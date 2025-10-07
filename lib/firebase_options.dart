@@ -21,10 +21,7 @@ class DefaultFirebaseOptions {
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for android - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return android;
       case TargetPlatform.iOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for ios - '
@@ -62,4 +59,14 @@ class DefaultFirebaseOptions {
     storageBucket: 'exam-bullet.appspot.com',
     measurementId: 'G-DTJZM49619',
   );
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyB-YKNoqF6vdtWgP31fPOlpxCtAf3sSbDs',
+    appId: '1:152281166556:android:c49960780660864f543a19',
+    messagingSenderId: '152281166556',
+    projectId: 'exam-bullet',
+    databaseURL: 'https://exam-bullet-default-rtdb.firebaseio.com',
+    storageBucket: 'exam-bullet.appspot.com',
+  );
+
 }
