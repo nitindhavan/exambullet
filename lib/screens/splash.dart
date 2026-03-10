@@ -1,5 +1,4 @@
 import 'package:exambullet/models/User.dart';
-import 'package:exambullet/screens/register.dart';
 import 'package:exambullet/screens/signin.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -13,15 +12,17 @@ class Splash extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Future.delayed(Duration(seconds: 0)).then((value) {
-      if (FirebaseAuth.instance.currentUser == null) {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (context) => const SignIn()));
       } else {
         FirebaseDatabase.instance
-            .ref('users').child(FirebaseAuth.instance.currentUser!.uid)
+            .ref('users')
+            .child(currentUser.uid)
             .once()
             .then((value) {
-          if (value.snapshot.exists) {
+          if (value.snapshot.exists && value.snapshot.value != null) {
             UserModel userModel =
                 UserModel.fromMap(value.snapshot.value as Map);
             Navigator.pushReplacement(
@@ -31,9 +32,19 @@ class Splash extends StatelessWidget {
               ),
             );
           } else {
+            final model = UserModel(
+              currentUser.displayName ?? 'User',
+              currentUser.phoneNumber ?? currentUser.email ?? '',
+              currentUser.uid,
+              [],
+            );
+            FirebaseDatabase.instance
+                .ref('users')
+                .child(model.uid)
+                .set(model.toMap());
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const Register()),
+              MaterialPageRoute(builder: (context) => Home(user: model)),
             );
           }
         });
