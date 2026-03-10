@@ -1,7 +1,7 @@
-import 'package:exambullet/models/User.dart';
-import 'package:exambullet/models/exam.dart';
-import 'package:exambullet/widgets/heading.dart';
-import 'package:exambullet/widgets/inputfield.dart';
+﻿import 'package:percent/models/User.dart';
+import 'package:percent/models/exam.dart';
+import 'package:percent/widgets/heading.dart';
+import 'package:percent/widgets/inputfield.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
@@ -72,3 +72,4 @@ class _AllExamsState extends State<AllExams> {
     );
   }
 }
+

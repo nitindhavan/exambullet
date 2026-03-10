@@ -1,7 +1,7 @@
-import 'package:exambullet/screens/splash.dart';
-import 'package:exambullet/widgets/button.dart';
-import 'package:exambullet/widgets/heading.dart';
-import 'package:exambullet/widgets/inputfield.dart';
+﻿import 'package:percent/screens/splash.dart';
+import 'package:percent/widgets/button.dart';
+import 'package:percent/widgets/heading.dart';
+import 'package:percent/widgets/inputfield.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -51,3 +51,4 @@ class _VerifyOTPState extends State<VerifyOTP> {
     );
   }
 }
+

@@ -1,5 +1,5 @@
-import 'package:exambullet/models/User.dart';
-import 'package:exambullet/screens/signin.dart';
+﻿import 'package:percent/models/User.dart';
+import 'package:percent/screens/signin.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -61,3 +61,4 @@ class Splash extends StatelessWidget {
     );
   }
 }
+

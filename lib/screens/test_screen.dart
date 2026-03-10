@@ -1,7 +1,7 @@
-import 'package:exambullet/models/question_model.dart';
-import 'package:exambullet/screens/result_screen.dart';
-import 'package:exambullet/screens/score_screen.dart';
-import 'package:exambullet/widgets/timer.dart';
+﻿import 'package:percent/models/question_model.dart';
+import 'package:percent/screens/result_screen.dart';
+import 'package:percent/screens/score_screen.dart';
+import 'package:percent/widgets/timer.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
@@ -243,3 +243,4 @@ class _TestScreenState extends State<TestScreen> {
     );
   }
 }
+

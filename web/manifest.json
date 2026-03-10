@@ -1,6 +1,6 @@
-{
-    "name": "exambullet",
-    "short_name": "exambullet",
+﻿{
+    "name": "percent",
+    "short_name": "percent",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
@@ -33,3 +33,4 @@
         }
     ]
 }
+

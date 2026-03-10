@@ -1,4 +1,4 @@
-import 'package:exambullet/models/question_model.dart';
+﻿import 'package:percent/models/question_model.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
@@ -257,3 +257,4 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 }
+

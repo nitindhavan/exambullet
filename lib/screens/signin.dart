@@ -1,8 +1,8 @@
-import 'package:exambullet/screens/splash.dart';
+﻿import 'package:percent/screens/splash.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart'; // ✅ add this import
+import 'package:google_sign_in/google_sign_in.dart'; // âœ… add this import
 
 class SignIn extends StatefulWidget {
   const SignIn({Key? key}) : super(key: key);
@@ -18,11 +18,11 @@ class _SignInState extends State<SignIn> {
     setState(() => visible = true);
     try {
       if (kIsWeb) {
-        // ✅ Web: popup flow
+        // âœ… Web: popup flow
         final provider = GoogleAuthProvider();
         await FirebaseAuth.instance.signInWithPopup(provider);
       } else {
-        // ✅ Android/iOS: native google_sign_in flow (avoids PigeonUserDetails bug)
+        // âœ… Android/iOS: native google_sign_in flow (avoids PigeonUserDetails bug)
         final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
         if (googleUser == null) {
           setState(() => visible = false);
@@ -88,12 +88,12 @@ class _SignInState extends State<SignIn> {
                           border: Border.all(
                               color: Colors.white.withOpacity(0.3), width: 1.5),
                         ),
-                        child: const Icon(Icons.bolt_rounded,
+                        child: const Icon(Icons.percent,
                             color: Colors.white, size: 52),
                       ),
                       const SizedBox(height: 28),
                       const Text(
-                        'ExamBullet',
+                        'Percent',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 40,

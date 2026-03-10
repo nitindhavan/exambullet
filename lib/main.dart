@@ -1,5 +1,5 @@
-import 'package:exambullet/screens/splash.dart';
-import 'package:exambullet/utils/url_params.dart';
+﻿import 'package:percent/screens/splash.dart';
+import 'package:percent/utils/url_params.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -44,3 +44,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+

@@ -1,4 +1,4 @@
-import 'package:exambullet/screens/result_screen.dart';
+﻿import 'package:percent/screens/result_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../models/question_model.dart';
@@ -70,3 +70,4 @@ class _ScoreScreenState extends State<ScoreScreen> {
     return '${obtained} / $total';
   }
 }
+

@@ -1,7 +1,7 @@
-import 'package:exambullet/main.dart';
-import 'package:exambullet/models/exam.dart';
-import 'package:exambullet/models/membership_model.dart';
-import 'package:exambullet/screens/home.dart';
+﻿import 'package:percent/main.dart';
+import 'package:percent/models/exam.dart';
+import 'package:percent/models/membership_model.dart';
+import 'package:percent/screens/home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -109,7 +109,7 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
                     var options = {
                       'key': 'rzp_test_waMZtMqYkvyLTm',
                       'amount': 10000,
-                      'name': 'Exam Bullet',
+                      'name': 'Percent',
                       'description': 'Membership',
                       'prefill': {
                         'contact': FirebaseAuth.instance.currentUser!.phoneNumber,
