@@ -1,4 +1,4 @@
-﻿name: percent
+name: percent
 description: A new Flutter project.
 
 # The following line prevents the package from being accidentally published to
@@ -42,6 +42,8 @@ dependencies:
   google_fonts: ^4.0.3
   google_sign_in: ^6.2.1
   razorpay_flutter_customui: ^1.4.2
+  http: ^1.6.0
+  webview_flutter: ^4.13.1
 
 
 dev_dependencies:

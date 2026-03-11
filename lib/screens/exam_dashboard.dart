@@ -1,85 +1,272 @@
 import 'package:percent/models/User.dart';
 import 'package:percent/models/exam.dart';
-import 'package:percent/models/test_model.dart';
-import 'package:percent/screens/membership_screen.dart';
-import 'package:percent/screens/test_screen.dart';
+import 'package:percent/screens/dashboard/exam_news_tab.dart';
+import 'package:percent/screens/dashboard/notes_tab.dart';
+import 'package:percent/screens/dashboard/quiz_tab.dart';
+import 'package:percent/screens/dashboard/tests_tab.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
-class ExamDashboard extends StatelessWidget {
+class ExamDashboard extends StatefulWidget {
   const ExamDashboard({Key? key, required this.exam, required this.user})
       : super(key: key);
-
   final ExamModel exam;
   final UserModel user;
+
+  @override
+  State<ExamDashboard> createState() => _ExamDashboardState();
+}
+
+class _ExamDashboardState extends State<ExamDashboard> {
+  int _currentIndex = 0;
+  bool _hasMembership = false;
+  bool _membershipLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkMembership();
+  }
+
+  Future<void> _checkMembership() async {
+    final snap = await FirebaseDatabase.instance
+        .ref('memberships')
+        .child(widget.exam.id)
+        .child(FirebaseAuth.instance.currentUser!.uid)
+        .once();
+    if (!mounted) return;
+    setState(() {
+      _hasMembership = snap.snapshot.exists;
+      _membershipLoaded = true;
+    });
+  }
+
+  List<_NavItem> get _navItems {
+    return [
+      const _NavItem(Icons.assignment_rounded, 'Tests'),
+      if (widget.exam.enableNotes)
+        const _NavItem(Icons.auto_stories_rounded, 'Notes'),
+      if (widget.exam.enableQuiz)
+        const _NavItem(Icons.lightbulb_rounded, 'Practice'),
+      const _NavItem(Icons.newspaper_rounded, 'Updates'),
+    ];
+  }
+
+  Widget _currentTab() {
+    if (!_membershipLoaded) {
+      return const Center(
+          child: CircularProgressIndicator(color: Color(0xff3D1975)));
+    }
+    final label = _navItems[_currentIndex].label;
+    switch (label) {
+      case 'Tests':
+        return TestsTab(exam: widget.exam, hasMembership: _hasMembership);
+      case 'Notes':
+        return NotesTab(exam: widget.exam, hasMembership: _hasMembership);
+      case 'Practice':
+        return QuizTab(exam: widget.exam, hasMembership: _hasMembership);
+      case 'Updates':
+        return ExamNewsTab(exam: widget.exam);
+      default:
+        return const SizedBox();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xffF6F2FF),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context),
-            _buildExamCard(),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Text(
-                'Mock Tests',
-                style: TextStyle(
-                  color: Color(0xff3D1975),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                ),
+      body: Column(
+        children: [
+          _DashboardHeader(
+            exam: widget.exam,
+            hasMembership: _hasMembership,
+            onBack: () => Navigator.pop(context),
+          ),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              child: KeyedSubtree(
+                key: ValueKey(_currentIndex),
+                child: _currentTab(),
               ),
             ),
-            Expanded(child: _buildTestsList(context)),
-          ],
-        ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: _BottomNav(
+        items: _navItems,
+        currentIndex: _currentIndex,
+        onTap: (i) => setState(() => _currentIndex = i),
       ),
     );
   }
+}
 
-  Widget _buildHeader(BuildContext context) {
+// ── Header ───────────────────────────────────────────────────────────────────
+
+class _DashboardHeader extends StatelessWidget {
+  const _DashboardHeader({
+    required this.exam,
+    required this.hasMembership,
+    required this.onBack,
+  });
+  final ExamModel exam;
+  final bool hasMembership;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xff3D1975), Color(0xff6B3FA0)],
+          colors: [Color(0xff1E0845), Color(0xff4A1E96)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(8, 12, 20, 24),
-      child: Row(
+      child: Stack(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: Colors.white, size: 20),
+          // Decorative circles
+          Positioned(
+            right: -20,
+            top: 0,
+            child: Container(
+              width: 130,
+              height: 130,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.04),
+              ),
+            ),
           ),
-          const SizedBox(width: 4),
-          Expanded(
+          Positioned(
+            left: -30,
+            bottom: -20,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.04),
+              ),
+            ),
+          ),
+          // Content
+          Padding(
+            padding: EdgeInsets.fromLTRB(8, topPad + 8, 16, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  exam.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
+                // Top row: back + pro badge
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: onBack,
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white, size: 20),
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    const Spacer(),
+                    if (hasMembership)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xffFFD700).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color: const Color(0xffFFD700).withOpacity(0.5)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.workspace_premium_rounded,
+                                color: Color(0xffFFD700), size: 14),
+                            SizedBox(width: 5),
+                            Text('PRO',
+                                style: TextStyle(
+                                    color: Color(0xffFFD700),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1)),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
-                Text(
-                  'Your selected goal',
-                  style: TextStyle(
-                      color: Colors.white.withOpacity(0.7), fontSize: 13),
+                const SizedBox(height: 12),
+                // Bottom row: icon + text
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Exam icon with border ring
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(17),
+                          border: Border.all(
+                              color: Colors.white.withOpacity(0.3), width: 1.5),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(13),
+                          child: Image.network(
+                            exam.icon,
+                            height: 54,
+                            width: 54,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 54,
+                              width: 54,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(13),
+                              ),
+                              child: const Icon(Icons.school_rounded,
+                                  color: Colors.white, size: 28),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              exam.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.4,
+                                height: 1.1,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              exam.about,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  color: Colors.white.withOpacity(0.6),
+                                  fontSize: 12,
+                                  height: 1.4),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -88,192 +275,98 @@ class ExamDashboard extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildExamCard() {
+// ── Custom Pill Bottom Nav ────────────────────────────────────────────────────
+
+class _BottomNav extends StatelessWidget {
+  const _BottomNav({
+    required this.items,
+    required this.currentIndex,
+    required this.onTap,
+  });
+  final List<_NavItem> items;
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).padding.bottom;
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(28),
+        ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xff3D1975).withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            color: const Color(0xff1E0845).withOpacity(0.12),
+            blurRadius: 24,
+            offset: const Offset(0, -6),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              exam.icon,
-              height: 72,
-              width: 72,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                height: 72,
-                width: 72,
-                decoration: BoxDecoration(
-                  color: const Color(0xff3D1975).withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.school_rounded,
-                    color: Color(0xff3D1975), size: 36),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  exam.name,
-                  style: const TextStyle(
-                    color: Color(0xff3D1975),
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  exam.about,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                      color: Colors.grey.shade600, fontSize: 13, height: 1.4),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTestsList(BuildContext context) {
-    return StreamBuilder<DatabaseEvent>(
-      stream: FirebaseDatabase.instance
-          .ref('tests')
-          .orderByChild('examId')
-          .equalTo(exam.id)
-          .onValue,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(
-              child: CircularProgressIndicator(color: Color(0xff3D1975)));
-        }
-        final tests = snapshot.data!.snapshot.children
-            .map((s) => TestModel.fromMap(s.value as Map))
-            .toList();
-        if (tests.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.inbox_outlined,
-                    size: 56, color: Colors.grey.shade300),
-                const SizedBox(height: 12),
-                Text(
-                  'No tests available yet',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 15),
-                ),
-              ],
-            ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          itemCount: tests.length,
-          itemBuilder: (ctx, i) => _testCard(ctx, tests[i], i),
-        );
-      },
-    );
-  }
-
-  Widget _testCard(BuildContext context, TestModel test, int index) {
-    return GestureDetector(
-      onTap: () {
-        FirebaseDatabase.instance
-            .ref('memberships')
-            .child(test.examId)
-            .child(FirebaseAuth.instance.currentUser!.uid)
-            .once()
-            .then((value) {
-          if (value.snapshot.exists) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => TestScreen(testModel: test)));
-          } else {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => MemberShipScreen(model: test.examId)));
-          }
-        });
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xff3D1975).withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPad + 10),
         child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xff3D1975).withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(
-                  '${index + 1}',
-                  style: const TextStyle(
-                    color: Color(0xff3D1975),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: items.asMap().entries.map((entry) {
+            final i = entry.key;
+            final item = entry.value;
+            final selected = i == currentIndex;
+            return Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => onTap(i),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                  decoration: BoxDecoration(
+                    color:
+                        selected ? const Color(0xff3D1975) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          item.icon,
+                          key: ValueKey(selected),
+                          size: 22,
+                          color: selected ? Colors.white : Colors.grey.shade400,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 200),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight:
+                              selected ? FontWeight.w700 : FontWeight.w500,
+                          color: selected ? Colors.white : Colors.grey.shade400,
+                        ),
+                        child: Text(item.label),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    test.name,
-                    style: const TextStyle(
-                      color: Color(0xff27124D),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${test.time} mins',
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios_rounded,
-                size: 16, color: Color(0xff3D1975)),
-          ],
+            );
+          }).toList(),
         ),
       ),
     );
   }
+}
+
+class _NavItem {
+  final IconData icon;
+  final String label;
+  const _NavItem(this.icon, this.label);
 }

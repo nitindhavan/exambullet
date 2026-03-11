@@ -65,7 +65,6 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
         child: Column(
           children: [
             _buildHeader(context),
-            // Search bar below header
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.only(top: 8, bottom: 28),
@@ -77,7 +76,7 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
                       count: goalExams.length,
                       color: const Color(0xff3D1975),
                     ),
-                    ...goalExams.map((e) => _examTile(e, isGoal: true)),
+                    _buildGrid(goalExams, isGoal: true),
                   ],
                   _sectionHeader(
                     icon: Icons.explore_rounded,
@@ -88,12 +87,37 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
                   if (otherExams.isEmpty)
                     _emptyState()
                   else
-                    ...otherExams.map((e) => _examTile(e, isGoal: false)),
+                    _buildGrid(otherExams, isGoal: false),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildGrid(List<ExamModel> exams, {required bool isGoal}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: exams.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 0.82,
+        ),
+        itemBuilder: (context, index) {
+          final exam = exams[index];
+          return _ExamCard(
+            exam: exam,
+            isGoal: isGoal,
+            onToggle: () => _toggleGoal(exam.id),
+          );
+        },
       ),
     );
   }
@@ -253,127 +277,6 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
     );
   }
 
-  Widget _examTile(ExamModel exam, {required bool isGoal}) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: isGoal
-              ? Border.all(
-                  color: const Color(0xff3D1975).withOpacity(0.35), width: 1.5)
-              : Border.all(color: Colors.transparent),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xff3D1975).withOpacity(0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        child: Row(
-          children: [
-            // Circular image
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xff3D1975).withOpacity(0.08),
-                border: Border.all(
-                  color: const Color(0xff3D1975).withOpacity(0.12),
-                  width: 1.5,
-                ),
-              ),
-              child: ClipOval(
-                child: Image.network(
-                  exam.icon,
-                  width: 64,
-                  height: 64,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Icon(
-                    Icons.school_rounded,
-                    color: Color(0xff3D1975),
-                    size: 30,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    exam.name,
-                    style: const TextStyle(
-                      color: Color(0xff27124D),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    exam.about,
-                    style: TextStyle(
-                        color: Colors.grey.shade500, fontSize: 12, height: 1.4),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (isGoal) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                              color: Colors.green, shape: BoxShape.circle),
-                        ),
-                        const SizedBox(width: 5),
-                        const Text(
-                          'In your goals',
-                          style: TextStyle(
-                              color: Colors.green,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            GestureDetector(
-              onTap: () => _toggleGoal(exam.id),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: isGoal
-                      ? const Color(0xff3D1975)
-                      : const Color(0xff3D1975).withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Icon(
-                  isGoal ? Icons.check_rounded : Icons.add_rounded,
-                  color: isGoal ? Colors.white : const Color(0xff3D1975),
-                  size: 22,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _emptyState() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 48),
@@ -391,6 +294,142 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ExamCard extends StatelessWidget {
+  const _ExamCard({
+    required this.exam,
+    required this.isGoal,
+    required this.onToggle,
+  });
+
+  final ExamModel exam;
+  final bool isGoal;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: isGoal
+            ? Border.all(
+                color: const Color(0xff3D1975).withOpacity(0.3), width: 1.5)
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xff3D1975).withOpacity(0.07),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Icon area
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            decoration: BoxDecoration(
+              color: const Color(0xff3D1975).withOpacity(0.05),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Center(
+              child: Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xff3D1975).withOpacity(0.12),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: ClipOval(
+                  child: Image.network(
+                    exam.icon,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.school_rounded,
+                      color: Color(0xff3D1975),
+                      size: 32,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Name + badge + button
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    exam.name,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xff2D0F5E),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  GestureDetector(
+                    onTap: onToggle,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: isGoal
+                            ? const Color(0xff3D1975)
+                            : const Color(0xff3D1975).withOpacity(0.07),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isGoal ? Icons.check_rounded : Icons.add_rounded,
+                            size: 13,
+                            color:
+                                isGoal ? Colors.white : const Color(0xff3D1975),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            isGoal ? 'Pinned' : 'Pin',
+                            style: TextStyle(
+                              color: isGoal
+                                  ? Colors.white
+                                  : const Color(0xff3D1975),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

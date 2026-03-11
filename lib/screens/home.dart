@@ -46,9 +46,8 @@ class _HomeState extends State<Home> {
     }
     final raw = snap.snapshot.value as Map;
     setState(() {
-      allExams = raw.entries
-          .map((e) => ExamModel.fromMap(e.value as Map))
-          .toList();
+      allExams =
+          raw.entries.map((e) => ExamModel.fromMap(e.value as Map)).toList();
       examsLoading = false;
     });
   }
@@ -107,7 +106,7 @@ class _HomeState extends State<Home> {
                 ),
 
                 SliverToBoxAdapter(
-                  child: NewsSection(),
+                  child: NewsSection(goalExams: goalExams),
                 ),
 
                 SliverToBoxAdapter(

@@ -84,10 +84,10 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
                 const SizedBox(height: 64),
                 Container(
                   width: double.infinity,
-                  child: Card(
+                  child: const Card(
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: const Column(
+                      padding: EdgeInsets.all(16),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text("What you will get:", style: TextStyle(fontWeight: FontWeight.bold)),

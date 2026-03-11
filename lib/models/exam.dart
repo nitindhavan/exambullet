@@ -5,6 +5,8 @@ class ExamModel {
   String banner;
   String icon;
   String goalId;
+  bool enableNotes;
+  bool enableQuiz;
 
   ExamModel.fromMap(Map<dynamic, dynamic> map)
       : name = map['name'],
@@ -12,18 +14,20 @@ class ExamModel {
         about = map['about'],
         banner = map['banner'],
         icon = map['icon'],
-        goalId = map['goalId'] ?? '';
+        goalId = map['goalId'] ?? '',
+        enableNotes = map['enableNotes'] ?? true,
+        enableQuiz = map['enableQuiz'] ?? true;
 
   Map<String, Object?> toMap() {
-    final map = {
+    return {
       'name': name,
       'id': id,
       'about': about,
       'banner': banner,
       'icon': icon,
       'goalId': goalId,
-    };
-    map.removeWhere((key, value) => value == null);
-    return map;
+      'enableNotes': enableNotes,
+      'enableQuiz': enableQuiz,
+    }..removeWhere((_, v) => v == null);
   }
 }
