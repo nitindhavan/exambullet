@@ -251,7 +251,7 @@ class _PapersList extends StatelessWidget {
   Widget build(BuildContext context) {
     return FutureBuilder<DatabaseEvent>(
       future: FirebaseDatabase.instance
-          .ref('exams/$examId/tests/${test.id}/papers')
+          .ref('exams/$examId/tests/${test.id}/papersInfo')
           .once(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -281,13 +281,17 @@ class _PapersList extends StatelessWidget {
             ...papers.asMap().entries.map((entry) {
               final i = entry.key;
               final paperSnap = entry.value;
-              final paperId = paperSnap.key!;
+
               final paperMap = paperSnap.value as Map?;
-              final paperName = paperMap != null && paperMap['name'] != null
-                  ? paperMap['name'] as String
-                  : 'Paper ${i + 1}';
-              final questionCount =
-                  paperSnap.child('questions').children.length;
+              final paperId = paperMap?['id'] as String? ?? paperSnap.key!;
+              final name = paperMap?['name'] as String? ?? 'Paper ${i + 1}';
+              final paperTime = (paperMap?['time'] as int?) ?? test.time;
+              final easy = (paperMap?['easy'] as int?) ?? 0;
+              final medium = (paperMap?['medium'] as int?) ?? 0;
+              final hard = (paperMap?['hard'] as int?) ?? 0;
+              final questionCount = (paperMap?['questionCount'] as int?) ??
+                  (easy + medium + hard);
+              final totalMarks = (paperMap?['totalMarks'] as int?) ?? 0;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
@@ -317,7 +321,6 @@ class _PapersList extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        // Paper number badge
                         Container(
                           width: 44,
                           height: 44,
@@ -330,54 +333,54 @@ class _PapersList extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Center(
-                            child: Text(
-                              '${i + 1}',
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 16),
-                            ),
+                            child: Text('${i + 1}',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 16)),
                           ),
                         ),
                         const SizedBox(width: 14),
-                        // Name + meta
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                paperName,
-                                style: const TextStyle(
-                                    color: Color(0xff1A0540),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700),
+                              Text(name,
+                                  style: const TextStyle(
+                                      color: Color(0xff1A0540),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 5),
+                              Row(
+                                children: [
+                                  Icon(Icons.help_outline_rounded,
+                                      size: 12, color: Colors.grey.shade400),
+                                  const SizedBox(width: 4),
+                                  Text('$questionCount Qs',
+                                      style: TextStyle(
+                                          color: Colors.grey.shade500,
+                                          fontSize: 12)),
+                                  const SizedBox(width: 10),
+                                  Icon(Icons.timer_outlined,
+                                      size: 12, color: Colors.grey.shade400),
+                                  const SizedBox(width: 4),
+                                  Text('$paperTime mins',
+                                      style: TextStyle(
+                                          color: Colors.grey.shade500,
+                                          fontSize: 12)),
+                                  const SizedBox(width: 10),
+                                  Icon(Icons.stars_rounded,
+                                      size: 12, color: Colors.grey.shade400),
+                                  const SizedBox(width: 4),
+                                  Text('$totalMarks marks',
+                                      style: TextStyle(
+                                          color: Colors.grey.shade500,
+                                          fontSize: 12)),
+                                ],
                               ),
-                              if (questionCount > 0) ...[
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Icon(Icons.help_outline_rounded,
-                                        size: 12, color: Colors.grey.shade400),
-                                    const SizedBox(width: 4),
-                                    Text('$questionCount questions',
-                                        style: TextStyle(
-                                            color: Colors.grey.shade500,
-                                            fontSize: 12)),
-                                    const SizedBox(width: 12),
-                                    Icon(Icons.timer_outlined,
-                                        size: 12, color: Colors.grey.shade400),
-                                    const SizedBox(width: 4),
-                                    Text('${test.time} mins',
-                                        style: TextStyle(
-                                            color: Colors.grey.shade500,
-                                            fontSize: 12)),
-                                  ],
-                                ),
-                              ],
                             ],
                           ),
                         ),
-                        // Start arrow
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
@@ -399,7 +402,6 @@ class _PapersList extends StatelessWidget {
     );
   }
 }
-// ── Shared widgets ────────────────────────────────────────────────────────────
 
 class _Chip extends StatelessWidget {
   const _Chip(this.label);
