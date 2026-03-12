@@ -42,16 +42,12 @@ class _ExamDashboardState extends State<ExamDashboard> {
     });
   }
 
-  List<_NavItem> get _navItems {
-    return [
-      const _NavItem(Icons.assignment_rounded, 'Tests'),
-      if (widget.exam.enableNotes)
+  List<_NavItem> get _navItems => [
+        const _NavItem(Icons.assignment_rounded, 'Tests'),
         const _NavItem(Icons.auto_stories_rounded, 'Notes'),
-      if (widget.exam.enableQuiz)
         const _NavItem(Icons.lightbulb_rounded, 'Practice'),
-      const _NavItem(Icons.newspaper_rounded, 'Updates'),
-    ];
-  }
+        const _NavItem(Icons.newspaper_rounded, 'Updates'),
+      ];
 
   Widget _currentTab() {
     if (!_membershipLoaded) {

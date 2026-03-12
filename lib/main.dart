@@ -6,8 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
 
-String origin = '';
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -15,7 +13,6 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    origin = getOrigin();
   } catch (e, st) {
     debugPrint('Startup error: $e');
     debugPrint('$st');
@@ -31,7 +28,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: origin,
+      title: 'Percent',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: const Color(0xffF6F2FF),

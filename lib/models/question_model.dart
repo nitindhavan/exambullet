@@ -1,32 +1,43 @@
-class Question{
-  String id;
-  String testId;
-  String examId;
-  String imageUrl;
-  int answer;
-  int marks;
-
-  Question(this.id, this.testId, this.examId, this.imageUrl, this.answer,
-      this.marks);
+class Question {
+  final String id;
+  final String questionText;
+  final String optionA;
+  final String optionB;
+  final String optionC;
+  final String optionD;
+  final int answer; // 1-based (1=A, 2=B, 3=C, 4=D)
+  final int marks;
+  final String imageUrl;
+  final String difficulty;
+  final String explanation;
+  final String topic;
 
   Question.fromMap(Map<dynamic, dynamic> map)
-      : id = map['id'],
-        testId=map['testId'],
-        examId=map['examId'],
-        imageUrl=map['imageUrl'],
-        answer=map['answer'],
-        marks=map['marks'];
+      : id = map['id'] ?? '',
+        questionText = map['questionText'] ?? '',
+        optionA = map['optionA'] ?? '',
+        optionB = map['optionB'] ?? '',
+        optionC = map['optionC'] ?? '',
+        optionD = map['optionD'] ?? '',
+        answer = map['answer'] ?? 0,
+        marks = map['marks'] ?? 1,
+        imageUrl = map['imageUrl'] ?? '',
+        difficulty = map['difficulty'] ?? '',
+        explanation = map['explanation'] ?? '',
+        topic = map['topic'] ?? '';
 
-  Map<String, Object?> toMap() {
-    final map = {
-      'id': id,
-      'testId': testId,
-      'examId': examId,
-      'imageUrl': imageUrl,
-      'answer': answer,
-      'marks': marks
-    };
-    map.removeWhere((key, value) => value==null);
-    return map;
+  String optionText(int n) {
+    switch (n) {
+      case 1:
+        return optionA;
+      case 2:
+        return optionB;
+      case 3:
+        return optionC;
+      case 4:
+        return optionD;
+      default:
+        return '';
+    }
   }
 }

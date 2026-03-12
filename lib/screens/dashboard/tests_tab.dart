@@ -5,29 +5,36 @@ import 'package:percent/screens/test_screen.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
-class TestsTab extends StatelessWidget {
-  const TestsTab(
-      {Key? key, required this.exam, required this.hasMembership})
+class TestsTab extends StatefulWidget {
+  const TestsTab({Key? key, required this.exam, required this.hasMembership})
       : super(key: key);
   final ExamModel exam;
   final bool hasMembership;
 
   @override
+  State<TestsTab> createState() => _TestsTabState();
+}
+
+class _TestsTabState extends State<TestsTab> {
+  int _selectedTest = 0;
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<DatabaseEvent>(
       stream: FirebaseDatabase.instance
-          .ref('tests')
-          .orderByChild('examId')
-          .equalTo(exam.id)
+          .ref('exams/${widget.exam.id}/tests')
           .onValue,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(
               child: CircularProgressIndicator(color: Color(0xff3D1975)));
         }
-        final tests = snapshot.data!.snapshot.children
-            .map((s) => TestModel.fromMap(s.value as Map))
-            .toList();
+        final raw = snapshot.data!.snapshot.value;
+        final tests = raw == null
+            ? <TestModel>[]
+            : snapshot.data!.snapshot.children
+                .map((s) => TestModel.fromMap(s.value as Map))
+                .toList();
 
         if (tests.isEmpty) {
           return const _EmptyState(
@@ -37,11 +44,17 @@ class TestsTab extends StatelessWidget {
           );
         }
 
+        // clamp in case tests list shrinks
+        if (_selectedTest >= tests.length) _selectedTest = 0;
+
+        final selected = tests[_selectedTest];
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Header ──────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
               child: Row(
                 children: [
                   const Text('Mock Tests',
@@ -54,16 +67,113 @@ class TestsTab extends StatelessWidget {
                 ],
               ),
             ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                itemCount: tests.length,
-                itemBuilder: (ctx, i) => _TestCard(
-                  test: tests[i],
-                  index: i,
-                  hasMembership: hasMembership,
-                  examId: exam.id,
+
+            // ── Segmented test switcher ──────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xffF0EBFF),
+                  borderRadius: BorderRadius.circular(16),
                 ),
+                child: Row(
+                  children: tests.asMap().entries.map((entry) {
+                    final i = entry.key;
+                    final test = entry.value;
+                    final isSelected = _selectedTest == i;
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          if (!widget.hasMembership) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    MemberShipScreen(model: widget.exam.id),
+                              ),
+                            );
+                            return;
+                          }
+                          setState(() => _selectedTest = i);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? const Color(0xff3D1975)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: const Color(0xff3D1975)
+                                          .withOpacity(0.25),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    )
+                                  ]
+                                : [],
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                test.name,
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : const Color(0xff3D1975),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              if (!widget.hasMembership && i > 0) ...[
+                                const SizedBox(height: 2),
+                                Icon(Icons.lock_rounded,
+                                    size: 10,
+                                    color: isSelected
+                                        ? Colors.white70
+                                        : const Color(0xffFF9800)),
+                              ]
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            // ── Selected test info ───────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
+                children: [
+                  Icon(Icons.timer_outlined,
+                      size: 13, color: Colors.grey.shade500),
+                  const SizedBox(width: 4),
+                  Text('${selected.time} mins',
+                      style:
+                          TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                ],
+              ),
+            ),
+
+            // ── Papers for selected test ─────────────────────────
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: widget.hasMembership
+                    ? _PapersList(test: selected, examId: widget.exam.id)
+                    : _LockedState(examId: widget.exam.id),
               ),
             ),
           ],
@@ -73,107 +183,223 @@ class TestsTab extends StatelessWidget {
   }
 }
 
-class _TestCard extends StatelessWidget {
-  const _TestCard({
-    required this.test,
-    required this.index,
-    required this.hasMembership,
-    required this.examId,
-  });
-  final TestModel test;
-  final int index;
-  final bool hasMembership;
+class _LockedState extends StatelessWidget {
+  const _LockedState({required this.examId});
   final String examId;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        if (hasMembership) {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => TestScreen(testModel: test)));
-        } else {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => MemberShipScreen(model: examId)));
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xff3D1975).withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 46,
-              height: 46,
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xff3D1975), Color(0xff6B3FA0)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(14),
+                color: const Color(0xffFFF3E0),
+                shape: BoxShape.circle,
               ),
-              child: Center(
-                child: Text('${index + 1}',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16)),
-              ),
+              child: const Icon(Icons.lock_rounded,
+                  size: 36, color: Color(0xffFF9800)),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(test.name,
-                      style: const TextStyle(
-                          color: Color(0xff1A0540),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 5),
-                  Row(
-                    children: [
-                      Icon(Icons.timer_outlined,
-                          size: 13, color: Colors.grey.shade500),
-                      const SizedBox(width: 4),
-                      Text('${test.time} mins',
-                          style: TextStyle(
-                              color: Colors.grey.shade500, fontSize: 12)),
-                    ],
-                  ),
-                ],
+            const SizedBox(height: 16),
+            const Text('Members Only',
+                style: TextStyle(
+                    color: Color(0xff2D0F5E),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Text('Get membership to access all tests',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+            const SizedBox(height: 20),
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => MemberShipScreen(model: examId)),
               ),
-            ),
-            if (!hasMembership)
-              Container(
-                padding: const EdgeInsets.all(6),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
-                    color: const Color(0xffFFF3E0),
-                    borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.lock_rounded,
-                    size: 16, color: Color(0xffFF9800)),
-              )
-            else
-              const Icon(Icons.arrow_forward_ios_rounded,
-                  size: 15, color: Color(0xff3D1975)),
+                  gradient: const LinearGradient(
+                      colors: [Color(0xff3D1975), Color(0xff6B3FA0)]),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('Get Membership',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w700)),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 }
+// ── Papers list ───────────────────────────────────────────────────────────────
+
+class _PapersList extends StatelessWidget {
+  const _PapersList({required this.test, required this.examId});
+  final TestModel test;
+  final String examId;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<DatabaseEvent>(
+      future: FirebaseDatabase.instance
+          .ref('exams/$examId/tests/${test.id}/papers')
+          .once(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox(
+            height: 120,
+            child: Center(
+                child: CircularProgressIndicator(
+                    color: Color(0xff3D1975), strokeWidth: 2)),
+          );
+        }
+
+        final papers = snapshot.data!.snapshot.children.toList();
+
+        if (papers.isEmpty) {
+          return const SizedBox(
+            height: 120,
+            child: Center(
+              child: Text('No papers available',
+                  style: TextStyle(color: Colors.grey, fontSize: 13)),
+            ),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ...papers.asMap().entries.map((entry) {
+              final i = entry.key;
+              final paperSnap = entry.value;
+              final paperId = paperSnap.key!;
+              final paperMap = paperSnap.value as Map?;
+              final paperName = paperMap != null && paperMap['name'] != null
+                  ? paperMap['name'] as String
+                  : 'Paper ${i + 1}';
+              final questionCount =
+                  paperSnap.child('questions').children.length;
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TestScreen(
+                        testModel: test,
+                        examId: examId,
+                        paperId: paperId,
+                      ),
+                    ),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xff3D1975).withOpacity(0.07),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        // Paper number badge
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xff3D1975), Color(0xff6B3FA0)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${i + 1}',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 16),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        // Name + meta
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                paperName,
+                                style: const TextStyle(
+                                    color: Color(0xff1A0540),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700),
+                              ),
+                              if (questionCount > 0) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(Icons.help_outline_rounded,
+                                        size: 12, color: Colors.grey.shade400),
+                                    const SizedBox(width: 4),
+                                    Text('$questionCount questions',
+                                        style: TextStyle(
+                                            color: Colors.grey.shade500,
+                                            fontSize: 12)),
+                                    const SizedBox(width: 12),
+                                    Icon(Icons.timer_outlined,
+                                        size: 12, color: Colors.grey.shade400),
+                                    const SizedBox(width: 4),
+                                    Text('${test.time} mins',
+                                        style: TextStyle(
+                                            color: Colors.grey.shade500,
+                                            fontSize: 12)),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        // Start arrow
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xffF0EBFF),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.play_arrow_rounded,
+                              color: Color(0xff3D1975), size: 18),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        );
+      },
+    );
+  }
+}
+// ── Shared widgets ────────────────────────────────────────────────────────────
 
 class _Chip extends StatelessWidget {
   const _Chip(this.label);
@@ -210,27 +436,17 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                  color: const Color(0xff3D1975).withOpacity(0.06),
-                  shape: BoxShape.circle),
-              child: Icon(icon,
-                  size: 40,
-                  color: const Color(0xff3D1975).withOpacity(0.4)),
-            ),
+            Icon(icon, size: 52, color: Colors.grey.shade300),
             const SizedBox(height: 16),
             Text(title,
                 style: const TextStyle(
                     color: Color(0xff2D0F5E),
-                    fontSize: 17,
+                    fontSize: 16,
                     fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(subtitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: Colors.grey.shade500, fontSize: 13, height: 1.5)),
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
           ],
         ),
       ),

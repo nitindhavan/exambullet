@@ -7,9 +7,15 @@ import 'package:flutter/services.dart';
 import '../models/test_model.dart';
 
 class TestScreen extends StatefulWidget {
-  const TestScreen({Key? key, required this.testModel}) : super(key: key);
+  const TestScreen({
+    Key? key,
+    required this.testModel,
+    required this.examId,
+    this.paperId,
+  }) : super(key: key);
   final TestModel testModel;
-
+  final String examId;
+  final String? paperId;
   @override
   State<TestScreen> createState() => _TestScreenState();
 }
@@ -33,15 +39,30 @@ class _TestScreenState extends State<TestScreen> {
   }
 
   Future<void> _loadQuestions() async {
-    final snap = await FirebaseDatabase.instance
-        .ref('questions')
-        .orderByChild('testId')
-        .equalTo(widget.testModel.id)
-        .once();
+    final List<Question> qs = [];
+
+    if (widget.paperId != null) {
+      // Load only the selected paper's questions
+      final snap = await FirebaseDatabase.instance
+          .ref(
+              'exams/${widget.examId}/tests/${widget.testModel.id}/papers/${widget.paperId}/questions')
+          .once();
+      for (final q in snap.snapshot.children) {
+        qs.add(Question.fromMap(q.value as Map));
+      }
+    } else {
+      // Load all papers (original behaviour)
+      final papersSnap = await FirebaseDatabase.instance
+          .ref('exams/${widget.examId}/tests/${widget.testModel.id}/papers')
+          .once();
+      for (final paper in papersSnap.snapshot.children) {
+        for (final q in paper.child('questions').children) {
+          qs.add(Question.fromMap(q.value as Map));
+        }
+      }
+    }
+
     if (!mounted) return;
-    final qs = snap.snapshot.children
-        .map((s) => Question.fromMap(s.value as Map))
-        .toList();
     setState(() {
       _questions = qs;
       _selected = List.filled(qs.length, -1);
@@ -165,12 +186,16 @@ class _TestScreenState extends State<TestScreen> {
               controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
               children: [
-                // ── Question image ──────────────────────────────────────
-                // AspectRatio fixes the height BEFORE the image loads,
-                // so the layout never shifts and the scroll never jumps.
+                // ── Question text ───────────────────────────────────────
                 Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: const Color(0xffEDE7F6),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xff3D1975), Color(0xff6B3FA0)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
@@ -179,39 +204,41 @@ class _TestScreenState extends State<TestScreen> {
                           offset: const Offset(0, 4))
                     ],
                   ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Image.network(
-                    _questions[_current].imageUrl,
-                    fit: BoxFit.fitWidth,
-                    loadingBuilder: (_, child, progress) {
-                      if (progress == null) return child;
-                      final pct = progress.expectedTotalBytes != null
-                          ? progress.cumulativeBytesLoaded /
-                              progress.expectedTotalBytes!
-                          : null;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          value: pct,
-                          color: const Color(0xff3D1975),
-                          strokeWidth: 2,
-                        ),
-                      );
-                    },
-                    errorBuilder: (_, __, ___) => Center(
-                      child: Icon(Icons.image_not_supported_outlined,
-                          color: Colors.grey.shade300, size: 40),
-                    ),
+                  child: Text(
+                    _questions[_current].questionText,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        height: 1.5),
                   ),
                 ),
+                if (_questions[_current].imageUrl.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.network(
+                      _questions[_current].imageUrl,
+                      fit: BoxFit.fitWidth,
+                      loadingBuilder: (_, child, progress) {
+                        if (progress == null) return child;
+                        return const Center(
+                            child: CircularProgressIndicator(
+                                color: Color(0xff3D1975), strokeWidth: 2));
+                      },
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 20),
-                // ── Options A–D ─────────────────────────────────────────
+// ── Options A–D ─────────────────────────────────────────
                 ...[1, 2, 3, 4].map((opt) => _OptionButton(
                       label: String.fromCharCode(64 + opt),
+                      optionText: _questions[_current].optionText(opt),
                       optionNumber: opt,
                       selected: _selected[_current],
                       onTap: () {
                         HapticFeedback.selectionClick();
-                        // Only selection state changes — no scroll side-effect
                         setState(() => _selected[_current] = opt);
                         _answeredNotifier.value =
                             _selected.where((s) => s != -1).length;
@@ -462,11 +489,13 @@ class _ProgressBar extends StatelessWidget {
 class _OptionButton extends StatelessWidget {
   const _OptionButton({
     required this.label,
+    required this.optionText,
     required this.optionNumber,
     required this.selected,
     required this.onTap,
   });
   final String label;
+  final String optionText;
   final int optionNumber;
   final int selected;
   final VoidCallback onTap;
@@ -518,13 +547,16 @@ class _OptionButton extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 14),
-            Text('Option $label',
-                style: TextStyle(
-                    color: isSelected ? Colors.white : const Color(0xff1A0540),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600)),
+            Expanded(
+              child: Text(optionText,
+                  style: TextStyle(
+                      color:
+                          isSelected ? Colors.white : const Color(0xff1A0540),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600)),
+            ),
             if (isSelected) ...[
-              const Spacer(),
+              const SizedBox(width: 8),
               const Icon(Icons.check_circle_rounded,
                   color: Colors.white, size: 20),
             ],
@@ -534,7 +566,6 @@ class _OptionButton extends StatelessWidget {
     );
   }
 }
-
 // ── Nav button ────────────────────────────────────────────────────────────────
 
 class _NavButton extends StatelessWidget {
