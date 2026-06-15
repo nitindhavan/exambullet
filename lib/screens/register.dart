@@ -137,10 +137,12 @@ class _RegisterState extends State<Register> {
                                 .child(model.uid)
                                 .set(model.toMap())
                                 .then((value) {
-                              Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => Home(user: model)));
+                              if (mounted) {
+                                Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => Home(user: model)));
+                              }
                             });
                           },
                     style: ElevatedButton.styleFrom(

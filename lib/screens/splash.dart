@@ -26,7 +26,7 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
   late Animation<Offset> _textSlide;
   late Animation<double> _percentRotate;
   late Animation<double> _percentScale;
-  late Animation<double> _shimmer;
+
 
   @override
   void initState() {
@@ -85,9 +85,7 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
       CurvedAnimation(parent: _percentCtrl, curve: Curves.easeInOut),
     );
 
-    _shimmer = Tween<double>(begin: -1.0, end: 2.0).animate(
-      CurvedAnimation(parent: _percentCtrl, curve: Curves.easeInOut),
-    );
+
 
     _ringCtrl.forward();
     _navigate();

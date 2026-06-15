@@ -39,7 +39,9 @@ class _VerifyOTPState extends State<VerifyOTP> {
                   visible = true;
                 });
                 await widget.result.confirm(otpController.text).then((value) {
-                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Splash()));
+                  if (mounted) {
+                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Splash()));
+                  }
                 });
               },
               text: 'Continue'),
