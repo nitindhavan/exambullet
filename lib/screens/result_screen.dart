@@ -82,7 +82,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                          color: AppTheme.primary.withOpacity(0.25),
+                          color: AppTheme.primary.withValues(alpha: 0.25),
                           blurRadius: 16,
                           offset: const Offset(0, 4))
                     ],
@@ -247,14 +247,14 @@ class _ResultScreenState extends State<ResultScreen> {
               ),
               const SizedBox(height: 8),
               // Legend
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     _LegendDot(color: _correct, label: 'Correct'),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     _LegendDot(color: _wrong, label: 'Wrong'),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     _LegendDot(color: AppTheme.border, label: 'Skipped'),
                   ],
                 ),
@@ -372,14 +372,14 @@ class _Header extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text('Review Answers',
                     style: TextStyle(
-                        color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                        color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -512,7 +512,7 @@ class _NavBtn extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: enabled ? Colors.white : Colors.white.withOpacity(0.45),
+            color: enabled ? Colors.white : Colors.white.withValues(alpha: 0.45),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppTheme.borderLight),
             boxShadow: enabled ? AppTheme.softShadow : [],

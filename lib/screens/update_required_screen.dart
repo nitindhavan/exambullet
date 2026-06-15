@@ -35,7 +35,7 @@ class UpdateRequiredScreen extends StatelessWidget {
                 width: 140,
                 height: 140,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryLight.withOpacity(0.4),
+                  color: AppTheme.primaryLight.withValues(alpha: 0.4),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -54,7 +54,7 @@ class UpdateRequiredScreen extends StatelessWidget {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: AppTheme.primary.withOpacity(0.3 * scale),
+                                color: AppTheme.primary.withValues(alpha: 0.3 * scale),
                                 blurRadius: 20 * scale,
                                 spreadRadius: 5 * scale,
                               ),
@@ -118,7 +118,7 @@ class UpdateRequiredScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primary.withOpacity(0.24),
+                        color: AppTheme.primary.withValues(alpha: 0.24),
                         blurRadius: 16,
                         offset: const Offset(0, 6),
                       ),
@@ -141,7 +141,7 @@ class UpdateRequiredScreen extends StatelessWidget {
               Text(
                 'Percent App Version 1.0.0',
                 style: TextStyle(
-                  color: AppTheme.textLight.withOpacity(0.8),
+                  color: AppTheme.textLight.withValues(alpha: 0.8),
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),

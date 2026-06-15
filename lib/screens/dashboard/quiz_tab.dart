@@ -5,6 +5,7 @@ import 'package:percent/models/subject_model.dart';
 import 'package:percent/models/topic_model.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/shimmer.dart';
+import 'package:percent/widgets/shimmer_loading.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // QuizTab  —  subjects list
@@ -123,7 +124,7 @@ class _QuizTabState extends State<QuizTab> {
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                            color: color.withOpacity(0.12),
+                            color: color.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(11)),
                         child: Icon(Icons.menu_book_rounded,
                             color: color, size: 22),
@@ -480,8 +481,7 @@ class _QuizPlayerScreenState extends State<_QuizPlayerScreen> {
 
   Widget _body() {
     if (_loading) {
-      return const Center(
-          child: CircularProgressIndicator(color: AppTheme.primary));
+      return const SkeletonLoader();
     }
     if (_questions.isEmpty) {
       return const _EmptyState(
@@ -543,7 +543,7 @@ class _QuizPlayerScreenState extends State<_QuizPlayerScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                          color: AppTheme.primary.withOpacity(0.25),
+                          color: AppTheme.primary.withValues(alpha: 0.25),
                           blurRadius: 16,
                           offset: const Offset(0, 6))
                     ],
@@ -593,9 +593,9 @@ class _QuizPlayerScreenState extends State<_QuizPlayerScreen> {
                             height: 30,
                             decoration: BoxDecoration(
                               color: _answered && idx == correct
-                                  ? AppTheme.success.withOpacity(0.15)
+                                  ? AppTheme.success.withValues(alpha: 0.15)
                                   : _answered && idx == _selectedOption
-                                      ? AppTheme.error.withOpacity(0.15)
+                                      ? AppTheme.error.withValues(alpha: 0.15)
                                       : AppTheme.primaryLight,
                               shape: BoxShape.circle,
                             ),
@@ -638,7 +638,7 @@ class _QuizPlayerScreenState extends State<_QuizPlayerScreen> {
                      decoration: BoxDecoration(
                        color: AppTheme.warningLight,
                        borderRadius: BorderRadius.circular(14),
-                       border: Border.all(color: AppTheme.warning.withOpacity(0.3)),
+                       border: Border.all(color: AppTheme.warning.withValues(alpha: 0.3)),
                      ),
                      child: Row(
                        crossAxisAlignment: CrossAxisAlignment.start,
@@ -721,7 +721,7 @@ class _ResultCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                      color: AppTheme.primary.withOpacity(0.3),
+                      color: AppTheme.primary.withValues(alpha: 0.3),
                       blurRadius: 24,
                       offset: const Offset(0, 8))
                 ],
@@ -849,7 +849,7 @@ class _EmptyState extends StatelessWidget {
                   color: AppTheme.primaryLight,
                   shape: BoxShape.circle),
               child: Icon(icon,
-                  size: 40, color: AppTheme.primary.withOpacity(0.4)),
+                  size: 40, color: AppTheme.primary.withValues(alpha: 0.4)),
             ),
             const SizedBox(height: 16),
             Text(title,

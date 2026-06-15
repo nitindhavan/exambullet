@@ -127,7 +127,15 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
         final minVersion = settings['minVersion'] as String? ?? '1.0.0';
         final updateUrl = settings['updateUrl'] as String? ?? '';
 
-        final packageInfo = await PackageInfo.fromPlatform();
+        final packageInfo = await PackageInfo.fromPlatform().timeout(
+          const Duration(seconds: 3),
+          onTimeout: () => PackageInfo(
+            appName: 'Percent',
+            packageName: 'com.example.percent',
+            version: '1.0.0',
+            buildNumber: '1',
+          ),
+        );
         final currentVersion = packageInfo.version;
 
         if (_isUpdateRequired(currentVersion, minVersion)) {
@@ -221,10 +229,10 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
                               width: 100,
                               height: 100,
                               decoration: BoxDecoration(
-                                color: AppTheme.primary.withOpacity(0.05),
+                                color: AppTheme.primary.withValues(alpha: 0.05),
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: AppTheme.primary.withOpacity(0.12),
+                                  color: AppTheme.primary.withValues(alpha: 0.12),
                                   width: 1.5,
                                 ),
                               ),
@@ -267,9 +275,9 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
                     position: _textSlide,
                     child: FadeTransition(
                       opacity: _textFade,
-                      child: Column(
+                      child: const Column(
                         children: [
-                          const Text(
+                          Text(
                             'Percent',
                             style: TextStyle(
                               color: AppTheme.textPrimary,
@@ -278,7 +286,7 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
                               letterSpacing: -0.5,
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          SizedBox(height: 6),
                           Text(
                             'Your exam prep companion',
                             style: TextStyle(
@@ -319,7 +327,7 @@ class _RingPainter extends CustomPainter {
       center,
       radius,
       Paint()
-        ..color = AppTheme.primary.withOpacity(0.08)
+        ..color = AppTheme.primary.withValues(alpha: 0.08)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 5,
     );
@@ -385,7 +393,7 @@ class _LoadingDotsState extends State<_LoadingDots>
               height: 7,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.primary.withOpacity(opacity),
+                color: AppTheme.primary.withValues(alpha: opacity),
               ),
             );
           }),

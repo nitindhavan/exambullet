@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/shimmer_loading.dart';
 
 class ExamDashboard extends StatefulWidget {
   const ExamDashboard({Key? key, required this.exam, required this.user})
@@ -61,8 +62,7 @@ class _ExamDashboardState extends State<ExamDashboard> {
 
   Widget _currentTab() {
     if (!_membershipLoaded) {
-      return const Center(
-          child: CircularProgressIndicator(color: AppTheme.primary));
+      return const SkeletonLoader();
     }
     final label = _navItems[_currentIndex].label;
     switch (label) {
@@ -148,7 +148,7 @@ class _DashboardHeader extends StatelessWidget {
               height: 130,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.04),
+                color: Colors.white.withValues(alpha: 0.04),
               ),
             ),
           ),
@@ -160,7 +160,7 @@ class _DashboardHeader extends StatelessWidget {
               height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.04),
+                color: Colors.white.withValues(alpha: 0.04),
               ),
             ),
           ),
@@ -186,10 +186,10 @@ class _DashboardHeader extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 5),
                         decoration: BoxDecoration(
-                          color: const Color(0xffFFD700).withOpacity(0.15),
+                          color: const Color(0xffFFD700).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                              color: const Color(0xffFFD700).withOpacity(0.5)),
+                              color: const Color(0xffFFD700).withValues(alpha: 0.5)),
                         ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
@@ -221,7 +221,7 @@ class _DashboardHeader extends StatelessWidget {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(17),
                           border: Border.all(
-                              color: Colors.white.withOpacity(0.3), width: 1.5),
+                              color: Colors.white.withValues(alpha: 0.3), width: 1.5),
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(13),
@@ -234,7 +234,7 @@ class _DashboardHeader extends StatelessWidget {
                               height: 54,
                               width: 54,
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
+                                color: Colors.white.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(13),
                               ),
                               child: const Icon(Icons.school_rounded,
@@ -264,7 +264,7 @@ class _DashboardHeader extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                  color: Colors.white.withOpacity(0.6),
+                                  color: Colors.white.withValues(alpha: 0.6),
                                   fontSize: 12,
                                   height: 1.4),
                             ),
@@ -307,7 +307,7 @@ class _BottomNav extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 24,
             offset: const Offset(0, -6),
           ),

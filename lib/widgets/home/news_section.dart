@@ -350,7 +350,7 @@ class _NewsCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.08),
+                    color: color.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -366,7 +366,7 @@ class _NewsCard extends StatelessWidget {
                   Icon(
                     Icons.open_in_new_rounded,
                     size: 12,
-                    color: AppTheme.textSecondary.withOpacity(0.6),
+                    color: AppTheme.textSecondary.withValues(alpha: 0.6),
                   ),
               ],
             ),
@@ -522,7 +522,7 @@ class _ArticleWebViewState extends State<_ArticleWebView> {
           ),
           if (_loading)
             LinearProgressIndicator(
-              backgroundColor: AppTheme.primary.withOpacity(0.1),
+              backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
               color: AppTheme.primary,
               minHeight: 3,
             ),

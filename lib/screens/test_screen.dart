@@ -204,6 +204,42 @@ class _TestScreenState extends State<TestScreen> {
       );
     }
 
+    if (_questions.isEmpty) {
+      return Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.textPrimary),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.quiz_outlined, size: 64, color: AppTheme.textLight),
+              SizedBox(height: 16),
+              Text(
+                'No questions available',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textPrimary),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'This test currently has no questions added to it.',
+                style: TextStyle(
+                    fontSize: 14, color: AppTheme.textSecondary),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: Column(
@@ -236,7 +272,7 @@ class _TestScreenState extends State<TestScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                          color: AppTheme.primary.withOpacity(0.25),
+                          color: AppTheme.primary.withValues(alpha: 0.25),
                           blurRadius: 16,
                           offset: const Offset(0, 4))
                     ],
@@ -417,7 +453,7 @@ class _TestHeader extends StatelessWidget {
                   builder: (_, answered, __) => Text(
                     '$answered / $total answered',
                     style: TextStyle(
-                        color: Colors.white.withOpacity(0.6), fontSize: 12),
+                        color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
                   ),
                 ),
               ],
@@ -436,12 +472,12 @@ class _TestHeader extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isLow
                       ? AppTheme.error
-                      : Colors.white.withOpacity(0.15),
+                      : Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                       color: isLow
                           ? AppTheme.error
-                          : Colors.white.withOpacity(0.25)),
+                          : Colors.white.withValues(alpha: 0.25)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -616,7 +652,7 @@ class _NavButton extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: enabled ? Colors.white : Colors.white.withOpacity(0.45),
+            color: enabled ? Colors.white : Colors.white.withValues(alpha: 0.45),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppTheme.borderLight),
             boxShadow: enabled ? AppTheme.softShadow : [],
@@ -763,7 +799,7 @@ class _QuestionPalette extends StatelessWidget {
                   bg = AppTheme.primary;
                   fg = Colors.white;
                 } else if (isAnswered) {
-                  bg = AppTheme.success.withOpacity(0.15);
+                  bg = AppTheme.success.withValues(alpha: 0.15);
                   fg = const Color(0xff065F46);
                 } else {
                   bg = Colors.white;
@@ -780,7 +816,7 @@ class _QuestionPalette extends StatelessWidget {
                         color: isCurrent
                             ? AppTheme.primary
                             : isAnswered
-                                ? AppTheme.success.withOpacity(0.4)
+                                ? AppTheme.success.withValues(alpha: 0.4)
                                 : AppTheme.borderLight,
                         width: 1.5,
                       ),
@@ -817,7 +853,7 @@ class _QuestionPalette extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                        color: AppTheme.primary.withOpacity(0.3),
+                        color: AppTheme.primary.withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 5))
                   ],
@@ -853,7 +889,7 @@ class _PaletteStat extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Column(
           children: [

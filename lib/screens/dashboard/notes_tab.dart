@@ -146,7 +146,7 @@ class _NoteCardState extends State<_NoteCard> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: widget.tagColor.withOpacity(0.10),
+                    color: widget.tagColor.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(tag,
@@ -229,7 +229,7 @@ class _LockedState extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                      color: AppTheme.primary.withOpacity(0.25),
+                      color: AppTheme.primary.withValues(alpha: 0.25),
                       blurRadius: 20,
                       offset: const Offset(0, 8))
                 ],
@@ -262,7 +262,7 @@ class _LockedState extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                        color: AppTheme.primary.withOpacity(0.3),
+                        color: AppTheme.primary.withValues(alpha: 0.3),
                         blurRadius: 16,
                         offset: const Offset(0, 6))
                   ],
@@ -304,7 +304,7 @@ class _EmptyState extends StatelessWidget {
                   shape: BoxShape.circle),
               child: Icon(icon,
                   size: 40,
-                  color: AppTheme.primary.withOpacity(0.4)),
+                  color: AppTheme.primary.withValues(alpha: 0.4)),
             ),
             const SizedBox(height: 16),
             Text(title,

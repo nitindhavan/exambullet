@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: AppTheme.background,
         textTheme: GoogleFonts.outfitTextTheme(Theme.of(context).textTheme),
         appBarTheme: const AppBarTheme(
-          color: AppTheme.primary,
+          backgroundColor: AppTheme.primary,
           toolbarHeight: 70,
           elevation: 0,
           systemOverlayStyle: SystemUiOverlayStyle(

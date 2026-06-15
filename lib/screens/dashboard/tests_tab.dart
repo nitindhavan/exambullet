@@ -130,7 +130,7 @@ class _TestsTabState extends State<TestsTab> {
                                 ? [
                                     BoxShadow(
                                       color: AppTheme.primary
-                                          .withOpacity(0.25),
+                                          .withValues(alpha: 0.25),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     )
@@ -178,12 +178,12 @@ class _TestsTabState extends State<TestsTab> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Row(
                 children: [
-                  Icon(Icons.timer_outlined,
+                  const Icon(Icons.timer_outlined,
                       size: 13, color: AppTheme.textLight),
                   const SizedBox(width: 4),
                   Text('${selected.time} mins',
                       style:
-                          TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                          const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
                 ],
               ),
             ),
@@ -388,11 +388,11 @@ class _PapersList extends StatelessWidget {
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.help_outline_rounded,
+                                      const Icon(Icons.help_outline_rounded,
                                           size: 12, color: AppTheme.textLight),
                                       const SizedBox(width: 4),
                                       Text('$questionCount Qs',
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                               color: AppTheme.textSecondary,
                                               fontSize: 12)),
                                     ],
@@ -400,11 +400,11 @@ class _PapersList extends StatelessWidget {
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.timer_outlined,
+                                      const Icon(Icons.timer_outlined,
                                           size: 12, color: AppTheme.textLight),
                                       const SizedBox(width: 4),
                                       Text('$paperTime mins',
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                               color: AppTheme.textSecondary,
                                               fontSize: 12)),
                                     ],
@@ -412,11 +412,11 @@ class _PapersList extends StatelessWidget {
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.stars_rounded,
+                                      const Icon(Icons.stars_rounded,
                                           size: 12, color: AppTheme.textLight),
                                       const SizedBox(width: 4),
                                       Text('$totalMarks marks',
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                               color: AppTheme.textSecondary,
                                               fontSize: 12)),
                                     ],

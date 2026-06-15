@@ -174,7 +174,7 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -200,9 +200,9 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
           Container(
             height: 50,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.14),
+              color: Colors.white.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withOpacity(0.25)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
             ),
             child: TextField(
               controller: _searchCtrl,
@@ -212,9 +212,9 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
               decoration: InputDecoration(
                 hintText: 'Search exams...',
                 hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.5), fontSize: 14),
+                    color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
                 prefixIcon: Icon(Icons.search_rounded,
-                    color: Colors.white.withOpacity(0.65), size: 20),
+                    color: Colors.white.withValues(alpha: 0.65), size: 20),
                 suffixIcon: _search.isNotEmpty
                     ? GestureDetector(
                         onTap: () {
@@ -222,7 +222,7 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
                           setState(() => _search = '');
                         },
                         child: Icon(Icons.close_rounded,
-                            color: Colors.white.withOpacity(0.65), size: 18),
+                            color: Colors.white.withValues(alpha: 0.65), size: 18),
                       )
                     : null,
                 border: InputBorder.none,
@@ -249,7 +249,7 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 19),
@@ -264,7 +264,7 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -291,7 +291,7 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
               _search.isNotEmpty
                   ? 'No exams match "$_search"'
                   : 'All exams are in your goals!',
-              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
             ),
           ],
         ),
@@ -319,7 +319,7 @@ class _ExamCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isGoal
-              ? AppTheme.primary.withOpacity(0.3)
+              ? AppTheme.primary.withValues(alpha: 0.3)
               : AppTheme.borderLight,
           width: 1.5,
         ),
@@ -346,7 +346,7 @@ class _ExamCard extends StatelessWidget {
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     ),

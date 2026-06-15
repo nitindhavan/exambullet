@@ -105,7 +105,7 @@ class ScoreScreen extends StatelessWidget {
                                 painter: _ScoreRingPainter(
                                   percentage: value,
                                   color: _resultColor,
-                                  backgroundColor: Colors.white.withOpacity(0.15),
+                                  backgroundColor: Colors.white.withValues(alpha: 0.15),
                                 ),
                               );
                             },
@@ -121,7 +121,7 @@ class ScoreScreen extends StatelessWidget {
                                     fontWeight: FontWeight.w900)),
                             Text('marks',
                                 style: TextStyle(
-                                    color: Colors.white.withOpacity(0.6),
+                                    color: Colors.white.withValues(alpha: 0.6),
                                     fontSize: 12)),
                           ],
                         ),
@@ -132,10 +132,10 @@ class ScoreScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 6),
                       decoration: BoxDecoration(
-                        color: _resultColor.withOpacity(0.2),
+                        color: _resultColor.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                         border:
-                            Border.all(color: _resultColor.withOpacity(0.5)),
+                            Border.all(color: _resultColor.withValues(alpha: 0.5)),
                       ),
                       child: Text(_resultLabel,
                           style: TextStyle(
@@ -201,7 +201,7 @@ class ScoreScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                            color: AppTheme.primary.withOpacity(0.3),
+                            color: AppTheme.primary.withValues(alpha: 0.3),
                             blurRadius: 16,
                             offset: const Offset(0, 6))
                       ],

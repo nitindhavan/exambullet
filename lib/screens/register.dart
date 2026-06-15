@@ -116,10 +116,18 @@ class _RegisterState extends State<Register> {
                     onPressed: visible
                         ? null
                         : () async {
-                            if (nameController.text.trim().isEmpty) {
+                            final name = nameController.text.trim();
+                            if (name.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                     content: Text('Please enter your name')),
+                              );
+                              return;
+                            }
+                            if (name.length < 3) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Name must be at least 3 characters long')),
                               );
                               return;
                             }
@@ -148,7 +156,7 @@ class _RegisterState extends State<Register> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primary,
                       disabledBackgroundColor:
-                          AppTheme.primary.withOpacity(0.6),
+                          AppTheme.primary.withValues(alpha: 0.6),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -186,7 +194,7 @@ class _RegisterState extends State<Register> {
                 const SizedBox(height: 24),
 
                 // ── Footer note ────────────────────────────────
-                Center(
+                const Center(
                   child: Text(
                     'Your name can be changed later from your profile.',
                     textAlign: TextAlign.center,

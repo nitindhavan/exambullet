@@ -120,7 +120,7 @@ class GoalExamsSection extends StatelessWidget {
                       child: Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryLight.withOpacity(0.15),
+                          color: AppTheme.primaryLight.withValues(alpha: 0.15),
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                         ),
                         child: Center(
@@ -206,7 +206,7 @@ class _GoalExamCard extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryLight.withOpacity(0.25),
+                  color: AppTheme.primaryLight.withValues(alpha: 0.25),
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 child: Center(
@@ -218,7 +218,7 @@ class _GoalExamCard extends StatelessWidget {
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primary.withOpacity(0.08),
+                          color: AppTheme.primary.withValues(alpha: 0.08),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -267,7 +267,7 @@ class _GoalExamCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppTheme.successLight.withOpacity(0.5),
+                      color: AppTheme.successLight.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -315,10 +315,10 @@ class _AddMoreCard extends StatelessWidget {
         width: 130,
         margin: const EdgeInsets.only(right: 20, bottom: 8, top: 2),
         decoration: BoxDecoration(
-          color: AppTheme.primaryLight.withOpacity(0.35),
+          color: AppTheme.primaryLight.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppTheme.primary.withOpacity(0.12),
+            color: AppTheme.primary.withValues(alpha: 0.12),
             width: 1.5,
           ),
           boxShadow: AppTheme.softShadow,
@@ -333,7 +333,7 @@ class _AddMoreCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primary.withOpacity(0.08),
+                    color: AppTheme.primary.withValues(alpha: 0.08),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),

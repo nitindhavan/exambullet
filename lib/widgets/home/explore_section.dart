@@ -64,7 +64,7 @@ class ExploreSection extends StatelessWidget {
               otherExams.isEmpty
                   ? 'No exams available'
                   : 'All exams are in your goals!',
-              style: TextStyle(color: AppTheme.textSecondary),
+              style: const TextStyle(color: AppTheme.textSecondary),
             ),
           )
         else
@@ -142,7 +142,7 @@ class ExploreSection extends StatelessWidget {
                     child: Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: AppTheme.borderLight.withOpacity(0.5),
+                        color: AppTheme.borderLight.withValues(alpha: 0.5),
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                       ),
                       child: Center(
@@ -225,7 +225,7 @@ class _ExploreCard extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: AppTheme.borderLight.withOpacity(0.5),
+                  color: AppTheme.borderLight.withValues(alpha: 0.5),
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 child: Center(
@@ -237,7 +237,7 @@ class _ExploreCard extends StatelessWidget {
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
+                          color: Colors.black.withValues(alpha: 0.04),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),

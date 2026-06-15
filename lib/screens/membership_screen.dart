@@ -151,7 +151,7 @@ class _Header extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
+                  color: Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
@@ -207,12 +207,12 @@ class _PriceCard extends StatelessWidget {
         border: Border.all(color: AppTheme.borderLight),
         boxShadow: AppTheme.softShadow,
       ),
-      child: Row(
+      child: const Row(
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   'Lifetime Membership',
                   style: TextStyle(
@@ -231,7 +231,7 @@ class _PriceCard extends StatelessWidget {
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: const [
+            children: [
               Text(
                 '₹100',
                 style: TextStyle(
@@ -342,7 +342,7 @@ class _GetMembershipButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primary.withOpacity(0.35),
+              color: AppTheme.primary.withValues(alpha: 0.35),
               blurRadius: 14,
               offset: const Offset(0, 5),
             ),

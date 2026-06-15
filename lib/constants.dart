@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
@@ -20,7 +20,7 @@ class _TimerWidgetState extends State<TimerWidget> {
   void initState() {
     super.initState();
     currentTime=widget.totalTime*60;
-    Timer.periodic(Duration(seconds: 1), (timer) {
+    Timer.periodic(const Duration(seconds: 1), (timer) {
       if(mounted) {
         setState(() {
           currentTime--;
@@ -40,9 +40,9 @@ class _TimerWidgetState extends State<TimerWidget> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Icon(Icons.timer,color: Color(0xff3D1975),),
-          SizedBox(width: 8,),
-          Text(time,style: TextStyle(fontSize: 16),)
+          const Icon(Icons.timer,color: Color(0xff3D1975),),
+          const SizedBox(width: 8,),
+          Text(time,style: const TextStyle(fontSize: 16),)
         ],
       ),
     );

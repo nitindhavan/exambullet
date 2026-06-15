@@ -82,10 +82,10 @@ class _SignInState extends State<SignIn> {
                         width: 90,
                         height: 90,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(28),
                           border: Border.all(
-                              color: Colors.white.withOpacity(0.3), width: 1.5),
+                              color: Colors.white.withValues(alpha: 0.3), width: 1.5),
                         ),
                         child: const Icon(Icons.percent,
                             color: Colors.white, size: 52),
@@ -105,7 +105,7 @@ class _SignInState extends State<SignIn> {
                         'Ace your exams with\nsmart practice tests',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 16,
                           height: 1.5,
                           fontWeight: FontWeight.w500,
@@ -144,7 +144,7 @@ class _SignInState extends State<SignIn> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(
+                    const Text(
                       'Sign in to access your tests, scores\nand memberships.',
                       style: TextStyle(
                         fontSize: 14,
@@ -207,7 +207,7 @@ class _SignInState extends State<SignIn> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Center(
+                    const Center(
                       child: Text(
                         'By continuing, you agree to our Terms & Privacy Policy',
                         textAlign: TextAlign.center,
@@ -242,7 +242,7 @@ class _SignInState extends State<SignIn> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppTheme.primary.withOpacity(0.08),
+            color: AppTheme.primary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Icon(icon, color: AppTheme.primary, size: 22),
