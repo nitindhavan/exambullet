@@ -38,7 +38,16 @@ class _ExamDashboardState extends State<ExamDashboard> {
         .once();
     if (!mounted) return;
     setState(() {
-      _hasMembership = snap.snapshot.exists;
+      if (snap.snapshot.exists) {
+        final rawData = snap.snapshot.value;
+        if (rawData is Map) {
+          _hasMembership = rawData['isActive'] != false;
+        } else {
+          _hasMembership = true;
+        }
+      } else {
+        _hasMembership = false;
+      }
       _membershipLoaded = true;
     });
   }
