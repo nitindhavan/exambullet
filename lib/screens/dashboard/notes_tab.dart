@@ -3,6 +3,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:percent/models/exam.dart';
 import 'package:percent/screens/membership_screen.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/shimmer.dart';
 
 class NotesTab extends StatelessWidget {
   const NotesTab(
@@ -36,8 +37,22 @@ class NotesTab extends StatelessWidget {
       stream: FirebaseDatabase.instance.ref('notes').child(exam.id).onValue,
       builder: (context, snap) {
         if (!snap.hasData) {
-          return const Center(
-              child: CircularProgressIndicator(color: AppTheme.primary));
+          return ShimmerLoading(
+            builder: (context, color) {
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: 4,
+                itemBuilder: (_, __) => Container(
+                  height: 72,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+              );
+            },
+          );
         }
         List<Map<String, dynamic>> notes = [];
         if (snap.data!.snapshot.value != null) {
