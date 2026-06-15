@@ -5,6 +5,7 @@ import 'package:percent/screens/test_screen.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/shimmer.dart';
 
 class TestsTab extends StatefulWidget {
   const TestsTab({Key? key, required this.exam, required this.hasMembership})
@@ -29,8 +30,22 @@ class _TestsTabState extends State<TestsTab> {
           .onValue,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const Center(
-              child: CircularProgressIndicator(color: AppTheme.primary));
+          return ShimmerLoading(
+            builder: (context, color) {
+              return ListView.builder(
+                padding: const EdgeInsets.all(20),
+                itemCount: 4,
+                itemBuilder: (_, __) => Container(
+                  height: 80,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              );
+            },
+          );
         }
         final raw = snapshot.data!.snapshot.value;
         final tests = raw == null
@@ -366,31 +381,46 @@ class _PapersList extends StatelessWidget {
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700)),
                               const SizedBox(height: 5),
-                              Row(
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 4,
                                 children: [
-                                  Icon(Icons.help_outline_rounded,
-                                      size: 12, color: AppTheme.textLight),
-                                  const SizedBox(width: 4),
-                                  Text('$questionCount Qs',
-                                      style: TextStyle(
-                                          color: AppTheme.textSecondary,
-                                          fontSize: 12)),
-                                  const SizedBox(width: 10),
-                                  Icon(Icons.timer_outlined,
-                                      size: 12, color: AppTheme.textLight),
-                                  const SizedBox(width: 4),
-                                  Text('$paperTime mins',
-                                      style: TextStyle(
-                                          color: AppTheme.textSecondary,
-                                          fontSize: 12)),
-                                  const SizedBox(width: 10),
-                                  Icon(Icons.stars_rounded,
-                                      size: 12, color: AppTheme.textLight),
-                                  const SizedBox(width: 4),
-                                  Text('$totalMarks marks',
-                                      style: TextStyle(
-                                          color: AppTheme.textSecondary,
-                                          fontSize: 12)),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.help_outline_rounded,
+                                          size: 12, color: AppTheme.textLight),
+                                      const SizedBox(width: 4),
+                                      Text('$questionCount Qs',
+                                          style: TextStyle(
+                                              color: AppTheme.textSecondary,
+                                              fontSize: 12)),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.timer_outlined,
+                                          size: 12, color: AppTheme.textLight),
+                                      const SizedBox(width: 4),
+                                      Text('$paperTime mins',
+                                          style: TextStyle(
+                                              color: AppTheme.textSecondary,
+                                              fontSize: 12)),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.stars_rounded,
+                                          size: 12, color: AppTheme.textLight),
+                                      const SizedBox(width: 4),
+                                      Text('$totalMarks marks',
+                                          style: TextStyle(
+                                              color: AppTheme.textSecondary,
+                                              fontSize: 12)),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ],

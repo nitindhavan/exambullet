@@ -39,27 +39,43 @@ class UpdateRequiredScreen extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: AppTheme.softShadow,
-                      border: Border.all(color: AppTheme.borderLight, width: 2),
-                    ),
-                    child: ShaderMask(
-                      shaderCallback: (bounds) => const LinearGradient(
-                        colors: AppTheme.primaryGradient,
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ).createShader(bounds),
-                      child: const Icon(
-                        Icons.system_update_rounded,
-                        size: 48,
-                        color: Colors.white,
-                      ),
-                    ),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0.8, end: 1.0),
+                    duration: const Duration(milliseconds: 1000),
+                    curve: Curves.easeInOut,
+                    builder: (context, scale, child) {
+                      return Transform.scale(
+                        scale: scale,
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.primary.withOpacity(0.3 * scale),
+                                blurRadius: 20 * scale,
+                                spreadRadius: 5 * scale,
+                              ),
+                            ],
+                            border: Border.all(color: AppTheme.borderLight, width: 2),
+                          ),
+                          child: ShaderMask(
+                            shaderCallback: (bounds) => const LinearGradient(
+                              colors: AppTheme.primaryGradient,
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ).createShader(bounds),
+                            child: const Icon(
+                              Icons.system_update_rounded,
+                              size: 48,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),

@@ -79,10 +79,11 @@ class HomeHeader extends StatelessWidget {
           const SizedBox(height: 24),
 
           // ── Stats row ─────────────────────────────
-          Row(
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
             children: [
               _statChip(Icons.flag_rounded, '$goalCount Active Goals'),
-              const SizedBox(width: 10),
               _statChip(Icons.bolt_rounded, 'Practice Daily'),
             ],
           ),

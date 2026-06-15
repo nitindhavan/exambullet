@@ -4,6 +4,7 @@ import 'package:percent/models/exam.dart';
 import 'package:percent/models/subject_model.dart';
 import 'package:percent/models/topic_model.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/shimmer.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // QuizTab  —  subjects list
@@ -51,8 +52,22 @@ class _QuizTabState extends State<QuizTab> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Center(
-          child: CircularProgressIndicator(color: AppTheme.primary));
+      return ShimmerLoading(
+        builder: (context, color) {
+          return ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: 6,
+            itemBuilder: (_, __) => Container(
+              height: 70,
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          );
+        },
+      );
     }
     if (_subjects.isEmpty) {
       return const _EmptyState(
@@ -136,14 +151,14 @@ class _QuizTabState extends State<QuizTab> {
 }
 
 const _subjectColors = [
-  Color(0xff4CAF50),
-  Color(0xff2196F3),
-  Color(0xffFF9800),
-  Color(0xff9C27B0),
-  Color(0xffF44336),
-  Color(0xff00BCD4),
-  Color(0xffE91E63),
-  Color(0xff795548),
+  Color(0xff10B981), // Emerald
+  Color(0xff3B82F6), // Blue
+  Color(0xffF59E0B), // Amber
+  Color(0xff8B5CF6), // Violet
+  Color(0xffEF4444), // Red
+  Color(0xff06B6D4), // Cyan
+  Color(0xffEC4899), // Pink
+  Color(0xffF97316), // Orange
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -196,8 +211,22 @@ class _TopicsScreenState extends State<_TopicsScreen> {
           _buildHeader(context),
           Expanded(
             child: _loading
-                ? const Center(
-                    child: CircularProgressIndicator(color: AppTheme.primary))
+                ? ShimmerLoading(
+                    builder: (context, color) {
+                      return ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: 5,
+                        itemBuilder: (_, __) => Container(
+                          height: 64,
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      );
+                    },
+                  )
                 : _topics.isEmpty
                     ? const _EmptyState(
                         icon: Icons.topic_outlined,

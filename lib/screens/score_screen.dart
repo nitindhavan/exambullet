@@ -96,11 +96,19 @@ class ScoreScreen extends StatelessWidget {
                         SizedBox(
                           width: 130,
                           height: 130,
-                          child: CircularProgressIndicator(
-                            value: _pct,
-                            strokeWidth: 10,
-                            backgroundColor: Colors.white.withOpacity(0.15),
-                            color: _resultColor,
+                          child: TweenAnimationBuilder<double>(
+                            duration: const Duration(milliseconds: 1400),
+                            curve: Curves.easeOutCubic,
+                            tween: Tween<double>(begin: 0, end: _pct),
+                            builder: (context, value, child) {
+                              return CustomPaint(
+                                painter: _ScoreRingPainter(
+                                  percentage: value,
+                                  color: _resultColor,
+                                  backgroundColor: Colors.white.withOpacity(0.15),
+                                ),
+                              );
+                            },
                           ),
                         ),
                         Column(
@@ -277,5 +285,51 @@ class _StatCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _ScoreRingPainter extends CustomPainter {
+  final double percentage;
+  final Color color;
+  final Color backgroundColor;
+
+  _ScoreRingPainter({
+    required this.percentage,
+    required this.color,
+    required this.backgroundColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+
+    final bgPaint = Paint()
+      ..color = backgroundColor
+      ..strokeWidth = 10
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawCircle(center, radius, bgPaint);
+
+    final fgPaint = Paint()
+      ..color = color
+      ..strokeWidth = 10
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -1.5708, // -pi/2
+      percentage * 2 * 3.14159,
+      false,
+      fgPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScoreRingPainter oldDelegate) {
+    return oldDelegate.percentage != percentage ||
+        oldDelegate.color != color ||
+        oldDelegate.backgroundColor != backgroundColor;
   }
 }
