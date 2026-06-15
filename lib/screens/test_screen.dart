@@ -45,21 +45,22 @@ class _TestScreenState extends State<TestScreen> {
     if (widget.paperId != null) {
       // Load only the selected paper's questions
       final snap = await FirebaseDatabase.instance
-          .ref(
-              'exams/${widget.examId}/tests/${widget.testModel.id}/papers/${widget.paperId}/questions')
+          .ref('questions')
+          .orderByChild('paperId')
+          .equalTo(widget.paperId)
           .once();
       for (final q in snap.snapshot.children) {
         qs.add(Question.fromMap(q.value as Map));
       }
     } else {
-      // Load all papers (original behaviour)
-      final papersSnap = await FirebaseDatabase.instance
-          .ref('exams/${widget.examId}/tests/${widget.testModel.id}/papers')
+      // Load all questions for the test
+      final snap = await FirebaseDatabase.instance
+          .ref('questions')
+          .orderByChild('testId')
+          .equalTo(widget.testModel.id)
           .once();
-      for (final paper in papersSnap.snapshot.children) {
-        for (final q in paper.child('questions').children) {
-          qs.add(Question.fromMap(q.value as Map));
-        }
+      for (final q in snap.snapshot.children) {
+        qs.add(Question.fromMap(q.value as Map));
       }
     }
 

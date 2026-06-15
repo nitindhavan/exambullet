@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
 import 'dart:math';
 import 'home.dart';
+import 'update_required_screen.dart';
 
 class Splash extends StatefulWidget {
   const Splash({Key? key}) : super(key: key);
@@ -92,9 +93,57 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
     _navigate();
   }
 
+  bool _isUpdateRequired(String current, String minReq) {
+    try {
+      final currentParts = current.split('.').map(int.parse).toList();
+      final minParts = minReq.split('.').map(int.parse).toList();
+
+      while (currentParts.length < 3) {
+        currentParts.add(0);
+      }
+      while (minParts.length < 3) {
+        minParts.add(0);
+      }
+
+      for (int i = 0; i < 3; i++) {
+        if (currentParts[i] < minParts[i]) return true;
+        if (currentParts[i] > minParts[i]) return false;
+      }
+    } catch (e) {
+      return current != minReq;
+    }
+    return false;
+  }
+
   Future<void> _navigate() async {
     await Future.delayed(const Duration(milliseconds: 2200));
     if (!mounted) return;
+
+    // ── Version Check ──────────────────────────────────────
+    try {
+      final appSettingsSnap = await FirebaseDatabase.instance.ref('appSettings').get();
+      if (!mounted) return;
+      if (appSettingsSnap.exists && appSettingsSnap.value != null) {
+        final settings = appSettingsSnap.value as Map;
+        final minVersion = settings['minVersion'] as String? ?? '1.0.0';
+        final updateUrl = settings['updateUrl'] as String? ?? '';
+
+        const currentVersion = '1.0.0';
+
+        if (_isUpdateRequired(currentVersion, minVersion)) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => UpdateRequiredScreen(updateUrl: updateUrl),
+            ),
+          );
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to check app update: $e');
+    }
+
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       Navigator.pushReplacement(

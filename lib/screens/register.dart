@@ -130,6 +130,7 @@ class _RegisterState extends State<Register> {
                               authUser.phoneNumber ?? authUser.email ?? '',
                               authUser.uid,
                               [],
+                              DateTime.now().toIso8601String(),
                             );
                             FirebaseDatabase.instance
                                 .ref('users')

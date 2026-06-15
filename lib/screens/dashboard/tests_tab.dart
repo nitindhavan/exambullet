@@ -23,7 +23,9 @@ class _TestsTabState extends State<TestsTab> {
   Widget build(BuildContext context) {
     return StreamBuilder<DatabaseEvent>(
       stream: FirebaseDatabase.instance
-          .ref('exams/${widget.exam.id}/tests')
+          .ref('tests')
+          .orderByChild('examId')
+          .equalTo(widget.exam.id)
           .onValue,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -257,7 +259,9 @@ class _PapersList extends StatelessWidget {
   Widget build(BuildContext context) {
     return FutureBuilder<DatabaseEvent>(
       future: FirebaseDatabase.instance
-          .ref('exams/$examId/tests/${test.id}/papersInfo')
+          .ref('papersInfo')
+          .orderByChild('testId')
+          .equalTo(test.id)
           .once(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {

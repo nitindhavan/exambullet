@@ -10,12 +10,16 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  } catch (e, st) {
-    debugPrint('Startup error: $e');
-    debugPrint('$st');
+    Firebase.app();
+  } catch (e) {
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } catch (err, st) {
+      debugPrint('Startup error: $err');
+      debugPrint('$st');
+    }
   }
 
   runApp(const MyApp());
