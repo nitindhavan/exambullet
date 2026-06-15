@@ -6,9 +6,9 @@ class ExamModel {
   String icon;
   bool editable;
 
-  ExamModel.fromMap(Map<dynamic, dynamic> map)
-      : name = map['name'],
-        id = map['id'],
+  ExamModel.fromMap(Map<dynamic, dynamic> map, [String? key])
+      : name = map['name'] ?? '',
+        id = map['id'] ?? key ?? '',
         about = map['about'] ?? '',
         banner = map['banner'] ?? '',
         icon = map['icon'] ?? '',

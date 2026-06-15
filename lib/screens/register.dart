@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:percent/utils/theme.dart';
 
 import '../models/User.dart';
 import 'home.dart';
@@ -19,7 +20,7 @@ class _RegisterState extends State<Register> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffF6F2FF),
+      backgroundColor: AppTheme.background,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -35,8 +36,9 @@ class _RegisterState extends State<Register> {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: const Color(0xff3D1975),
+                      color: AppTheme.primary,
                       borderRadius: BorderRadius.circular(24),
+                      boxShadow: AppTheme.softShadow,
                     ),
                     child: const Icon(Icons.person_outline,
                         color: Colors.white, size: 44),
@@ -49,7 +51,7 @@ class _RegisterState extends State<Register> {
                 const Text(
                   "What's your\nname?",
                   style: TextStyle(
-                    color: Color(0xff3D1975),
+                    color: AppTheme.textPrimary,
                     fontSize: 36,
                     fontWeight: FontWeight.w900,
                     height: 1.2,
@@ -59,8 +61,9 @@ class _RegisterState extends State<Register> {
                 const Text(
                   "This is how you'll appear in the app.",
                   style: TextStyle(
-                    color: Colors.black45,
+                    color: AppTheme.textSecondary,
                     fontSize: 15,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
 
@@ -71,30 +74,25 @@ class _RegisterState extends State<Register> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xff3D1975).withOpacity(0.08),
-                        blurRadius: 20,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
+                    border: Border.all(color: AppTheme.border),
+                    boxShadow: AppTheme.softShadow,
                   ),
                   child: TextField(
                     controller: nameController,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xff3D1975),
+                      color: AppTheme.textPrimary,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Enter your full name',
-                      hintStyle: TextStyle(
-                        color: Colors.grey.shade400,
+                      hintStyle: const TextStyle(
+                        color: AppTheme.textLight,
                         fontWeight: FontWeight.normal,
                       ),
                       prefixIcon: const Icon(
                         Icons.person_outline,
-                        color: Color(0xff3D1975),
+                        color: AppTheme.primary,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -145,9 +143,9 @@ class _RegisterState extends State<Register> {
                             });
                           },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xff3D1975),
+                      backgroundColor: AppTheme.primary,
                       disabledBackgroundColor:
-                          const Color(0xff3D1975).withOpacity(0.6),
+                          AppTheme.primary.withOpacity(0.6),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -190,7 +188,7 @@ class _RegisterState extends State<Register> {
                     'Your name can be changed later from your profile.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.grey.shade500,
+                      color: AppTheme.textLight,
                       fontSize: 13,
                     ),
                   ),

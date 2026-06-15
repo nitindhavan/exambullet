@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:percent/models/exam.dart';
 import 'package:percent/screens/membership_screen.dart';
+import 'package:percent/utils/theme.dart';
 
 class NotesTab extends StatelessWidget {
   const NotesTab(
@@ -11,15 +12,15 @@ class NotesTab extends StatelessWidget {
   final bool hasMembership;
 
   static const _tagColors = {
-    'Important': Color(0xffF44336),
-    'Formula': Color(0xff2196F3),
-    'Concept': Color(0xff4CAF50),
-    'Tip': Color(0xffFF9800),
-    'Revision': Color(0xff9C27B0),
+    'Important': AppTheme.error,
+    'Formula': AppTheme.secondary,
+    'Concept': AppTheme.success,
+    'Tip': AppTheme.warning,
+    'Revision': AppTheme.primary,
   };
 
   Color _tagColor(String tag) =>
-      _tagColors[tag] ?? const Color(0xff3D1975);
+      _tagColors[tag] ?? AppTheme.primary;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +37,7 @@ class NotesTab extends StatelessWidget {
       builder: (context, snap) {
         if (!snap.hasData) {
           return const Center(
-              child: CircularProgressIndicator(color: Color(0xff3D1975)));
+              child: CircularProgressIndicator(color: AppTheme.primary));
         }
         List<Map<String, dynamic>> notes = [];
         if (snap.data!.snapshot.value != null) {
@@ -61,7 +62,7 @@ class NotesTab extends StatelessWidget {
                 children: [
                   const Text('Study Notes',
                       style: TextStyle(
-                          color: Color(0xff2D0F5E),
+                          color: AppTheme.textPrimary,
                           fontSize: 18,
                           fontWeight: FontWeight.w900)),
                   const Spacer(),
@@ -113,14 +114,13 @@ class _NoteCardState extends State<_NoteCard> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          border: Border(left: BorderSide(color: widget.tagColor, width: 3.5)),
-          boxShadow: [
-            BoxShadow(
-              color: widget.tagColor.withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: Border(
+            left: BorderSide(color: widget.tagColor, width: 4),
+            top: const BorderSide(color: AppTheme.borderLight),
+            right: const BorderSide(color: AppTheme.borderLight),
+            bottom: const BorderSide(color: AppTheme.borderLight),
+          ),
+          boxShadow: AppTheme.softShadow,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,16 +153,16 @@ class _NoteCardState extends State<_NoteCard> {
             const SizedBox(height: 10),
             Text(title,
                 style: const TextStyle(
-                    color: Color(0xff1A0540),
+                    color: AppTheme.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w700)),
             if (_expanded && content.isNotEmpty) ...[
               const SizedBox(height: 10),
-              Divider(color: Colors.grey.shade100),
+              const Divider(color: AppTheme.borderLight),
               const SizedBox(height: 8),
               Text(content,
-                  style: TextStyle(
-                      color: Colors.grey.shade700,
+                  style: const TextStyle(
+                      color: AppTheme.textSecondary,
                       fontSize: 13,
                       height: 1.65)),
             ],
@@ -181,12 +181,12 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xff3D1975).withOpacity(0.08),
+        color: AppTheme.primaryLight,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(label,
           style: const TextStyle(
-              color: Color(0xff3D1975),
+              color: AppTheme.primary,
               fontSize: 12,
               fontWeight: FontWeight.w600)),
     );
@@ -210,11 +210,11 @@ class _LockedState extends StatelessWidget {
               height: 90,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                    colors: [Color(0xff3D1975), Color(0xff6B3FA0)]),
+                    colors: AppTheme.primaryGradient),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                      color: const Color(0xff3D1975).withOpacity(0.25),
+                      color: AppTheme.primary.withOpacity(0.25),
                       blurRadius: 20,
                       offset: const Offset(0, 8))
                 ],
@@ -225,15 +225,15 @@ class _LockedState extends StatelessWidget {
             const SizedBox(height: 20),
             const Text('Pro Content',
                 style: TextStyle(
-                    color: Color(0xff2D0F5E),
+                    color: AppTheme.textPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Unlock premium study notes and preparation material with a Pro membership.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  color: Colors.grey.shade600, fontSize: 13, height: 1.5),
+                  color: AppTheme.textSecondary, fontSize: 13, height: 1.5),
             ),
             const SizedBox(height: 24),
             GestureDetector(
@@ -243,11 +243,11 @@ class _LockedState extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                      colors: [Color(0xff3D1975), Color(0xff6B3FA0)]),
+                      colors: AppTheme.primaryGradient),
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                        color: const Color(0xff3D1975).withOpacity(0.3),
+                        color: AppTheme.primary.withOpacity(0.3),
                         blurRadius: 16,
                         offset: const Offset(0, 6))
                   ],
@@ -284,24 +284,24 @@ class _EmptyState extends StatelessWidget {
             Container(
               width: 80,
               height: 80,
-              decoration: BoxDecoration(
-                  color: const Color(0xff3D1975).withOpacity(0.06),
+              decoration: const BoxDecoration(
+                  color: AppTheme.primaryLight,
                   shape: BoxShape.circle),
               child: Icon(icon,
                   size: 40,
-                  color: const Color(0xff3D1975).withOpacity(0.4)),
+                  color: AppTheme.primary.withOpacity(0.4)),
             ),
             const SizedBox(height: 16),
             Text(title,
                 style: const TextStyle(
-                    color: Color(0xff2D0F5E),
+                    color: AppTheme.textPrimary,
                     fontSize: 17,
                     fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             Text(subtitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: Colors.grey.shade500, fontSize: 13, height: 1.5)),
+                style: const TextStyle(
+                    color: AppTheme.textSecondary, fontSize: 13, height: 1.5)),
           ],
         ),
       ),

@@ -1,6 +1,6 @@
-﻿import 'package:flutter/services.dart';
+import 'package:flutter/services.dart';
 import 'package:percent/screens/splash.dart';
-import 'package:percent/utils/url_params.dart';
+import 'package:percent/utils/theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -30,14 +30,15 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Percent',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: const Color(0xffF6F2FF),
-        textTheme: GoogleFonts.robotoTextTheme(Theme.of(context).textTheme),
+        primaryColor: AppTheme.primary,
+        scaffoldBackgroundColor: AppTheme.background,
+        textTheme: GoogleFonts.outfitTextTheme(Theme.of(context).textTheme),
         appBarTheme: const AppBarTheme(
-          color: Color(0xff3D1975),
+          color: AppTheme.primary,
           toolbarHeight: 70,
+          elevation: 0,
           systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: Color(0xff3D1975),
+            statusBarColor: AppTheme.primary,
             statusBarIconBrightness: Brightness.light,
           ),
         ),

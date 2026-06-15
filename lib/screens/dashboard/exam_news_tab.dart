@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:percent/models/exam.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:percent/utils/theme.dart';
 
 // ── Data model ────────────────────────────────────────────────────────────────
 
@@ -197,7 +198,7 @@ class _ExamNewsTabState extends State<ExamNewsTab> {
                   const Text(
                     'Latest News',
                     style: TextStyle(
-                        color: Color(0xff2D0F5E),
+                        color: AppTheme.textPrimary,
                         fontSize: 18,
                         fontWeight: FontWeight.w900),
                   ),
@@ -211,15 +212,15 @@ class _ExamNewsTabState extends State<ExamNewsTab> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: _isLive
-                                ? const Color(0xff4CAF50)
+                                ? AppTheme.success
                                 : Colors.grey.shade400,
                           ),
                         ),
                         const SizedBox(width: 5),
                         Text(
                           _isLive ? 'Live · Google News' : 'Curated tips',
-                          style: TextStyle(
-                              color: Colors.grey.shade500, fontSize: 11),
+                          style: const TextStyle(
+                              color: AppTheme.textSecondary, fontSize: 11),
                         ),
                       ],
                     ),
@@ -232,11 +233,11 @@ class _ExamNewsTabState extends State<ExamNewsTab> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xff3D1975).withOpacity(0.08),
+                      color: AppTheme.primaryLight,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(Icons.refresh_rounded,
-                        color: Color(0xff3D1975), size: 18),
+                        color: AppTheme.primary, size: 18),
                   ),
                 ),
             ],
@@ -281,7 +282,7 @@ class _NewsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = isLive ? const Color(0xff1565C0) : const Color(0xff3D1975);
+    final accent = isLive ? AppTheme.secondary : AppTheme.primary;
     final tappable = article.url.isNotEmpty;
     return GestureDetector(
       onTap: tappable ? () => _open(context) : null,
@@ -290,13 +291,8 @@ class _NewsCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: accent.withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: Border.all(color: AppTheme.borderLight),
+          boxShadow: AppTheme.softShadow,
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -306,7 +302,7 @@ class _NewsCard extends StatelessWidget {
               Text(
                 article.title,
                 style: const TextStyle(
-                  color: Color(0xff1A0540),
+                  color: AppTheme.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                   height: 1.4,
@@ -423,14 +419,14 @@ class _ArticleWebViewState extends State<_ArticleWebView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffF6F2FF),
+      backgroundColor: AppTheme.background,
       body: Column(
         children: [
           // ── Custom header ──────────────────────────────
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xff1E0845), Color(0xff4A1E96)],
+                colors: AppTheme.primaryGradient,
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -482,9 +478,9 @@ class _ArticleWebViewState extends State<_ArticleWebView> {
           ),
           // ── Progress bar ───────────────────────────────
           if (_loading)
-            LinearProgressIndicator(
-              backgroundColor: const Color(0xff3D1975).withOpacity(0.1),
-              color: const Color(0xff3D1975),
+            const LinearProgressIndicator(
+              backgroundColor: AppTheme.primaryLight,
+              color: AppTheme.primary,
               minHeight: 3,
             ),
           // ── WebView ────────────────────────────────────
@@ -542,19 +538,15 @@ class _ShimmerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg =
-        Color.lerp(const Color(0xffEDE7F6), const Color(0xffF3EEF8), opacity)!;
+        Color.lerp(const Color(0xffF1F5F9), const Color(0xffE2E8F0), opacity)!;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2))
-        ],
+        border: Border.all(color: AppTheme.borderLight),
+        boxShadow: AppTheme.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

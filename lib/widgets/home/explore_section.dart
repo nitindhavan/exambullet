@@ -1,5 +1,7 @@
 import 'package:percent/models/exam.dart';
 import 'package:flutter/material.dart';
+import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/shimmer.dart';
 
 class ExploreSection extends StatelessWidget {
   const ExploreSection({
@@ -32,7 +34,7 @@ class ExploreSection extends StatelessWidget {
               const Text(
                 'Explore Exams',
                 style: TextStyle(
-                  color: Color(0xff2D0F5E),
+                  color: AppTheme.textPrimary,
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -0.3,
@@ -44,7 +46,7 @@ class ExploreSection extends StatelessWidget {
                   child: const Text(
                     'View All',
                     style: TextStyle(
-                      color: Color(0xff5B2FA0),
+                      color: AppTheme.primary,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
@@ -54,11 +56,7 @@ class ExploreSection extends StatelessWidget {
           ),
         ),
         if (examsLoading)
-          const Padding(
-            padding: EdgeInsets.all(20),
-            child: Center(
-                child: CircularProgressIndicator(color: Color(0xff3D1975))),
-          )
+          _buildShimmer(context)
         else if (preview.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -66,7 +64,7 @@ class ExploreSection extends StatelessWidget {
               otherExams.isEmpty
                   ? 'No exams available'
                   : 'All exams are in your goals!',
-              style: TextStyle(color: Colors.grey.shade500),
+              style: TextStyle(color: AppTheme.textSecondary),
             ),
           )
         else
@@ -76,7 +74,7 @@ class ExploreSection extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.82,
+              childAspectRatio: 0.78,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
@@ -94,7 +92,7 @@ class ExploreSection extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xff3D1975), Color(0xff6B3FA0)],
+                    colors: AppTheme.primaryGradient,
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -114,6 +112,93 @@ class ExploreSection extends StatelessWidget {
       ],
     );
   }
+
+  Widget _buildShimmer(BuildContext context) {
+    return ShimmerLoading(
+      builder: (context, color) {
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.78,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+          ),
+          itemCount: 4,
+          itemBuilder: (_, __) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppTheme.borderLight),
+                boxShadow: AppTheme.softShadow,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: AppTheme.borderLight.withOpacity(0.5),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                      child: Center(
+                        child: Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: color,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          height: 12,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          height: 12,
+                          width: 60,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          height: 20,
+                          width: 70,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 }
 
 class _ExploreCard extends StatelessWidget {
@@ -129,49 +214,44 @@ class _ExploreCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xff3D1975).withOpacity(0.08),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
-            ),
-          ],
+          border: Border.all(color: AppTheme.borderLight),
+          boxShadow: AppTheme.softShadow,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // ── Circular icon ──────────────────────
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              decoration: BoxDecoration(
-                color: const Color(0xff3D1975).withOpacity(0.05),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: Center(
-                child: Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xff3D1975).withOpacity(0.12),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: ClipOval(
-                    child: Image.network(
-                      exam.icon,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(
-                        Icons.school_rounded,
-                        color: Color(0xff3D1975),
-                        size: 32,
+            // ── Icon Area ──────────────────────
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppTheme.borderLight.withOpacity(0.5),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Center(
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: Image.network(
+                        exam.icon,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.school_rounded,
+                          color: AppTheme.primary,
+                          size: 28,
+                        ),
                       ),
                     ),
                   ),
@@ -181,35 +261,52 @@ class _ExploreCard extends StatelessWidget {
 
             // ── Name + pill ────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
+              padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    exam.name,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Color(0xff2D0F5E),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                  SizedBox(
+                    height: 36,
+                    child: Center(
+                      child: Text(
+                        exam.name,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          height: 1.25,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                     decoration: BoxDecoration(
-                      color: const Color(0xff3D1975).withOpacity(0.07),
-                      borderRadius: BorderRadius.circular(8),
+                      color: AppTheme.primaryLight,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
-                      'Start Practice →',
-                      style: TextStyle(
-                        color: Color(0xff3D1975),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Practice',
+                          style: TextStyle(
+                            color: AppTheme.primary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        SizedBox(width: 3),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          color: AppTheme.primary,
+                          size: 10,
+                        ),
+                      ],
                     ),
                   ),
                 ],

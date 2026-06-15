@@ -1,4 +1,4 @@
-﻿import 'package:percent/models/User.dart';
+import 'package:percent/models/User.dart';
 import 'package:percent/models/exam.dart';
 import 'package:percent/widgets/heading.dart';
 import 'package:percent/widgets/inputfield.dart';
@@ -34,7 +34,7 @@ class _AllExamsState extends State<AllExams> {
               if(!snapshot.hasData) return Center(child: CircularProgressIndicator(color: Color(0xff3D1975),));
               List<ExamModel> modelList=[];
               for(DataSnapshot snap in snapshot.data!.snapshot.children){
-                ExamModel model=ExamModel.fromMap(snap.value as Map);
+                ExamModel model=ExamModel.fromMap(snap.value as Map, snap.key);
                 modelList.add(model);
               }
               return GridView.builder(gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2), itemBuilder: (BuildContext context, int index) {

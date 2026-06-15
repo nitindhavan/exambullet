@@ -2,6 +2,7 @@ import 'package:percent/models/exam.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:percent/utils/theme.dart';
 
 class AllExamsScreen extends StatefulWidget {
   const AllExamsScreen({
@@ -60,7 +61,7 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
         widget.allExams.where((e) => !_goalIds.contains(e.id)).toList());
 
     return Scaffold(
-      backgroundColor: const Color(0xffF6F2FF),
+      backgroundColor: AppTheme.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -74,7 +75,7 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
                       icon: Icons.flag_rounded,
                       label: 'My Goals',
                       count: goalExams.length,
-                      color: const Color(0xff3D1975),
+                      color: AppTheme.primary,
                     ),
                     _buildGrid(goalExams, isGoal: true),
                   ],
@@ -82,7 +83,7 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
                     icon: Icons.explore_rounded,
                     label: 'All Exams',
                     count: otherExams.length,
-                    color: const Color(0xff6B3FA0),
+                    color: AppTheme.secondary,
                   ),
                   if (otherExams.isEmpty)
                     _emptyState()
@@ -126,7 +127,7 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xff2A0D5E), Color(0xff6B3FA0)],
+          colors: AppTheme.primaryGradient,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -290,7 +291,7 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
               _search.isNotEmpty
                   ? 'No exams match "$_search"'
                   : 'All exams are in your goals!',
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
             ),
           ],
         ),
@@ -316,17 +317,13 @@ class _ExamCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: isGoal
-            ? Border.all(
-                color: const Color(0xff3D1975).withOpacity(0.3), width: 1.5)
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xff3D1975).withOpacity(0.07),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        border: Border.all(
+          color: isGoal
+              ? AppTheme.primary.withOpacity(0.3)
+              : AppTheme.borderLight,
+          width: 1.5,
+        ),
+        boxShadow: AppTheme.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -335,10 +332,10 @@ class _ExamCard extends StatelessWidget {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 18),
-            decoration: BoxDecoration(
-              color: const Color(0xff3D1975).withOpacity(0.05),
+            decoration: const BoxDecoration(
+              color: AppTheme.borderLight,
               borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
+                  BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Center(
               child: Container(
@@ -349,7 +346,7 @@ class _ExamCard extends StatelessWidget {
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xff3D1975).withOpacity(0.12),
+                      color: Colors.black.withOpacity(0.04),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     ),
@@ -361,7 +358,7 @@ class _ExamCard extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => const Icon(
                       Icons.school_rounded,
-                      color: Color(0xff3D1975),
+                      color: AppTheme.primary,
                       size: 32,
                     ),
                   ),
@@ -381,7 +378,7 @@ class _ExamCard extends StatelessWidget {
                     exam.name,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Color(0xff2D0F5E),
+                      color: AppTheme.textPrimary,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       height: 1.3,
@@ -397,8 +394,8 @@ class _ExamCard extends StatelessWidget {
                           horizontal: 12, vertical: 5),
                       decoration: BoxDecoration(
                         color: isGoal
-                            ? const Color(0xff3D1975)
-                            : const Color(0xff3D1975).withOpacity(0.07),
+                            ? AppTheme.primary
+                            : AppTheme.primaryLight,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
@@ -408,7 +405,7 @@ class _ExamCard extends StatelessWidget {
                             isGoal ? Icons.check_rounded : Icons.add_rounded,
                             size: 13,
                             color:
-                                isGoal ? Colors.white : const Color(0xff3D1975),
+                                isGoal ? Colors.white : AppTheme.primary,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -416,7 +413,7 @@ class _ExamCard extends StatelessWidget {
                             style: TextStyle(
                               color: isGoal
                                   ? Colors.white
-                                  : const Color(0xff3D1975),
+                                  : AppTheme.primary,
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                             ),

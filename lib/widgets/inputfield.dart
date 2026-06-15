@@ -1,27 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:percent/utils/theme.dart';
+
 class InputField extends StatelessWidget {
-  InputField({Key? key,required this.controller,required this.hint,this.icon}) : super(key: key);
+  const InputField({
+    Key? key,
+    required this.controller,
+    required this.hint,
+    this.icon,
+  }) : super(key: key);
 
   final TextEditingController controller;
   final String hint;
-  IconData? icon;
+  final IconData? icon;
+
   @override
   Widget build(BuildContext context) {
-    return  Container(
-      padding: EdgeInsets.only(left: 8,right: 8),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: Alignment.centerLeft,
-      margin: EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.border),
+        boxShadow: AppTheme.softShadow,
       ),
-      height: 60,
+      height: 58,
       child: TextField(
         controller: controller,
+        style: const TextStyle(
+          color: AppTheme.textPrimary,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
         decoration: InputDecoration(
           border: InputBorder.none,
           hintText: hint,
-          icon: Icon(icon)
+          hintStyle: const TextStyle(
+            color: AppTheme.textLight,
+            fontWeight: FontWeight.normal,
+          ),
+          icon: icon != null
+              ? Icon(
+                  icon,
+                  color: AppTheme.textSecondary,
+                  size: 22,
+                )
+              : null,
         ),
       ),
     );

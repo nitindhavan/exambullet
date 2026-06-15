@@ -1,7 +1,8 @@
-﻿import 'package:percent/screens/result_screen.dart';
+import 'package:percent/screens/result_screen.dart';
 import 'package:flutter/material.dart';
 import '../models/question_model.dart';
 import '../models/test_model.dart';
+import 'package:percent/utils/theme.dart';
 
 class ScoreScreen extends StatelessWidget {
   const ScoreScreen({
@@ -32,9 +33,9 @@ class ScoreScreen extends StatelessWidget {
   double get _pct => _total > 0 ? (_obtained / _total) : 0;
 
   Color get _resultColor {
-    if (_pct >= 0.7) return const Color(0xff4CAF50);
-    if (_pct >= 0.4) return const Color(0xffFF9800);
-    return const Color(0xffF44336);
+    if (_pct >= 0.7) return AppTheme.success;
+    if (_pct >= 0.4) return AppTheme.warning;
+    return AppTheme.error;
   }
 
   String get _resultLabel {
@@ -46,14 +47,14 @@ class ScoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffF0EBFF),
+      backgroundColor: AppTheme.background,
       body: Column(
         children: [
           // Header
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xff1E0845), Color(0xff4A1E96)],
+                colors: AppTheme.primaryGradient,
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -149,19 +150,19 @@ class ScoreScreen extends StatelessWidget {
                     label: 'Answered',
                     value: '$_answered',
                     icon: Icons.check_circle_rounded,
-                    color: const Color(0xff4CAF50)),
+                    color: AppTheme.success),
                 const SizedBox(width: 12),
                 _StatCard(
                     label: 'Skipped',
                     value: '$_skipped',
                     icon: Icons.remove_circle_rounded,
-                    color: const Color(0xffFF9800)),
+                    color: AppTheme.warning),
                 const SizedBox(width: 12),
                 _StatCard(
                     label: 'Accuracy',
                     value: '${(_pct * 100).round()}%',
                     icon: Icons.analytics_rounded,
-                    color: const Color(0xff3D1975)),
+                    color: AppTheme.primary),
               ],
             ),
           ),
@@ -188,11 +189,11 @@ class ScoreScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                          colors: [Color(0xff1E0845), Color(0xff4A1E96)]),
+                          colors: AppTheme.primaryGradient),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                            color: const Color(0xff3D1975).withOpacity(0.3),
+                            color: AppTheme.primary.withOpacity(0.3),
                             blurRadius: 16,
                             offset: const Offset(0, 6))
                       ],
@@ -214,12 +215,14 @@ class ScoreScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     decoration: BoxDecoration(
                       color: Colors.white,
+                      border: Border.all(color: AppTheme.border),
                       borderRadius: BorderRadius.circular(16),
+                      boxShadow: AppTheme.softShadow,
                     ),
                     child: const Center(
                       child: Text('Back to Tests',
                           style: TextStyle(
-                              color: Color(0xff3D1975),
+                              color: AppTheme.primary,
                               fontWeight: FontWeight.w700,
                               fontSize: 16)),
                     ),
@@ -254,12 +257,8 @@ class _StatCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-                color: color.withOpacity(0.08),
-                blurRadius: 12,
-                offset: const Offset(0, 4))
-          ],
+          border: Border.all(color: AppTheme.borderLight),
+          boxShadow: AppTheme.softShadow,
         ),
         child: Column(
           children: [
@@ -270,8 +269,8 @@ class _StatCard extends StatelessWidget {
                     color: color, fontSize: 18, fontWeight: FontWeight.w900)),
             const SizedBox(height: 3),
             Text(label,
-                style: TextStyle(
-                    color: Colors.grey.shade500,
+                style: const TextStyle(
+                    color: AppTheme.textSecondary,
                     fontSize: 11,
                     fontWeight: FontWeight.w500)),
           ],

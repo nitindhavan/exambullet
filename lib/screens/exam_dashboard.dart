@@ -7,6 +7,7 @@ import 'package:percent/screens/dashboard/tests_tab.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:percent/utils/theme.dart';
 
 class ExamDashboard extends StatefulWidget {
   const ExamDashboard({Key? key, required this.exam, required this.user})
@@ -52,7 +53,7 @@ class _ExamDashboardState extends State<ExamDashboard> {
   Widget _currentTab() {
     if (!_membershipLoaded) {
       return const Center(
-          child: CircularProgressIndicator(color: Color(0xff3D1975)));
+          child: CircularProgressIndicator(color: AppTheme.primary));
     }
     final label = _navItems[_currentIndex].label;
     switch (label) {
@@ -72,7 +73,7 @@ class _ExamDashboardState extends State<ExamDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffF6F2FF),
+      backgroundColor: AppTheme.background,
       body: Column(
         children: [
           _DashboardHeader(
@@ -118,7 +119,7 @@ class _DashboardHeader extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xff1E0845), Color(0xff4A1E96)],
+          colors: AppTheme.primaryGradient,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -297,7 +298,7 @@ class _BottomNav extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xff1E0845).withOpacity(0.12),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 24,
             offset: const Offset(0, -6),
           ),
@@ -323,7 +324,7 @@ class _BottomNav extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
                   decoration: BoxDecoration(
                     color:
-                        selected ? const Color(0xff3D1975) : Colors.transparent,
+                        selected ? AppTheme.primaryLight : Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -335,7 +336,7 @@ class _BottomNav extends StatelessWidget {
                           item.icon,
                           key: ValueKey(selected),
                           size: 22,
-                          color: selected ? Colors.white : Colors.grey.shade400,
+                          color: selected ? AppTheme.primary : AppTheme.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -345,7 +346,7 @@ class _BottomNav extends StatelessWidget {
                           fontSize: 10,
                           fontWeight:
                               selected ? FontWeight.w700 : FontWeight.w500,
-                          color: selected ? Colors.white : Colors.grey.shade400,
+                          color: selected ? AppTheme.primary : AppTheme.textSecondary,
                         ),
                         child: Text(item.label),
                       ),

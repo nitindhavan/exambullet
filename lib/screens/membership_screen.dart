@@ -1,8 +1,9 @@
-﻿import 'package:percent/models/exam.dart';
+import 'package:percent/models/exam.dart';
 import 'package:percent/models/membership_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:percent/utils/theme.dart';
 
 class MemberShipScreen extends StatefulWidget {
   const MemberShipScreen({Key? key, required this.model}) : super(key: key);
@@ -16,14 +17,10 @@ class MemberShipScreen extends StatefulWidget {
 class _MemberShipScreenState extends State<MemberShipScreen> {
   bool _isLoading = false;
 
-  static const Color _primary = Color(0xff3D1975);
-  static const Color _accent = Color(0xff6A2FD8);
-  static const Color _bg = Color(0xffF6F2FF);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppTheme.background,
       body: FutureBuilder(
         future:
             FirebaseDatabase.instance.ref('exams').child(widget.model).once(),
@@ -33,7 +30,7 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
           }
           if (!snapshot.hasData) {
             return const Center(
-              child: CircularProgressIndicator(color: _primary),
+              child: CircularProgressIndicator(color: AppTheme.primary),
             );
           }
 
@@ -42,7 +39,7 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
             return const Center(child: Text('Exam not found.'));
           }
 
-          final exam = ExamModel.fromMap(rawValue as Map);
+          final exam = ExamModel.fromMap(rawValue as Map, widget.model);
 
           return Column(
             children: [
@@ -72,7 +69,7 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
                       const SizedBox(height: 12),
                       const Text(
                         'One-time payment · Lifetime access',
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -129,7 +126,7 @@ class _Header extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(16, topPad + 12, 16, 32),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xff3D1975), Color(0xff6A2FD8)],
+          colors: AppTheme.primaryGradient,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -204,13 +201,8 @@ class _PriceCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: AppTheme.borderLight),
+        boxShadow: AppTheme.softShadow,
       ),
       child: Row(
         children: [
@@ -223,13 +215,13 @@ class _PriceCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xff3D1975),
+                    color: AppTheme.textPrimary,
                   ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Pay once, access forever',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                 ),
               ],
             ),
@@ -240,7 +232,7 @@ class _PriceCard extends StatelessWidget {
               Text(
                 '₹100',
                 style: TextStyle(
-                  color: Color(0xff3D1975),
+                  color: AppTheme.primary,
                   fontSize: 36,
                   fontWeight: FontWeight.w900,
                   height: 1,
@@ -248,7 +240,7 @@ class _PriceCard extends StatelessWidget {
               ),
               Text(
                 'one-time',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
+                style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
               ),
             ],
           ),
@@ -279,13 +271,8 @@ class _BenefitsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: AppTheme.borderLight),
+        boxShadow: AppTheme.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,7 +282,7 @@ class _BenefitsCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Color(0xff3D1975),
+              color: AppTheme.textPrimary,
             ),
           ),
           const SizedBox(height: 16),
@@ -307,17 +294,17 @@ class _BenefitsCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(9),
                     decoration: BoxDecoration(
-                      color: const Color(0xffEDE8FF),
+                      color: AppTheme.primaryLight,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(item['icon'] as IconData,
-                        color: const Color(0xff3D1975), size: 18),
+                        color: AppTheme.primary, size: 18),
                   ),
                   const SizedBox(width: 14),
                   Text(
                     item['label'] as String,
                     style:
-                        const TextStyle(fontSize: 14, color: Color(0xff2D2D2D)),
+                        const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
                   ),
                 ],
               ),
@@ -328,6 +315,7 @@ class _BenefitsCard extends StatelessWidget {
     );
   }
 }
+
 // ── CTA Button ────────────────────────────────────────────────────────────────
 
 class _GetMembershipButton extends StatelessWidget {
@@ -344,14 +332,14 @@ class _GetMembershipButton extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xff3D1975), Color(0xff6A2FD8)],
+            colors: AppTheme.primaryGradient,
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xff3D1975).withOpacity(0.35),
+              color: AppTheme.primary.withOpacity(0.35),
               blurRadius: 14,
               offset: const Offset(0, 5),
             ),

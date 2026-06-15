@@ -4,6 +4,7 @@ import 'package:percent/screens/membership_screen.dart';
 import 'package:percent/screens/test_screen.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:percent/utils/theme.dart';
 
 class TestsTab extends StatefulWidget {
   const TestsTab({Key? key, required this.exam, required this.hasMembership})
@@ -27,7 +28,7 @@ class _TestsTabState extends State<TestsTab> {
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(
-              child: CircularProgressIndicator(color: Color(0xff3D1975)));
+              child: CircularProgressIndicator(color: AppTheme.primary));
         }
         final raw = snapshot.data!.snapshot.value;
         final tests = raw == null
@@ -35,6 +36,10 @@ class _TestsTabState extends State<TestsTab> {
             : snapshot.data!.snapshot.children
                 .map((s) => TestModel.fromMap(s.value as Map))
                 .toList();
+
+        if (tests.isNotEmpty) {
+          tests.sort((a, b) => _compareNames(a.name, b.name));
+        }
 
         if (tests.isEmpty) {
           return const _EmptyState(
@@ -44,7 +49,6 @@ class _TestsTabState extends State<TestsTab> {
           );
         }
 
-        // clamp in case tests list shrinks
         if (_selectedTest >= tests.length) _selectedTest = 0;
 
         final selected = tests[_selectedTest];
@@ -59,7 +63,7 @@ class _TestsTabState extends State<TestsTab> {
                 children: [
                   const Text('Mock Tests',
                       style: TextStyle(
-                          color: Color(0xff2D0F5E),
+                          color: AppTheme.textPrimary,
                           fontSize: 18,
                           fontWeight: FontWeight.w900)),
                   const Spacer(),
@@ -74,7 +78,7 @@ class _TestsTabState extends State<TestsTab> {
               child: Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: const Color(0xffF0EBFF),
+                  color: AppTheme.borderLight,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -102,13 +106,13 @@ class _TestsTabState extends State<TestsTab> {
                           padding: const EdgeInsets.symmetric(vertical: 11),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? const Color(0xff3D1975)
+                                ? AppTheme.primary
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: const Color(0xff3D1975)
+                                      color: AppTheme.primary
                                           .withOpacity(0.25),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
@@ -127,7 +131,7 @@ class _TestsTabState extends State<TestsTab> {
                                 style: TextStyle(
                                   color: isSelected
                                       ? Colors.white
-                                      : const Color(0xff3D1975),
+                                      : AppTheme.textSecondary,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -138,7 +142,7 @@ class _TestsTabState extends State<TestsTab> {
                                     size: 10,
                                     color: isSelected
                                         ? Colors.white70
-                                        : const Color(0xffFF9800)),
+                                        : AppTheme.warning),
                               ]
                             ],
                           ),
@@ -158,11 +162,11 @@ class _TestsTabState extends State<TestsTab> {
               child: Row(
                 children: [
                   Icon(Icons.timer_outlined,
-                      size: 13, color: Colors.grey.shade500),
+                      size: 13, color: AppTheme.textLight),
                   const SizedBox(width: 4),
                   Text('${selected.time} mins',
                       style:
-                          TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                          TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
                 ],
               ),
             ),
@@ -197,23 +201,23 @@ class _LockedState extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: const Color(0xffFFF3E0),
+              decoration: const BoxDecoration(
+                color: AppTheme.warningLight,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.lock_rounded,
-                  size: 36, color: Color(0xffFF9800)),
+                  size: 36, color: AppTheme.warning),
             ),
             const SizedBox(height: 16),
             const Text('Members Only',
                 style: TextStyle(
-                    color: Color(0xff2D0F5E),
+                    color: AppTheme.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
-            Text('Get membership to access all tests',
+            const Text('Get membership to access all tests',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
             const SizedBox(height: 20),
             GestureDetector(
               onTap: () => Navigator.push(
@@ -226,8 +230,9 @@ class _LockedState extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                      colors: [Color(0xff3D1975), Color(0xff6B3FA0)]),
+                      colors: AppTheme.primaryGradient),
                   borderRadius: BorderRadius.circular(12),
+                  boxShadow: AppTheme.softShadow,
                 ),
                 child: const Text('Get Membership',
                     style: TextStyle(
@@ -240,6 +245,7 @@ class _LockedState extends StatelessWidget {
     );
   }
 }
+
 // ── Papers list ───────────────────────────────────────────────────────────────
 
 class _PapersList extends StatelessWidget {
@@ -259,18 +265,28 @@ class _PapersList extends StatelessWidget {
             height: 120,
             child: Center(
                 child: CircularProgressIndicator(
-                    color: Color(0xff3D1975), strokeWidth: 2)),
+                    color: AppTheme.primary, strokeWidth: 2)),
           );
         }
 
         final papers = snapshot.data!.snapshot.children.toList();
+
+        if (papers.isNotEmpty) {
+          papers.sort((a, b) {
+            final mapA = a.value as Map?;
+            final mapB = b.value as Map?;
+            final nameA = mapA?['name'] as String? ?? '';
+            final nameB = mapB?['name'] as String? ?? '';
+            return _compareNames(nameA, nameB);
+          });
+        }
 
         if (papers.isEmpty) {
           return const SizedBox(
             height: 120,
             child: Center(
               child: Text('No papers available',
-                  style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  style: TextStyle(color: AppTheme.textLight, fontSize: 13)),
             ),
           );
         }
@@ -311,13 +327,8 @@ class _PapersList extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xff3D1975).withOpacity(0.07),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
+                      border: Border.all(color: AppTheme.borderLight),
+                      boxShadow: AppTheme.softShadow,
                     ),
                     child: Row(
                       children: [
@@ -326,7 +337,7 @@ class _PapersList extends StatelessWidget {
                           height: 44,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xff3D1975), Color(0xff6B3FA0)],
+                              colors: AppTheme.primaryGradient,
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -347,34 +358,34 @@ class _PapersList extends StatelessWidget {
                             children: [
                               Text(name,
                                   style: const TextStyle(
-                                      color: Color(0xff1A0540),
+                                      color: AppTheme.textPrimary,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700)),
                               const SizedBox(height: 5),
                               Row(
                                 children: [
                                   Icon(Icons.help_outline_rounded,
-                                      size: 12, color: Colors.grey.shade400),
+                                      size: 12, color: AppTheme.textLight),
                                   const SizedBox(width: 4),
                                   Text('$questionCount Qs',
                                       style: TextStyle(
-                                          color: Colors.grey.shade500,
+                                          color: AppTheme.textSecondary,
                                           fontSize: 12)),
                                   const SizedBox(width: 10),
                                   Icon(Icons.timer_outlined,
-                                      size: 12, color: Colors.grey.shade400),
+                                      size: 12, color: AppTheme.textLight),
                                   const SizedBox(width: 4),
                                   Text('$paperTime mins',
                                       style: TextStyle(
-                                          color: Colors.grey.shade500,
+                                          color: AppTheme.textSecondary,
                                           fontSize: 12)),
                                   const SizedBox(width: 10),
                                   Icon(Icons.stars_rounded,
-                                      size: 12, color: Colors.grey.shade400),
+                                      size: 12, color: AppTheme.textLight),
                                   const SizedBox(width: 4),
                                   Text('$totalMarks marks',
                                       style: TextStyle(
-                                          color: Colors.grey.shade500,
+                                          color: AppTheme.textSecondary,
                                           fontSize: 12)),
                                 ],
                               ),
@@ -384,11 +395,11 @@ class _PapersList extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xffF0EBFF),
+                            color: AppTheme.primaryLight,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(Icons.play_arrow_rounded,
-                              color: Color(0xff3D1975), size: 18),
+                              color: AppTheme.primary, size: 18),
                         ),
                       ],
                     ),
@@ -411,12 +422,12 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xff3D1975).withOpacity(0.08),
+        color: AppTheme.primaryLight,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(label,
           style: const TextStyle(
-              color: Color(0xff3D1975),
+              color: AppTheme.primary,
               fontSize: 12,
               fontWeight: FontWeight.w600)),
     );
@@ -438,20 +449,35 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 52, color: Colors.grey.shade300),
+            Icon(icon, size: 52, color: AppTheme.textLight),
             const SizedBox(height: 16),
             Text(title,
                 style: const TextStyle(
-                    color: Color(0xff2D0F5E),
+                    color: AppTheme.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
             Text(subtitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
           ],
         ),
       ),
     );
   }
+}
+
+int _compareNames(String a, String b) {
+  final regExp = RegExp(r'\d+');
+  final matchA = regExp.firstMatch(a);
+  final matchB = regExp.firstMatch(b);
+
+  if (matchA != null && matchB != null) {
+    final int valA = int.parse(matchA.group(0)!);
+    final int valB = int.parse(matchB.group(0)!);
+    if (valA != valB) {
+      return valA.compareTo(valB);
+    }
+  }
+  return a.compareTo(b);
 }

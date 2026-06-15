@@ -1,7 +1,8 @@
-﻿import 'package:percent/models/question_model.dart';
+import 'package:percent/models/question_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/test_model.dart';
+import 'package:percent/utils/theme.dart';
 
 class ResultScreen extends StatefulWidget {
   const ResultScreen({
@@ -22,9 +23,9 @@ class ResultScreen extends StatefulWidget {
 class _ResultScreenState extends State<ResultScreen> {
   int _current = 0;
 
-  static const Color _primary = Color(0xff3D1975);
-  static const Color _correct = Color(0xff4CAF50);
-  static const Color _wrong = Color(0xffF44336);
+  static const Color _primary = AppTheme.primary;
+  static const Color _correct = AppTheme.success;
+  static const Color _wrong = AppTheme.error;
 
   void _goTo(int index) {
     HapticFeedback.selectionClick();
@@ -38,7 +39,7 @@ class _ResultScreenState extends State<ResultScreen> {
     final total = widget.questions.length;
 
     return Scaffold(
-      backgroundColor: const Color(0xffF0EBFF),
+      backgroundColor: AppTheme.background,
       body: Column(
         children: [
           // ── Header ────────────────────────────────────────────
@@ -56,8 +57,8 @@ class _ResultScreenState extends State<ResultScreen> {
               borderRadius: BorderRadius.circular(6),
               child: LinearProgressIndicator(
                 value: (_current + 1) / total,
-                backgroundColor: _primary.withOpacity(0.1),
-                color: _primary,
+                backgroundColor: AppTheme.primaryLight,
+                color: AppTheme.primary,
                 minHeight: 5,
               ),
             ),
@@ -74,11 +75,17 @@ class _ResultScreenState extends State<ResultScreen> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xff3D1975), Color(0xff6B3FA0)],
+                      colors: AppTheme.primaryGradient,
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                          color: AppTheme.primary.withOpacity(0.25),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4))
+                    ],
                   ),
                   child: Text(
                     question.questionText,
@@ -129,7 +136,8 @@ class _ResultScreenState extends State<ResultScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                          color: const Color(0xff3D1975).withOpacity(0.15)),
+                          color: AppTheme.borderLight),
+                      boxShadow: AppTheme.softShadow,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,15 +149,15 @@ class _ResultScreenState extends State<ResultScreen> {
                             const SizedBox(width: 6),
                             const Text('Explanation',
                                 style: TextStyle(
-                                    color: _primary,
+                                    color: AppTheme.primary,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700)),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Text(question.explanation,
-                            style: TextStyle(
-                                color: Colors.grey.shade700,
+                            style: const TextStyle(
+                                color: AppTheme.textSecondary,
                                 fontSize: 13,
                                 height: 1.5)),
                       ],
@@ -211,7 +219,7 @@ class _ResultScreenState extends State<ResultScreen> {
           constraints: BoxConstraints(
               maxHeight: MediaQuery.of(context).size.height * 0.72),
           decoration: const BoxDecoration(
-            color: Color(0xffF6F2FF),
+            color: AppTheme.background,
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: Column(
@@ -232,7 +240,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   alignment: Alignment.centerLeft,
                   child: Text('Questions',
                       style: TextStyle(
-                          color: Color(0xff1E0845),
+                          color: AppTheme.textPrimary,
                           fontSize: 18,
                           fontWeight: FontWeight.w900)),
                 ),
@@ -247,7 +255,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     const SizedBox(width: 16),
                     _LegendDot(color: _wrong, label: 'Wrong'),
                     const SizedBox(width: 16),
-                    _LegendDot(color: Colors.grey.shade300, label: 'Skipped'),
+                    _LegendDot(color: AppTheme.border, label: 'Skipped'),
                   ],
                 ),
               ),
@@ -270,10 +278,10 @@ class _ResultScreenState extends State<ResultScreen> {
                     Color bg;
                     Color fg = Colors.white;
                     if (isCurrent) {
-                      bg = const Color(0xff3D1975);
+                      bg = AppTheme.primary;
                     } else if (sel == -1) {
-                      bg = Colors.grey.shade200;
-                      fg = Colors.grey.shade600;
+                      bg = AppTheme.borderLight;
+                      fg = AppTheme.textSecondary;
                     } else if (sel == correct) {
                       bg = _correct;
                     } else {
@@ -287,7 +295,12 @@ class _ResultScreenState extends State<ResultScreen> {
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
                         decoration: BoxDecoration(
-                            color: bg, borderRadius: BorderRadius.circular(12)),
+                            color: bg,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color: isCurrent ? AppTheme.primary : AppTheme.borderLight,
+                                width: 1.5),
+                            boxShadow: AppTheme.softShadow),
                         child: Center(
                           child: Text('${i + 1}',
                               style: TextStyle(
@@ -329,7 +342,7 @@ class _Header extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xff1E0845), Color(0xff4A1E96)],
+          colors: AppTheme.primaryGradient,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -405,19 +418,19 @@ class _ResultOption extends StatelessWidget {
     IconData? trailingIcon;
 
     if (isCorrect) {
-      bg = const Color(0xff4CAF50).withOpacity(0.12);
-      fg = const Color(0xff2E7D32);
-      borderColor = const Color(0xff4CAF50);
+      bg = AppTheme.successLight;
+      fg = const Color(0xff065F46);
+      borderColor = AppTheme.success;
       trailingIcon = Icons.check_circle_rounded;
     } else if (isSelected) {
-      bg = const Color(0xffF44336).withOpacity(0.1);
-      fg = const Color(0xffC62828);
-      borderColor = const Color(0xffF44336);
+      bg = AppTheme.errorLight;
+      fg = const Color(0xff991B1B);
+      borderColor = AppTheme.error;
       trailingIcon = Icons.cancel_rounded;
     } else {
       bg = Colors.white;
-      fg = const Color(0xff555555);
-      borderColor = Colors.grey.shade200;
+      fg = AppTheme.textPrimary;
+      borderColor = AppTheme.borderLight;
       trailingIcon = null;
     }
 
@@ -429,6 +442,7 @@ class _ResultOption extends StatelessWidget {
           color: bg,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: borderColor, width: 1.5),
+          boxShadow: AppTheme.softShadow,
         ),
         child: Row(
           children: [
@@ -437,10 +451,10 @@ class _ResultOption extends StatelessWidget {
               height: 32,
               decoration: BoxDecoration(
                 color: isCorrect
-                    ? const Color(0xff4CAF50)
+                    ? AppTheme.success
                     : isSelected
-                        ? const Color(0xffF44336)
-                        : Colors.grey.shade200,
+                        ? AppTheme.error
+                        : AppTheme.borderLight,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
@@ -448,7 +462,7 @@ class _ResultOption extends StatelessWidget {
                     style: TextStyle(
                         color: (isCorrect || isSelected)
                             ? Colors.white
-                            : Colors.grey.shade600,
+                            : AppTheme.primary,
                         fontWeight: FontWeight.w800,
                         fontSize: 13)),
               ),
@@ -457,14 +471,14 @@ class _ResultOption extends StatelessWidget {
             Expanded(
               child: Text(text,
                   style: TextStyle(
-                      color: fg, fontSize: 14, fontWeight: FontWeight.w600)),
+                      color: fg, fontSize: 14, fontWeight: FontWeight.w500)),
             ),
             if (trailingIcon != null) ...[
               const SizedBox(width: 8),
               Icon(trailingIcon,
                   color: isCorrect
-                      ? const Color(0xff4CAF50)
-                      : const Color(0xffF44336),
+                      ? AppTheme.success
+                      : AppTheme.error,
                   size: 20),
             ],
           ],
@@ -500,14 +514,8 @@ class _NavBtn extends StatelessWidget {
           decoration: BoxDecoration(
             color: enabled ? Colors.white : Colors.white.withOpacity(0.45),
             borderRadius: BorderRadius.circular(14),
-            boxShadow: enabled
-                ? [
-                    BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3))
-                  ]
-                : [],
+            border: Border.all(color: AppTheme.borderLight),
+            boxShadow: enabled ? AppTheme.softShadow : [],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -516,13 +524,13 @@ class _NavBtn extends StatelessWidget {
                 Icon(icon,
                     size: 14,
                     color: enabled
-                        ? const Color(0xff3D1975)
+                        ? AppTheme.primary
                         : Colors.grey.shade300),
               if (!trailing) const SizedBox(width: 6),
               Text(label,
                   style: TextStyle(
                       color: enabled
-                          ? const Color(0xff3D1975)
+                          ? AppTheme.primary
                           : Colors.grey.shade300,
                       fontWeight: FontWeight.w700,
                       fontSize: 14)),
@@ -531,7 +539,7 @@ class _NavBtn extends StatelessWidget {
                 Icon(icon,
                     size: 14,
                     color: enabled
-                        ? const Color(0xff3D1975)
+                        ? AppTheme.primary
                         : Colors.grey.shade300),
             ],
           ),
@@ -558,7 +566,7 @@ class _LegendDot extends StatelessWidget {
             decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 5),
         Text(label,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
       ],
     );
   }

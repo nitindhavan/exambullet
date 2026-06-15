@@ -1,8 +1,9 @@
-﻿import 'package:percent/screens/splash.dart';
+import 'package:percent/screens/splash.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart'; // âœ… add this import
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:percent/utils/theme.dart';
 
 class SignIn extends StatefulWidget {
   const SignIn({Key? key}) : super(key: key);
@@ -18,15 +19,13 @@ class _SignInState extends State<SignIn> {
     setState(() => visible = true);
     try {
       if (kIsWeb) {
-        // âœ… Web: popup flow
         final provider = GoogleAuthProvider();
         await FirebaseAuth.instance.signInWithPopup(provider);
       } else {
-        // âœ… Android/iOS: native google_sign_in flow (avoids PigeonUserDetails bug)
         final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
         if (googleUser == null) {
           setState(() => visible = false);
-          return; // user cancelled
+          return;
         }
         final GoogleSignInAuthentication googleAuth =
             await googleUser.authentication;
@@ -47,7 +46,7 @@ class _SignInState extends State<SignIn> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Sign-in failed: $e'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: AppTheme.error,
           behavior: SnackBarBehavior.floating,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -64,7 +63,7 @@ class _SignInState extends State<SignIn> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xff3D1975), Color(0xff6B3FA0), Color(0xff9B6FD0)],
+            colors: AppTheme.primaryGradient,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -106,9 +105,10 @@ class _SignInState extends State<SignIn> {
                         'Ace your exams with\nsmart practice tests',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.75),
+                          color: Colors.white.withOpacity(0.8),
                           fontSize: 16,
                           height: 1.5,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -118,11 +118,18 @@ class _SignInState extends State<SignIn> {
               Container(
                 width: double.infinity,
                 decoration: const BoxDecoration(
-                  color: Color(0xffF6F2FF),
+                  color: AppTheme.surface,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(36),
                     topRight: Radius.circular(36),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 20,
+                      offset: Offset(0, -5),
+                    ),
+                  ],
                 ),
                 padding: const EdgeInsets.fromLTRB(28, 36, 28, 40),
                 child: Column(
@@ -133,7 +140,7 @@ class _SignInState extends State<SignIn> {
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w900,
-                        color: Color(0xff3D1975),
+                        color: AppTheme.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -141,7 +148,7 @@ class _SignInState extends State<SignIn> {
                       'Sign in to access your tests, scores\nand memberships.',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade600,
+                        color: AppTheme.textSecondary,
                         height: 1.5,
                       ),
                     ),
@@ -154,13 +161,12 @@ class _SignInState extends State<SignIn> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           disabledBackgroundColor: Colors.white70,
-                          foregroundColor: const Color(0xff3D1975),
+                          foregroundColor: AppTheme.primary,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(
-                                color:
-                                    const Color(0xff3D1975).withOpacity(0.2)),
+                            side: const BorderSide(
+                                color: AppTheme.border),
                           ),
                         ),
                         child: visible
@@ -168,7 +174,7 @@ class _SignInState extends State<SignIn> {
                                 width: 22,
                                 height: 22,
                                 child: CircularProgressIndicator(
-                                  color: Color(0xff3D1975),
+                                  color: AppTheme.primary,
                                   strokeWidth: 2.5,
                                 ),
                               )
@@ -180,12 +186,12 @@ class _SignInState extends State<SignIn> {
                                     height: 24,
                                     decoration: const BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: Color(0xffEEE8FF),
+                                      color: AppTheme.primaryLight,
                                     ),
                                     child: const Icon(
                                         Icons.g_mobiledata_rounded,
                                         size: 18,
-                                        color: Color(0xff3D1975)),
+                                        color: AppTheme.primary),
                                   ),
                                   const SizedBox(width: 12),
                                   const Text(
@@ -193,7 +199,7 @@ class _SignInState extends State<SignIn> {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xff3D1975),
+                                      color: AppTheme.textPrimary,
                                     ),
                                   ),
                                 ],
@@ -207,11 +213,11 @@ class _SignInState extends State<SignIn> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade500,
+                          color: AppTheme.textLight,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 28),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -236,10 +242,10 @@ class _SignInState extends State<SignIn> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xff3D1975).withOpacity(0.08),
+            color: AppTheme.primary.withOpacity(0.08),
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Icon(icon, color: const Color(0xff3D1975), size: 22),
+          child: Icon(icon, color: AppTheme.primary, size: 22),
         ),
         const SizedBox(height: 6),
         Text(
@@ -247,7 +253,7 @@ class _SignInState extends State<SignIn> {
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Color(0xff3D1975),
+            color: AppTheme.textPrimary,
           ),
         ),
       ],

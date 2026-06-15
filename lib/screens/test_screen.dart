@@ -1,10 +1,11 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:percent/models/question_model.dart';
 import 'package:percent/screens/score_screen.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/test_model.dart';
+import 'package:percent/utils/theme.dart';
 
 class TestScreen extends StatefulWidget {
   const TestScreen({
@@ -106,16 +107,16 @@ class _TestScreenState extends State<TestScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Submit Test?',
             style: TextStyle(
-                color: Color(0xff1E0845), fontWeight: FontWeight.w800)),
+                color: AppTheme.textPrimary, fontWeight: FontWeight.w800)),
         content: Text(
           'You have answered ${_answeredNotifier.value} of ${_questions.length} questions.',
-          style: TextStyle(color: Colors.grey.shade600, height: 1.5),
+          style: const TextStyle(color: AppTheme.textSecondary, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child:
-                Text('Cancel', style: TextStyle(color: Colors.grey.shade500)),
+                const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
           ),
           GestureDetector(
             onTap: () {
@@ -126,7 +127,7 @@ class _TestScreenState extends State<TestScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                    colors: [Color(0xff1E0845), Color(0xff4A1E96)]),
+                    colors: AppTheme.primaryGradient),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Text('Submit',
@@ -161,14 +162,14 @@ class _TestScreenState extends State<TestScreen> {
   Widget build(BuildContext context) {
     if (!_loaded) {
       return const Scaffold(
-        backgroundColor: Color(0xffF0EBFF),
+        backgroundColor: AppTheme.background,
         body:
-            Center(child: CircularProgressIndicator(color: Color(0xff3D1975))),
+            Center(child: CircularProgressIndicator(color: AppTheme.primary)),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xffF0EBFF),
+      backgroundColor: AppTheme.background,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -192,14 +193,14 @@ class _TestScreenState extends State<TestScreen> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xff3D1975), Color(0xff6B3FA0)],
+                      colors: AppTheme.primaryGradient,
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                          color: const Color(0xff3D1975).withOpacity(0.07),
+                          color: AppTheme.primary.withOpacity(0.25),
                           blurRadius: 16,
                           offset: const Offset(0, 4))
                     ],
@@ -224,7 +225,7 @@ class _TestScreenState extends State<TestScreen> {
                         if (progress == null) return child;
                         return const Center(
                             child: CircularProgressIndicator(
-                                color: Color(0xff3D1975), strokeWidth: 2));
+                                color: AppTheme.primary, strokeWidth: 2));
                       },
                       errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                     ),
@@ -273,7 +274,7 @@ class _TestScreenState extends State<TestScreen> {
       floatingActionButton: ValueListenableBuilder<int>(
         valueListenable: _answeredNotifier,
         builder: (_, answered, __) => FloatingActionButton.extended(
-          backgroundColor: const Color(0xff3D1975),
+          backgroundColor: AppTheme.primary,
           onPressed: () => _showPalette(context),
           icon: const Icon(Icons.grid_view_rounded,
               color: Colors.white, size: 20),
@@ -342,7 +343,7 @@ class _TestHeader extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xff1E0845), Color(0xff4A1E96)],
+          colors: AppTheme.primaryGradient,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -398,12 +399,12 @@ class _TestHeader extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                 decoration: BoxDecoration(
                   color: isLow
-                      ? const Color(0xffFF5722)
+                      ? AppTheme.error
                       : Colors.white.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                       color: isLow
-                          ? const Color(0xffFF5722)
+                          ? AppTheme.error
                           : Colors.white.withOpacity(0.25)),
                 ),
                 child: Row(
@@ -436,7 +437,7 @@ class _TestHeader extends StatelessWidget {
               ),
               child: const Text('Submit',
                   style: TextStyle(
-                      color: Color(0xff1E0845),
+                      color: AppTheme.primary,
                       fontWeight: FontWeight.w800,
                       fontSize: 13)),
             ),
@@ -465,7 +466,7 @@ class _ProgressBar extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 6),
             child: Text('Q ${current + 1} of $total',
                 style: const TextStyle(
-                    color: Color(0xff3D1975),
+                    color: AppTheme.primary,
                     fontSize: 12,
                     fontWeight: FontWeight.w700)),
           ),
@@ -473,8 +474,8 @@ class _ProgressBar extends StatelessWidget {
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
               value: total > 0 ? (current + 1) / total : 0,
-              backgroundColor: const Color(0xff3D1975).withOpacity(0.1),
-              color: const Color(0xff3D1975),
+              backgroundColor: AppTheme.primaryLight,
+              color: AppTheme.primary,
               minHeight: 6,
             ),
           ),
@@ -510,21 +511,13 @@ class _OptionButton extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xff3D1975) : Colors.white,
+          color: isSelected ? AppTheme.primaryLight : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? const Color(0xff3D1975) : Colors.grey.shade200,
-            width: 1.5,
+            color: isSelected ? AppTheme.primary : AppTheme.borderLight,
+            width: isSelected ? 2.0 : 1.5,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: isSelected
-                  ? const Color(0xff3D1975).withOpacity(0.22)
-                  : Colors.black.withOpacity(0.04),
-              blurRadius: isSelected ? 12 : 6,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: AppTheme.softShadow,
         ),
         child: Row(
           children: [
@@ -532,16 +525,13 @@ class _OptionButton extends StatelessWidget {
               width: 34,
               height: 34,
               decoration: BoxDecoration(
-                color: isSelected
-                    ? Colors.white.withOpacity(0.2)
-                    : const Color(0xff3D1975).withOpacity(0.08),
+                color: isSelected ? AppTheme.primary : AppTheme.primaryLight,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
                 child: Text(label,
                     style: TextStyle(
-                        color:
-                            isSelected ? Colors.white : const Color(0xff3D1975),
+                        color: isSelected ? Colors.white : AppTheme.primary,
                         fontWeight: FontWeight.w900,
                         fontSize: 14)),
               ),
@@ -550,15 +540,14 @@ class _OptionButton extends StatelessWidget {
             Expanded(
               child: Text(optionText,
                   style: TextStyle(
-                      color:
-                          isSelected ? Colors.white : const Color(0xff1A0540),
+                      color: isSelected ? AppTheme.primary : AppTheme.textPrimary,
                       fontSize: 15,
                       fontWeight: FontWeight.w600)),
             ),
             if (isSelected) ...[
               const SizedBox(width: 8),
               const Icon(Icons.check_circle_rounded,
-                  color: Colors.white, size: 20),
+                  color: AppTheme.primary, size: 20),
             ],
           ],
         ),
@@ -593,14 +582,8 @@ class _NavButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: enabled ? Colors.white : Colors.white.withOpacity(0.45),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: enabled
-                ? [
-                    BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3))
-                  ]
-                : [],
+            border: Border.all(color: AppTheme.borderLight),
+            boxShadow: enabled ? AppTheme.softShadow : [],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -609,13 +592,13 @@ class _NavButton extends StatelessWidget {
                 Icon(icon,
                     size: 15,
                     color: enabled
-                        ? const Color(0xff3D1975)
+                        ? AppTheme.primary
                         : Colors.grey.shade300),
               if (!trailing) const SizedBox(width: 6),
               Text(label,
                   style: TextStyle(
                       color: enabled
-                          ? const Color(0xff3D1975)
+                          ? AppTheme.primary
                           : Colors.grey.shade300,
                       fontWeight: FontWeight.w700,
                       fontSize: 14)),
@@ -624,7 +607,7 @@ class _NavButton extends StatelessWidget {
                 Icon(icon,
                     size: 15,
                     color: enabled
-                        ? const Color(0xff3D1975)
+                        ? AppTheme.primary
                         : Colors.grey.shade300),
             ],
           ),
@@ -661,7 +644,7 @@ class _QuestionPalette extends StatelessWidget {
         maxHeight: MediaQuery.of(context).size.height * 0.72,
       ),
       decoration: const BoxDecoration(
-        color: Color(0xffF6F2FF),
+        color: AppTheme.background,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(28),
           topRight: Radius.circular(28),
@@ -685,7 +668,7 @@ class _QuestionPalette extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Text('Questions',
                   style: TextStyle(
-                      color: Color(0xff1E0845),
+                      color: AppTheme.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.w900)),
             ),
@@ -698,17 +681,17 @@ class _QuestionPalette extends StatelessWidget {
                 _PaletteStat(
                     value: answered,
                     label: 'Answered',
-                    color: const Color(0xff4CAF50)),
+                    color: AppTheme.success),
                 const SizedBox(width: 10),
                 _PaletteStat(
                     value: unanswered,
                     label: 'Skipped',
-                    color: const Color(0xffFF9800)),
+                    color: AppTheme.warning),
                 const SizedBox(width: 10),
                 _PaletteStat(
                     value: total,
                     label: 'Total',
-                    color: const Color(0xff3D1975)),
+                    color: AppTheme.primary),
               ],
             ),
           ),
@@ -718,8 +701,8 @@ class _QuestionPalette extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
               child: LinearProgressIndicator(
                 value: total > 0 ? answered / total : 0,
-                backgroundColor: Colors.grey.shade200,
-                color: const Color(0xff4CAF50),
+                backgroundColor: AppTheme.borderLight,
+                color: AppTheme.success,
                 minHeight: 7,
               ),
             ),
@@ -741,14 +724,14 @@ class _QuestionPalette extends StatelessWidget {
                 Color bg;
                 Color fg;
                 if (isCurrent) {
-                  bg = const Color(0xff3D1975);
+                  bg = AppTheme.primary;
                   fg = Colors.white;
                 } else if (isAnswered) {
-                  bg = const Color(0xff4CAF50).withOpacity(0.15);
-                  fg = const Color(0xff2E7D32);
+                  bg = AppTheme.success.withOpacity(0.15);
+                  fg = const Color(0xff065F46);
                 } else {
                   bg = Colors.white;
-                  fg = Colors.grey.shade500;
+                  fg = AppTheme.textSecondary;
                 }
                 return GestureDetector(
                   onTap: () => onTap(i),
@@ -759,12 +742,13 @@ class _QuestionPalette extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isCurrent
-                            ? const Color(0xff3D1975)
+                            ? AppTheme.primary
                             : isAnswered
-                                ? const Color(0xff4CAF50).withOpacity(0.4)
-                                : Colors.grey.shade200,
+                                ? AppTheme.success.withOpacity(0.4)
+                                : AppTheme.borderLight,
                         width: 1.5,
                       ),
+                      boxShadow: AppTheme.softShadow,
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -775,8 +759,8 @@ class _QuestionPalette extends StatelessWidget {
                                 fontWeight: FontWeight.w800,
                                 fontSize: 14)),
                         if (isAnswered && !isCurrent)
-                          Icon(Icons.check_rounded,
-                              size: 10, color: const Color(0xff4CAF50)),
+                          const Icon(Icons.check_rounded,
+                              size: 10, color: AppTheme.success),
                       ],
                     ),
                   ),
@@ -793,11 +777,11 @@ class _QuestionPalette extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                      colors: [Color(0xff1E0845), Color(0xff4A1E96)]),
+                      colors: AppTheme.primaryGradient),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                        color: const Color(0xff3D1975).withOpacity(0.3),
+                        color: AppTheme.primary.withOpacity(0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 5))
                   ],
@@ -842,8 +826,8 @@ class _PaletteStat extends StatelessWidget {
                     color: color, fontSize: 20, fontWeight: FontWeight.w900)),
             const SizedBox(height: 2),
             Text(label,
-                style: TextStyle(
-                    color: Colors.grey.shade500,
+                style: const TextStyle(
+                    color: AppTheme.textSecondary,
                     fontSize: 10,
                     fontWeight: FontWeight.w500)),
           ],

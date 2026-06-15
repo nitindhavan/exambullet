@@ -1,8 +1,9 @@
-﻿import 'package:percent/models/User.dart';
+import 'package:percent/models/User.dart';
 import 'package:percent/screens/signin.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:percent/utils/theme.dart';
 import 'dart:math';
 import 'home.dart';
 
@@ -145,9 +146,9 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xff1A0840), Color(0xff3D1975), Color(0xff6B3FA0)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            colors: AppTheme.bgGradient,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
         child: Center(
@@ -171,10 +172,10 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
                               width: 100,
                               height: 100,
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.08),
+                                color: AppTheme.primary.withOpacity(0.05),
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.15),
+                                  color: AppTheme.primary.withOpacity(0.12),
                                   width: 1.5,
                                 ),
                               ),
@@ -185,18 +186,10 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
                                     scale: _percentScale.value,
                                     child: ShaderMask(
                                       shaderCallback: (bounds) =>
-                                          LinearGradient(
-                                        colors: const [
-                                          Color(0xffE9D5FF),
-                                          Colors.white,
-                                          Color(0xffC084FC),
-                                        ],
-                                        stops: [
-                                          (_shimmer.value - 0.3)
-                                              .clamp(0.0, 1.0),
-                                          _shimmer.value.clamp(0.0, 1.0),
-                                          (_shimmer.value + 0.3)
-                                              .clamp(0.0, 1.0),
+                                          const LinearGradient(
+                                        colors: [
+                                          AppTheme.primary,
+                                          AppTheme.secondary,
                                         ],
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
@@ -230,9 +223,9 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
                           const Text(
                             'Percent',
                             style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 30,
-                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textPrimary,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
                               letterSpacing: -0.5,
                             ),
                           ),
@@ -240,9 +233,9 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
                           Text(
                             'Your exam prep companion',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.55),
+                              color: AppTheme.textSecondary,
                               fontSize: 14,
-                              fontWeight: FontWeight.w400,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
@@ -277,7 +270,7 @@ class _RingPainter extends CustomPainter {
       center,
       radius,
       Paint()
-        ..color = Colors.white.withOpacity(0.1)
+        ..color = AppTheme.primary.withOpacity(0.08)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 5,
     );
@@ -290,7 +283,7 @@ class _RingPainter extends CustomPainter {
       false,
       Paint()
         ..shader = const LinearGradient(
-          colors: [Color(0xffC084FC), Colors.white],
+          colors: AppTheme.primaryGradient,
         ).createShader(rect)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 5
@@ -343,7 +336,7 @@ class _LoadingDotsState extends State<_LoadingDots>
               height: 7,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(opacity),
+                color: AppTheme.primary.withOpacity(opacity),
               ),
             );
           }),

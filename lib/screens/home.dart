@@ -1,4 +1,4 @@
-﻿import 'package:percent/models/User.dart';
+import 'package:percent/models/User.dart';
 import 'package:percent/models/exam.dart';
 import 'package:percent/screens/all_exams_screen.dart';
 import 'package:percent/screens/exam_dashboard.dart';
@@ -9,6 +9,7 @@ import 'package:percent/widgets/home/news_section.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:percent/utils/theme.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key, required this.user}) : super(key: key);
@@ -47,7 +48,7 @@ class _HomeState extends State<Home> {
     final raw = snap.snapshot.value as Map;
     setState(() {
       allExams =
-          raw.entries.map((e) => ExamModel.fromMap(e.value as Map)).toList();
+          raw.entries.map((e) => ExamModel.fromMap(e.value as Map, e.key as String)).toList();
       examsLoading = false;
     });
   }
@@ -73,19 +74,20 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffF0EBFF),
-      body: SafeArea(
-        child: StreamBuilder<Set<String>>(
-          stream: _goalIdsStream,
-          initialData: const {},
-          builder: (context, snap) {
-            final goalIds = snap.data ?? {};
-            final goalExams =
-                allExams.where((e) => goalIds.contains(e.id)).toList();
-            final otherExams =
-                allExams.where((e) => !goalIds.contains(e.id)).toList();
+      backgroundColor: AppTheme.background,
+      body: StreamBuilder<Set<String>>(
+        stream: _goalIdsStream,
+        initialData: const {},
+        builder: (context, snap) {
+          final goalIds = snap.data ?? {};
+          final goalExams =
+              allExams.where((e) => goalIds.contains(e.id)).toList();
+          final otherExams =
+              allExams.where((e) => !goalIds.contains(e.id)).toList();
 
-            return CustomScrollView(
+          return SafeArea(
+            top: false,
+            child: CustomScrollView(
               slivers: [
                 // ── Sticky header ──────────────────────────
                 SliverToBoxAdapter(
@@ -121,9 +123,9 @@ class _HomeState extends State<Home> {
 
                 const SliverToBoxAdapter(child: SizedBox(height: 32)),
               ],
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }

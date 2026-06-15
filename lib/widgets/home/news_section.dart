@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:percent/models/exam.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/shimmer.dart';
 
 class NewsSection extends StatefulWidget {
   const NewsSection({Key? key, required this.goalExams}) : super(key: key);
@@ -161,7 +163,7 @@ class _NewsSectionState extends State<NewsSection> {
           child: Text(
             'Latest Updates',
             style: TextStyle(
-              color: Color(0xff2D0F5E),
+              color: AppTheme.textPrimary,
               fontSize: 20,
               fontWeight: FontWeight.w900,
               letterSpacing: -0.3,
@@ -172,15 +174,12 @@ class _NewsSectionState extends State<NewsSection> {
           future: _newsFuture,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const SizedBox(
-                height: 160,
-                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-              );
+              return _buildShimmer(context);
             }
             final items =
                 (snap.data?.isNotEmpty == true) ? snap.data! : _fallback;
             return SizedBox(
-              height: 160,
+              height: 175,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
@@ -194,6 +193,117 @@ class _NewsSectionState extends State<NewsSection> {
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildShimmer(BuildContext context) {
+    return ShimmerLoading(
+      builder: (context, color) {
+        return SizedBox(
+          height: 175,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+            itemCount: 3,
+            itemBuilder: (_, __) {
+              return Container(
+                width: 220,
+                margin: const EdgeInsets.only(right: 12, bottom: 8, top: 2),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: AppTheme.softShadow,
+                  border: Border.all(color: AppTheme.borderLight),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          height: 16,
+                          width: 80,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        Container(
+                          height: 12,
+                          width: 12,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      height: 14,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      height: 14,
+                      width: 150,
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            height: 11,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            height: 11,
+                            width: 180,
+                            decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          height: 12,
+                          width: 60,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
@@ -222,73 +332,92 @@ class _NewsCard extends StatelessWidget {
     return GestureDetector(
       onTap: tappable ? () => _open(context) : null,
       child: Container(
-        width: 210,
-        margin: const EdgeInsets.only(right: 12),
+        width: 220,
+        margin: const EdgeInsets.only(right: 12, bottom: 8, top: 2),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.10),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-          border: Border(left: BorderSide(color: color, width: 3)),
+          boxShadow: AppTheme.softShadow,
+          border: Border.all(color: AppTheme.borderLight),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.10),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                item['tag'] ?? '',
-                style: TextStyle(
-                    color: color, fontSize: 10, fontWeight: FontWeight.w700),
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    item['tag'] ?? '',
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                if (tappable)
+                  Icon(
+                    Icons.open_in_new_rounded,
+                    size: 12,
+                    color: AppTheme.textSecondary.withOpacity(0.6),
+                  ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               item['title'] ?? '',
               style: const TextStyle(
-                color: Color(0xff2D0F5E),
+                color: AppTheme.textPrimary,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
+                height: 1.3,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Expanded(
               child: Text(
                 item['body'] ?? '',
-                style: TextStyle(
-                    color: Colors.grey.shade500, fontSize: 11, height: 1.35),
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 11,
+                  height: 1.35,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (tappable)
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('Read',
-                        style: TextStyle(
-                            color: color,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700)),
-                    const SizedBox(width: 2),
-                    Icon(Icons.arrow_forward_rounded, size: 11, color: color),
-                  ],
-                ),
+            if (tappable) ...[
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Read Article',
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 3),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 8,
+                    color: color,
+                  ),
+                ],
               ),
+            ],
           ],
         ),
       ),
@@ -337,13 +466,13 @@ class _ArticleWebViewState extends State<_ArticleWebView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffF6F2FF),
+      backgroundColor: AppTheme.background,
       body: Column(
         children: [
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xff1E0845), Color(0xff4A1E96)],
+                colors: AppTheme.primaryGradient,
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -393,8 +522,8 @@ class _ArticleWebViewState extends State<_ArticleWebView> {
           ),
           if (_loading)
             LinearProgressIndicator(
-              backgroundColor: const Color(0xff3D1975).withOpacity(0.1),
-              color: const Color(0xff3D1975),
+              backgroundColor: AppTheme.primary.withOpacity(0.1),
+              color: AppTheme.primary,
               minHeight: 3,
             ),
           Expanded(child: WebViewWidget(controller: _controller)),
