@@ -86,6 +86,9 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
   Future<void> _saveAndActivate() async {
     setState(() => _isLoading = true);
 
+    // Simulate secure payment gateway interaction
+    await Future.delayed(const Duration(milliseconds: 1500));
+
     final membership = MembershipModel(
       widget.model,
       FirebaseAuth.instance.currentUser!.uid,

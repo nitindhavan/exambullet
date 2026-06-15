@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/test_model.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/shimmer.dart';
 
 class TestScreen extends StatefulWidget {
   const TestScreen({
@@ -162,10 +163,44 @@ class _TestScreenState extends State<TestScreen> {
   @override
   Widget build(BuildContext context) {
     if (!_loaded) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppTheme.background,
-        body:
-            Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+        body: SafeArea(
+          child: ShimmerLoading(
+            builder: (context, color) => Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    height: 120,
+                    decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(20)),
+                  ),
+                  const SizedBox(height: 30),
+                  Container(
+                    height: 180,
+                    decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(20)),
+                  ),
+                  const SizedBox(height: 20),
+                  ...List.generate(
+                    4,
+                    (i) => Container(
+                      height: 60,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(16)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       );
     }
 

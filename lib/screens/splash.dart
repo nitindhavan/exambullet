@@ -7,6 +7,7 @@ import 'package:percent/utils/theme.dart';
 import 'dart:math';
 import 'home.dart';
 import 'update_required_screen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class Splash extends StatefulWidget {
   const Splash({Key? key}) : super(key: key);
@@ -126,7 +127,8 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
         final minVersion = settings['minVersion'] as String? ?? '1.0.0';
         final updateUrl = settings['updateUrl'] as String? ?? '';
 
-        const currentVersion = '1.0.0';
+        final packageInfo = await PackageInfo.fromPlatform();
+        final currentVersion = packageInfo.version;
 
         if (_isUpdateRequired(currentVersion, minVersion)) {
           Navigator.pushReplacement(
