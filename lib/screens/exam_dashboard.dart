@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:percent/models/User.dart';
 import 'package:percent/models/exam.dart';
 import 'package:percent/screens/dashboard/exam_news_tab.dart';
@@ -24,32 +25,49 @@ class _ExamDashboardState extends State<ExamDashboard> {
   int _currentIndex = 0;
   bool _hasMembership = false;
   bool _membershipLoaded = false;
+  StreamSubscription<DatabaseEvent>? _membershipSub;
 
   @override
   void initState() {
     super.initState();
-    _checkMembership();
+    _listenToMembership();
   }
 
-  Future<void> _checkMembership() async {
-    final snap = await FirebaseDatabase.instance
+  @override
+  void dispose() {
+    _membershipSub?.cancel();
+    super.dispose();
+  }
+
+  void _listenToMembership() {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    _membershipSub = FirebaseDatabase.instance
         .ref('memberships')
         .child(widget.exam.id)
-        .child(FirebaseAuth.instance.currentUser!.uid)
-        .once();
-    if (!mounted) return;
-    setState(() {
-      if (snap.snapshot.exists) {
-        final rawData = snap.snapshot.value;
-        if (rawData is Map) {
-          _hasMembership = rawData['isActive'] != false;
+        .child(uid)
+        .onValue
+        .listen((event) {
+      if (!mounted) return;
+      setState(() {
+        if (event.snapshot.exists) {
+          final rawData = event.snapshot.value;
+          if (rawData is Map) {
+            _hasMembership = rawData['isActive'] != false;
+          } else {
+            _hasMembership = true;
+          }
         } else {
-          _hasMembership = true;
+          _hasMembership = false;
         }
-      } else {
-        _hasMembership = false;
+        _membershipLoaded = true;
+      });
+    }, onError: (err) {
+      debugPrint('Error listening to membership: $err');
+      if (mounted) {
+        setState(() {
+          _membershipLoaded = true;
+        });
       }
-      _membershipLoaded = true;
     });
   }
 
