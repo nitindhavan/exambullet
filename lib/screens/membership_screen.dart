@@ -2,8 +2,13 @@ import 'package:percent/models/exam.dart';
 import 'package:percent/models/membership_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:razorpay_flutter_customui/razorpay_flutter_customui.dart';
+
+// Amount in paise (₹100 = 10000 paise)
+const int _amountPaise = 10000;
 
 class MemberShipScreen extends StatefulWidget {
   const MemberShipScreen({Key? key, required this.model}) : super(key: key);
@@ -16,6 +21,116 @@ class MemberShipScreen extends StatefulWidget {
 
 class _MemberShipScreenState extends State<MemberShipScreen> {
   bool _isLoading = false;
+  String? _razorpayKey;
+  late Razorpay _razorpay;
+
+  @override
+  void initState() {
+    super.initState();
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _onPaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _onPaymentError);
+    _loadRazorpayKey();
+  }
+
+  Future<void> _loadRazorpayKey() async {
+    try {
+      final snap =
+          await FirebaseDatabase.instance.ref('appSettings').once();
+      if (!mounted) return;
+      if (snap.snapshot.exists && snap.snapshot.value != null) {
+        final settings = snap.snapshot.value as Map;
+        final key = kDebugMode
+            ? settings['razorpayKeyTest'] as String?
+            : settings['razorpayKeyLive'] as String?;
+        if (key != null && key.isNotEmpty) {
+          _razorpay.initilizeSDK(key);
+          setState(() => _razorpayKey = key);
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to load Razorpay key: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _razorpay.clear();
+    super.dispose();
+  }
+
+  void _startPayment() {
+    if (_razorpayKey == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Payment not configured. Try again later.')),
+      );
+      return;
+    }
+    final user = FirebaseAuth.instance.currentUser!;
+    final options = {
+      'key': _razorpayKey!,
+      'amount': _amountPaise,
+      'currency': 'INR',
+      'name': 'ExamBullet',
+      'description': 'Lifetime Membership',
+      'email': user.email ?? '',
+      'contact': user.phoneNumber ?? '',
+      'method': 'upi',
+      '_[flow]': 'intent',
+    };
+    setState(() => _isLoading = true);
+    _razorpay.submit(options);
+  }
+
+  Future<void> _onPaymentSuccess(Map<dynamic, dynamic> response) async {
+    final paymentId = response['razorpay_payment_id'] as String? ?? '';
+    debugPrint('Payment success: $paymentId');
+
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final membership = MembershipModel(
+      widget.model,
+      uid,
+      DateTime.now().toIso8601String(),
+      paymentId: paymentId,
+    );
+
+    try {
+      await FirebaseDatabase.instance
+          .ref('memberships')
+          .child(widget.model)
+          .child(uid)
+          .set(membership.toMap());
+
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      debugPrint('Error saving membership after payment: $e');
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Payment successful (ID: $paymentId) but activation failed. Contact support.',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _onPaymentError(Map<dynamic, dynamic> response) {
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    final code = response['data']?['code'] as int? ?? -1;
+    if (code == Razorpay.PAYMENT_CANCELLED) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Payment failed: ${response['data']?['message'] ?? 'Unknown error'}',
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,33 +158,26 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
 
           return Column(
             children: [
-              // ── Header ──────────────────────────────────────────
               _Header(
                   examName: exam.name, onBack: () => Navigator.pop(context)),
-
-              // ── Scrollable content ──────────────────────────────
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
                   child: Column(
                     children: [
-                      // Price card
                       _PriceCard(),
                       const SizedBox(height: 20),
-
-                      // Benefits card
                       _BenefitsCard(),
                       const SizedBox(height: 32),
-
-                      // CTA
                       _GetMembershipButton(
                         isLoading: _isLoading,
-                        onPressed: _saveAndActivate,
+                        onPressed: _startPayment,
                       ),
                       const SizedBox(height: 12),
                       const Text(
                         'One-time payment · Lifetime access',
-                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                        style: TextStyle(
+                            color: AppTheme.textSecondary, fontSize: 12),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -81,36 +189,6 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
         },
       ),
     );
-  }
-
-  Future<void> _saveAndActivate() async {
-    setState(() => _isLoading = true);
-
-    // Simulate secure payment gateway interaction
-    await Future.delayed(const Duration(milliseconds: 1500));
-
-    final membership = MembershipModel(
-      widget.model,
-      FirebaseAuth.instance.currentUser!.uid,
-      DateTime.now().toIso8601String(),
-    );
-
-    try {
-      await FirebaseDatabase.instance
-          .ref('memberships')
-          .child(widget.model)
-          .child(FirebaseAuth.instance.currentUser!.uid)
-          .set(membership.toMap());
-
-      if (mounted) Navigator.pop(context);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Something went wrong. Please try again.')),
-      );
-    }
   }
 }
 
@@ -224,7 +302,8 @@ class _PriceCard extends StatelessWidget {
                 SizedBox(height: 4),
                 Text(
                   'Pay once, access forever',
-                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  style:
+                      TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                 ),
               ],
             ),
@@ -243,7 +322,8 @@ class _PriceCard extends StatelessWidget {
               ),
               Text(
                 'one-time',
-                style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                style:
+                    TextStyle(color: AppTheme.textSecondary, fontSize: 12),
               ),
             ],
           ),
@@ -306,8 +386,8 @@ class _BenefitsCard extends StatelessWidget {
                   const SizedBox(width: 14),
                   Text(
                     item['label'] as String,
-                    style:
-                        const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                    style: const TextStyle(
+                        fontSize: 14, color: AppTheme.textPrimary),
                   ),
                 ],
               ),
@@ -352,8 +432,8 @@ class _GetMembershipButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
           ),
           onPressed: isLoading ? null : onPressed,
           child: isLoading
