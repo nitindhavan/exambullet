@@ -88,9 +88,11 @@ class _ExamNewsTabState extends State<ExamNewsTab> {
     setState(() => _loading = true);
     try {
       final query = Uri.encodeComponent('${widget.exam.name} exam');
-      final uri = Uri.parse(
-        'https://news.google.com/rss/search?q=$query&hl=en-IN&gl=IN&ceid=IN:en',
-      );
+      String urlString = 'https://news.google.com/rss/search?q=$query&hl=en-IN&gl=IN&ceid=IN:en';
+      if (kIsWeb) {
+        urlString = 'https://corsproxy.io/?${Uri.encodeComponent(urlString)}';
+      }
+      final uri = Uri.parse(urlString);
       final response = await http.get(uri, headers: {
         'User-Agent': 'Mozilla/5.0'
       }).timeout(const Duration(seconds: 12));

@@ -10,155 +10,73 @@ class HomeHeader extends StatelessWidget {
     Key? key,
     required this.user,
     required this.goalCount,
+    required this.onTapSearch,
   }) : super(key: key);
 
   final UserModel user;
   final int goalCount;
+  final VoidCallback onTapSearch;
 
   @override
   Widget build(BuildContext context) {
     final double topPadding = MediaQuery.of(context).padding.top;
     return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primary.withValues(alpha: 0.15),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
-        ),
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: AppTheme.primaryGradient,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Stack(
+      color: Colors.white,
+      padding: EdgeInsets.fromLTRB(20, topPadding + 14, 20, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // ── Decorative glows ───────────────────
-              Positioned(
-                top: -30,
-                right: -30,
-                child: Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        Colors.white.withValues(alpha: 0.22),
-                        Colors.white.withValues(alpha: 0.0),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: -50,
-                left: -20,
-                child: Container(
-                  width: 160,
-                  height: 160,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        Colors.white.withValues(alpha: 0.15),
-                        Colors.white.withValues(alpha: 0.0),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              
-              // ── Main Content ───────────────────────
-              Padding(
-                padding: EdgeInsets.fromLTRB(20, 20 + topPadding, 20, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // Left: Avatar + Greeting
+              Expanded(
+                child: Row(
                   children: [
-                    // Top Row: Avatar & Greeting & Notification Bell
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              _buildAvatar(),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Hey, ${user.name.trim().split(' ').first} 👋',
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                      style: GoogleFonts.outfit(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: -0.3,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      'Ready to boost your percent?',
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                      style: GoogleFonts.inter(
-                                        color: Colors.white.withValues(alpha: 0.8),
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                    _buildAvatar(),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hey, ${user.name.trim().split(' ').first} 👋',
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: GoogleFonts.outfit(
+                              color: AppTheme.textPrimary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.3,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        _NotificationBell(userId: user.uid),
-                      ],
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Stats Cards Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildGlassStatCard(
-                            icon: Icons.flag_rounded,
-                            value: '$goalCount Active',
-                            label: 'Goal Exams',
+                          const SizedBox(height: 2),
+                          Text(
+                            'Let\'s prepare today',
+                            style: GoogleFonts.inter(
+                              color: AppTheme.textSecondary,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildGlassStatCard(
-                            icon: Icons.local_fire_department_rounded,
-                            value: 'Daily',
-                            label: 'Practice Streak',
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 16),
+              // Right: Streak + Notifications
+              Row(
+                children: [
+                  _buildStreakBadge(),
+                  const SizedBox(width: 10),
+                  _NotificationBell(userId: user.uid),
+                ],
+              ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
@@ -178,94 +96,58 @@ class HomeHeader extends StatelessWidget {
     initials = initials.toUpperCase();
 
     return Container(
-      width: 48,
-      height: 48,
+      width: 42,
+      height: 42,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
+        color: AppTheme.primaryLight,
         shape: BoxShape.circle,
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.35),
+          color: AppTheme.primary.withValues(alpha: 0.15),
           width: 1.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Center(
         child: initials.isNotEmpty
             ? Text(
                 initials,
                 style: GoogleFonts.outfit(
-                  color: Colors.white,
-                  fontSize: 16,
+                  color: AppTheme.primary,
+                  fontSize: 14,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
                 ),
               )
             : const Icon(
                 Icons.person_rounded,
-                color: Colors.white,
-                size: 24,
+                color: AppTheme.primary,
+                size: 20,
               ),
       ),
     );
   }
 
-  Widget _buildGlassStatCard({
-    required IconData icon,
-    required String value,
-    required String label,
-  }) {
+  Widget _buildStreakBadge() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.12),
-          width: 1,
-        ),
+        color: const Color(0xffFFF7ED),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xffFED7AA), width: 1),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: Colors.white, size: 18),
+          const Icon(
+            Icons.local_fire_department_rounded,
+            color: Color(0xffEA580C),
+            size: 15,
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  value,
-                  style: GoogleFonts.outfit(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    color: Colors.white.withValues(alpha: 0.65),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+          const SizedBox(width: 4),
+          Text(
+            'Daily Prep',
+            style: GoogleFonts.inter(
+              color: const Color(0xffC2410C),
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -312,24 +194,24 @@ class _NotificationBell extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   Container(
-                    width: 44,
-                    height: 44,
+                    width: 42,
+                    height: 42,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
+                      color: Colors.white,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.5),
+                      border: Border.all(color: AppTheme.borderLight, width: 1.5),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
                     child: const Icon(
                       Icons.notifications_none_rounded,
-                      color: Colors.white,
-                      size: 22,
+                      color: AppTheme.textPrimary,
+                      size: 20,
                     ),
                   ),
                   if (unreadCount > 0)
@@ -343,8 +225,8 @@ class _NotificationBell extends StatelessWidget {
                           shape: BoxShape.circle,
                         ),
                         constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
+                          minWidth: 15,
+                          minHeight: 15,
                         ),
                         child: Center(
                           child: Text(

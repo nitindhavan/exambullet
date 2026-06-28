@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:percent/models/exam.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -16,42 +17,38 @@ class NewsSection extends StatefulWidget {
 }
 
 class _NewsSectionState extends State<NewsSection> {
-  static const _colors = [
-    Color(0xff4CAF50),
-    Color(0xff2196F3),
-    Color(0xffFF9800),
-    Color(0xff9C27B0),
-    Color(0xffF44336),
-  ];
+  late Future<List<Map<String, String>>> _newsFuture;
 
   static const _fallback = <Map<String, String>>[
     {
-      'tag': 'Daily Tip',
+      'source': 'Daily Tip',
       'title': 'Practise daily for best results',
-      'body': 'Consistent daily practice boosts retention by up to 80%.',
+      'description': 'Consistent daily practice boosts retention by up to 80%.',
+      'date': '',
       'url': ''
     },
     {
-      'tag': 'Reminder',
+      'source': 'Reminder',
       'title': 'Review your weak areas',
-      'body': 'Revisit topics you scored low on before your next mock test.',
+      'description': 'Revisit topics you scored low on before your next mock test.',
+      'date': '',
       'url': ''
     },
     {
-      'tag': 'New Content',
+      'source': 'New Content',
       'title': 'Fresh mock tests are live',
-      'body': 'New question sets have been added for all exams.',
+      'description': 'New question sets have been added for all exams.',
+      'date': '',
       'url': ''
     },
     {
-      'tag': 'Strategy',
+      'source': 'Strategy',
       'title': 'Attempt easy questions first',
-      'body': 'Build momentum in mock tests by starting with easier ones.',
+      'description': 'Build momentum in mock tests by starting with easier ones.',
+      'date': '',
       'url': ''
     },
   ];
-
-  late Future<List<Map<String, String>>> _newsFuture;
 
   @override
   void initState() {
@@ -65,58 +62,69 @@ class _NewsSectionState extends State<NewsSection> {
     final oldIds = old.goalExams.map((e) => e.id).toSet();
     final newIds = widget.goalExams.map((e) => e.id).toSet();
     if (oldIds.length != newIds.length || !oldIds.containsAll(newIds)) {
-      _newsFuture = _fetchNews(); // assign outside setState
-      setState(() {}); // trigger rebuild only
+      _newsFuture = _fetchNews();
+      setState(() {});
     }
   }
 
   Future<List<Map<String, String>>> _fetchNews() async {
     try {
-      final names = widget.goalExams.take(3).map((e) => e.name).toList();
-      final query =
-          names.isEmpty ? 'exam preparation tips India' : names.join(' OR ');
-
-      final uri = Uri.parse(
-        'https://news.google.com/rss/search'
-        '?q=${Uri.encodeComponent(query)}&hl=en-IN&gl=IN&ceid=IN:en',
-      );
-
-      final resp = await http.get(uri, headers: {
-        'User-Agent': 'Mozilla/5.0'
-      }).timeout(const Duration(seconds: 10));
-      if (resp.statusCode != 200) return [];
+      if (widget.goalExams.isEmpty) return [];
 
       final results = <Map<String, String>>[];
-      final itemRx = RegExp(r'<item>([\s\S]*?)<\/item>');
+      final examsToFetch = widget.goalExams.take(4).toList(); 
 
-      for (final m in itemRx.allMatches(resp.body).take(5)) {
-        final block = m.group(1) ?? '';
+      final futures = examsToFetch.map((exam) async {
+        final query = '${exam.name} exam';
+        String urlString = 'https://news.google.com/rss/search?q=${Uri.encodeComponent(query)}&hl=en-IN&gl=IN&ceid=IN:en';
+        if (kIsWeb) {
+          urlString = 'https://corsproxy.io/?${Uri.encodeComponent(urlString)}';
+        }
+        try {
+          final resp = await http.get(Uri.parse(urlString), headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+          });
+          if (resp.statusCode == 200) {
+            final localRes = <Map<String, String>>[];
+            final itemRx = RegExp(r'<item>([\s\S]*?)<\/item>');
+            for (final m in itemRx.allMatches(resp.body).take(6)) {
+              final block = m.group(1) ?? '';
+              var title = _clean(_tag(block, 'title'));
+              final dash = title.lastIndexOf(' - ');
+              if (dash > 0) title = title.substring(0, dash);
+              final source = _tagAttr(block, 'source');
+              final body = _clean(_tag(block, 'description'));
+              final url = _parseLink(block);
+              final date = _fmtDate(_tag(block, 'pubDate'));
+              
+              if (title.isNotEmpty) {
+                localRes.add({
+                  'source': source.isNotEmpty ? source : 'Google News',
+                  'title': title,
+                  'description': body,
+                  'date': date,
+                  'url': url,
+                });
+              }
+            }
+            return localRes;
+          }
+        } catch (_) {}
+        return <Map<String, String>>[];
+      });
 
-        var title = _clean(_tag(block, 'title'));
-        // Google News appends " - Source" to each title — strip it
-        final dash = title.lastIndexOf(' - ');
-        if (dash > 0) title = title.substring(0, dash);
-
-        final source = _tagAttr(block, 'source');
-        final body = _clean(_tag(block, 'description'));
-        final url = _parseLink(block);
-
-        if (title.isEmpty) continue;
-        results.add({
-          'tag': source.isNotEmpty ? source : 'Google News',
-          'title': title,
-          'body': body,
-          'url': url,
-        });
+      final allResults = await Future.wait(futures);
+      for (final r in allResults) {
+        results.addAll(r);
       }
-
-      return results;
+      
+      results.shuffle(); 
+      return results.take(15).toList();
     } catch (_) {
       return [];
     }
   }
 
-  // Google News RSS puts <link> as bare text (not a proper XML element).
   String _parseLink(String block) {
     final el = RegExp(r'<link>([^<]+)<\/link>').firstMatch(block);
     if (el != null) return el.group(1)?.trim() ?? '';
@@ -155,41 +163,111 @@ class _NewsSectionState extends State<NewsSection> {
     return s.replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
+  String _fmtDate(String rfc) {
+    if (rfc.isEmpty) return '';
+    final parts = rfc.split(',');
+    if (parts.length > 1) {
+      final tokens = parts[1].trim().split(' ');
+      if (tokens.length >= 3) return '${tokens[0]} ${tokens[1]} ${tokens[2]}';
+    }
+    return rfc;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(20, 28, 20, 14),
-          child: Text(
-            'Latest Updates',
-            style: TextStyle(
-              color: AppTheme.textPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.3,
-            ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Latest Updates',
+                    style: TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 2),
+                  FutureBuilder(
+                    future: _newsFuture,
+                    builder: (context, snap) {
+                      final isLive = snap.hasData && snap.data!.isNotEmpty;
+                      final isLoading = snap.connectionState == ConnectionState.waiting;
+                      if (isLoading) return const SizedBox.shrink();
+                      return Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isLive
+                                  ? AppTheme.success
+                                  : Colors.grey.shade400,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            isLive ? 'Live · Google News' : 'Curated tips',
+                            style: const TextStyle(
+                                color: AppTheme.textSecondary, fontSize: 11),
+                          ),
+                        ],
+                      );
+                    }
+                  ),
+                ],
+              ),
+              const Spacer(),
+              FutureBuilder(
+                future: _newsFuture,
+                builder: (context, snap) {
+                  final isLoading = snap.connectionState == ConnectionState.waiting;
+                  if (isLoading) return const SizedBox.shrink();
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _newsFuture = _fetchNews();
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryLight,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.refresh_rounded,
+                          color: AppTheme.primary, size: 18),
+                    ),
+                  );
+                }
+              ),
+            ],
           ),
         ),
         FutureBuilder<List<Map<String, String>>>(
           future: _newsFuture,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return _buildShimmer(context);
+              return const _LoadingList();
             }
             final items =
                 (snap.data?.isNotEmpty == true) ? snap.data! : _fallback;
-            return SizedBox(
-              height: 175,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-                itemCount: items.length,
-                itemBuilder: (_, i) => _NewsCard(
-                  item: items[i],
-                  color: _colors[i % _colors.length],
-                ),
+            final isLive = snap.data?.isNotEmpty == true;
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              itemCount: items.length,
+              itemBuilder: (_, i) => _NewsCard(
+                item: items[i],
+                isLive: isLive,
               ),
             );
           },
@@ -198,124 +276,13 @@ class _NewsSectionState extends State<NewsSection> {
     );
   }
 
-  Widget _buildShimmer(BuildContext context) {
-    return ShimmerLoading(
-      builder: (context, color) {
-        return SizedBox(
-          height: 175,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-            itemCount: 3,
-            itemBuilder: (_, __) {
-              return Container(
-                width: 220,
-                margin: const EdgeInsets.only(right: 12, bottom: 8, top: 2),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: AppTheme.softShadow,
-                  border: Border.all(color: AppTheme.borderLight),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          height: 16,
-                          width: 80,
-                          decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
-                        Container(
-                          height: 12,
-                          width: 12,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      height: 14,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      height: 14,
-                      width: 150,
-                      decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            height: 11,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: color,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            height: 11,
-                            width: 180,
-                            decoration: BoxDecoration(
-                              color: color,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          height: 12,
-                          width: 60,
-                          decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
+
 }
 
-// ── Card ──────────────────────────────────────────────────────────────────────
-
 class _NewsCard extends StatelessWidget {
-  const _NewsCard({required this.item, required this.color});
+  const _NewsCard({required this.item, required this.isLive});
   final Map<String, String> item;
-  final Color color;
+  final bool isLive;
 
   void _open(BuildContext context) async {
     final url = item['url'] ?? '';
@@ -330,111 +297,115 @@ class _NewsCard extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => _ArticleWebView(url: url, title: item['title'] ?? ''),
+        builder: (_) => _ArticleWebView(
+          url: url,
+          title: item['title'] ?? '',
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final accent = isLive ? AppTheme.secondary : AppTheme.primary;
     final tappable = (item['url'] ?? '').isNotEmpty;
+    final source = item['source'] ?? '';
+    final date = item['date'] ?? '';
+    final title = item['title'] ?? '';
+    final desc = item['description'] ?? '';
+
     return GestureDetector(
       onTap: tappable ? () => _open(context) : null,
       child: Container(
-        width: 220,
-        margin: const EdgeInsets.only(right: 12, bottom: 8, top: 2),
-        padding: const EdgeInsets.all(14),
+        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: AppTheme.softShadow,
           border: Border.all(color: AppTheme.borderLight),
+          boxShadow: AppTheme.softShadow,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    item['tag'] ?? '',
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                if (tappable)
-                  Icon(
-                    Icons.open_in_new_rounded,
-                    size: 12,
-                    color: AppTheme.textSecondary.withValues(alpha: 0.6),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              item['title'] ?? '',
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                height: 1.3,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 6),
-            Expanded(
-              child: Text(
-                item['body'] ?? '',
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
                 style: const TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 11,
-                  height: 1.35,
+                  color: AppTheme.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  height: 1.4,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            if (tappable) ...[
-              const SizedBox(height: 6),
+              if (desc.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  desc,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      color: Colors.grey.shade600, fontSize: 12, height: 1.5),
+                ),
+              ],
+              const SizedBox(height: 10),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    'Read Article',
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
+                  if (source.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        source,
+                        style: TextStyle(
+                            color: accent,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 3),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 8,
-                    color: color,
-                  ),
+                  if (source.isNotEmpty && date.isNotEmpty)
+                    const SizedBox(width: 8),
+                  if (date.isNotEmpty)
+                    Text(date,
+                        style: TextStyle(
+                            color: Colors.grey.shade400, fontSize: 11)),
+                  if (tappable) ...[
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Read',
+                              style: TextStyle(
+                                  color: accent,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700)),
+                          const SizedBox(width: 4),
+                          Icon(Icons.arrow_forward_rounded,
+                              size: 12, color: accent),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
-
-// ── In-app WebView (same as exam_news_tab) ────────────────────────────────────
 
 class _ArticleWebView extends StatefulWidget {
   const _ArticleWebView({required this.url, required this.title});
@@ -509,7 +480,7 @@ class _ArticleWebViewState extends State<_ArticleWebView> {
                         _currentTitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: GoogleFonts.outfit(
                           color: Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -536,6 +507,101 @@ class _ArticleWebViewState extends State<_ArticleWebView> {
               minHeight: 3,
             ),
           Expanded(child: WebViewWidget(controller: _controller)),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Shimmer Loading ───────────────────────────────────────────────────────────
+
+class _LoadingList extends StatefulWidget {
+  const _LoadingList();
+
+  @override
+  State<_LoadingList> createState() => _LoadingListState();
+}
+
+class _LoadingListState extends State<_LoadingList>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat(reverse: true);
+
+  late final Animation<double> _anim =
+      Tween<double>(begin: 0.25, end: 0.65).animate(_ctrl);
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, __) => ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        itemCount: 5,
+        itemBuilder: (_, __) => _ShimmerCard(opacity: _anim.value),
+      ),
+    );
+  }
+}
+
+class _ShimmerCard extends StatelessWidget {
+  const _ShimmerCard({required this.opacity});
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg =
+        Color.lerp(const Color(0xffF1F5F9), const Color(0xffE2E8F0), opacity)!;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.borderLight),
+        boxShadow: AppTheme.softShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+              height: 14,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                  color: bg, borderRadius: BorderRadius.circular(6))),
+          const SizedBox(height: 8),
+          Container(
+              height: 14,
+              width: 200,
+              decoration: BoxDecoration(
+                  color: bg, borderRadius: BorderRadius.circular(6))),
+          const SizedBox(height: 12),
+          Container(
+              height: 12,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                  color: bg, borderRadius: BorderRadius.circular(6))),
+          const SizedBox(height: 6),
+          Container(
+              height: 12,
+              width: 220,
+              decoration: BoxDecoration(
+                  color: bg, borderRadius: BorderRadius.circular(6))),
+          const SizedBox(height: 14),
+          Container(
+              height: 22,
+              width: 90,
+              decoration: BoxDecoration(
+                  color: bg, borderRadius: BorderRadius.circular(8))),
         ],
       ),
     );

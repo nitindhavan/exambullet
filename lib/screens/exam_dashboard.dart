@@ -10,19 +10,24 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/shimmer_loading.dart';
-
 class ExamDashboard extends StatefulWidget {
-  const ExamDashboard({Key? key, required this.exam, required this.user})
-      : super(key: key);
+  const ExamDashboard({
+    Key? key,
+    required this.exam,
+    required this.user,
+    this.initialTab = 0,
+  }) : super(key: key);
+
   final ExamModel exam;
   final UserModel user;
+  final int initialTab;
 
   @override
   State<ExamDashboard> createState() => _ExamDashboardState();
 }
 
 class _ExamDashboardState extends State<ExamDashboard> {
-  int _currentIndex = 0;
+  late int _currentIndex;
   bool _hasMembership = false;
   bool _membershipLoaded = false;
   StreamSubscription<DatabaseEvent>? _membershipSub;
@@ -30,10 +35,9 @@ class _ExamDashboardState extends State<ExamDashboard> {
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialTab;
     _listenToMembership();
-  }
-
-  @override
+  }  @override
   void dispose() {
     _membershipSub?.cancel();
     super.dispose();

@@ -1,5 +1,6 @@
 import 'package:percent/models/exam.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/shimmer.dart';
 
@@ -30,12 +31,12 @@ class GoalExamsSection extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'My Goals',
-                style: TextStyle(
+                style: GoogleFonts.outfit(
                   color: AppTheme.textPrimary,
                   fontSize: 20,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: -0.3,
                 ),
               ),
@@ -48,15 +49,15 @@ class GoalExamsSection extends StatelessWidget {
                     color: AppTheme.primaryLight,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.tune_rounded,
+                      const Icon(Icons.tune_rounded,
                           size: 13, color: AppTheme.primary),
-                      SizedBox(width: 5),
+                      const SizedBox(width: 5),
                       Text(
                         'Manage',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: AppTheme.primary,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -76,7 +77,7 @@ class GoalExamsSection extends StatelessWidget {
           _EmptyGoalsCTA(onTap: onManageTap)
         else
           SizedBox(
-            height: 200,
+            height: 205,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
@@ -252,9 +253,9 @@ class _GoalExamCard extends StatelessWidget {
                       child: Text(
                         exam.name,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: GoogleFonts.outfit(
                           color: AppTheme.textPrimary,
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
                           height: 1.25,
                         ),
@@ -265,10 +266,14 @@ class _GoalExamCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppTheme.successLight.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(12),
+                      color: AppTheme.success.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppTheme.success.withValues(alpha: 0.2),
+                        width: 1,
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -282,11 +287,11 @@ class _GoalExamCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Text(
+                        Text(
                           'Active',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             color: AppTheme.success,
-                            fontSize: 9,
+                            fontSize: 9.5,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -315,10 +320,10 @@ class _AddMoreCard extends StatelessWidget {
         width: 130,
         margin: const EdgeInsets.only(right: 20, bottom: 8, top: 2),
         decoration: BoxDecoration(
-          color: AppTheme.primaryLight.withValues(alpha: 0.35),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppTheme.primary.withValues(alpha: 0.12),
+            color: AppTheme.primary.withValues(alpha: 0.25),
             width: 1.5,
           ),
           boxShadow: AppTheme.softShadow,
@@ -328,28 +333,21 @@ class _AddMoreCard extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
+              decoration: const BoxDecoration(
+                color: AppTheme.primaryLight,
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primary.withValues(alpha: 0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
               ),
               child: const Icon(
                 Icons.add_rounded,
                 color: AppTheme.primary,
-                size: 28,
+                size: 24,
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Add More',
+            Text(
+              'Add Goal',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: GoogleFonts.outfit(
                 color: AppTheme.primary,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -371,50 +369,58 @@ class _EmptyGoalsCTA extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20),
-        padding: const EdgeInsets.all(18),
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppTheme.border),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppTheme.borderLight),
           boxShadow: AppTheme.softShadow,
         ),
-        child: Row(
+        child: Column(
           children: [
             Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
+              width: 64,
+              height: 64,
+              decoration: const BoxDecoration(
                 color: AppTheme.primaryLight,
-                borderRadius: BorderRadius.circular(16),
+                shape: BoxShape.circle,
               ),
               child: const Icon(Icons.flag_outlined,
-                  color: AppTheme.primary, size: 28),
+                  color: AppTheme.primary, size: 32),
             ),
-            const SizedBox(width: 16),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Set your exam goals',
-                    style: TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Pin exams you\'re preparing for and track them here',
-                    style: TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 12, height: 1.4),
-                  ),
-                ],
-               ),
+            const SizedBox(height: 16),
+            Text(
+              'No active study goals yet',
+              style: GoogleFonts.outfit(
+                color: AppTheme.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded,
-                size: 14, color: AppTheme.primary),
+            const SizedBox(height: 8),
+            Text(
+              'Choose and pin exams you are preparing for to track your tests, mock practices, and news updates here.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                  color: AppTheme.textSecondary, fontSize: 12.5, height: 1.5),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: AppTheme.primaryGradient),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Configure Goals',
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+            ),
           ],
         ),
       ),

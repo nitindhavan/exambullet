@@ -5,6 +5,7 @@ class ExamModel {
   String banner;
   String icon;
   bool editable;
+  bool visible;
 
   ExamModel.fromMap(Map<dynamic, dynamic> map, [String? key])
       : name = map['name'] ?? '',
@@ -12,7 +13,8 @@ class ExamModel {
         about = map['about'] ?? '',
         banner = map['banner'] ?? '',
         icon = map['icon'] ?? '',
-        editable = (map['editable'] ?? 0) == 1;
+        editable = (map['editable'] ?? 0) == 1,
+        visible = map['visible'] ?? false;
 
   Map<String, Object?> toMap() => {
         'name': name,
@@ -21,5 +23,6 @@ class ExamModel {
         'banner': banner,
         'icon': icon,
         'editable': editable ? 1 : 0,
+        'visible': visible,
       };
 }

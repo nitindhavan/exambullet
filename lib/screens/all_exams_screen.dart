@@ -2,6 +2,7 @@ import 'package:percent/models/exam.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:percent/utils/theme.dart';
 
 class AllExamsScreen extends StatefulWidget {
@@ -9,23 +10,27 @@ class AllExamsScreen extends StatefulWidget {
     Key? key,
     required this.allExams,
     required this.goalIds,
+    this.initialSearch = '',
   }) : super(key: key);
 
   final List<ExamModel> allExams;
   final Set<String> goalIds;
+  final String initialSearch;
 
   @override
   State<AllExamsScreen> createState() => _AllExamsScreenState();
 }
 
 class _AllExamsScreenState extends State<AllExamsScreen> {
-  final _searchCtrl = TextEditingController();
+  late final TextEditingController _searchCtrl;
   String _search = '';
   late Set<String> _goalIds;
 
   @override
   void initState() {
     super.initState();
+    _search = widget.initialSearch;
+    _searchCtrl = TextEditingController(text: widget.initialSearch);
     _goalIds = Set<String>.from(widget.goalIds);
   }
 
@@ -35,10 +40,10 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
     super.dispose();
   }
 
-  List<ExamModel> _filtered(List<ExamModel> src) {
-    if (_search.isEmpty) return src;
+  List<ExamModel> _filterExams() {
+    if (_search.isEmpty) return widget.allExams;
     final q = _search.toLowerCase();
-    return src.where((e) => e.name.toLowerCase().contains(q)).toList();
+    return widget.allExams.where((e) => e.name.toLowerCase().contains(q)).toList();
   }
 
   Future<void> _toggleGoal(String examId) async {
@@ -55,166 +60,102 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final goalExams = _filtered(
-        widget.allExams.where((e) => _goalIds.contains(e.id)).toList());
-    final otherExams = _filtered(
-        widget.allExams.where((e) => !_goalIds.contains(e.id)).toList());
+    final filtered = _filterExams();
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(context),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.only(top: 8, bottom: 28),
-                children: [
-                  if (goalExams.isNotEmpty) ...[
-                    _sectionHeader(
-                      icon: Icons.flag_rounded,
-                      label: 'My Goals',
-                      count: goalExams.length,
-                      color: AppTheme.primary,
-                    ),
-                    _buildGrid(goalExams, isGoal: true),
-                  ],
-                  _sectionHeader(
-                    icon: Icons.explore_rounded,
-                    label: 'All Exams',
-                    count: otherExams.length,
-                    color: AppTheme.secondary,
-                  ),
-                  if (otherExams.isEmpty)
-                    _emptyState()
-                  else
-                    _buildGrid(otherExams, isGoal: false),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+      body: Column(
+        children: [
+          // ── Premium White Header with Search ──
+          _buildHeader(context),
 
-  Widget _buildGrid(List<ExamModel> exams, {required bool isGoal}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: exams.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.82,
-        ),
-        itemBuilder: (context, index) {
-          final exam = exams[index];
-          return _ExamCard(
-            exam: exam,
-            isGoal: isGoal,
-            onToggle: () => _toggleGoal(exam.id),
-          );
-        },
+          // ── Catalog Grid ──
+          Expanded(
+            child: filtered.isEmpty
+                ? _emptyState()
+                : GridView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    itemCount: filtered.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.84,
+                    ),
+                    itemBuilder: (context, index) {
+                      final exam = filtered[index];
+                      final isGoal = _goalIds.contains(exam.id);
+                      return GestureDetector(
+                        onTap: () => _toggleGoal(exam.id),
+                        child: _ExamCard(
+                          exam: exam,
+                          isGoal: isGoal,
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context) {
+    final double topPadding = MediaQuery.of(context).padding.top;
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: AppTheme.primaryGradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+      color: Colors.white,
+      padding: EdgeInsets.fromLTRB(16, topPadding + 14, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               GestureDetector(
                 onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white, size: 20),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryLight,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.arrow_back_ios_new_rounded,
+                      color: AppTheme.primary, size: 16),
+                ),
               ),
               const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Choose Your Exams',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Pin exams to track them on home',
-                      style: TextStyle(color: Colors.white60, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.flag_rounded,
-                        color: Colors.white, size: 14),
-                    const SizedBox(width: 5),
-                    Text(
-                      '${_goalIds.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+              Expanded(
+                child: Text(
+                  'Choose Your Goals',
+                  style: GoogleFonts.outfit(
+                    color: AppTheme.textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
+          // ── Minimalist Search Input ──
           Container(
-            height: 50,
+            height: 46,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.borderLight, width: 1.5),
             ),
             child: TextField(
               controller: _searchCtrl,
               onChanged: (v) => setState(() => _search = v),
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-              cursorColor: Colors.white,
+              style: GoogleFonts.inter(color: AppTheme.textPrimary, fontSize: 14),
+              cursorColor: AppTheme.primary,
               decoration: InputDecoration(
-                hintText: 'Search exams...',
-                hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
+                hintText: 'Search exams (e.g. JEE, UPSC...)',
+                hintStyle: GoogleFonts.inter(
+                    color: AppTheme.textSecondary.withValues(alpha: 0.55), fontSize: 13.5),
                 prefixIcon: Icon(Icons.search_rounded,
-                    color: Colors.white.withValues(alpha: 0.65), size: 20),
+                    color: AppTheme.textSecondary.withValues(alpha: 0.65), size: 18),
                 suffixIcon: _search.isNotEmpty
                     ? GestureDetector(
                         onTap: () {
@@ -222,55 +163,12 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
                           setState(() => _search = '');
                         },
                         child: Icon(Icons.close_rounded,
-                            color: Colors.white.withValues(alpha: 0.65), size: 18),
+                            color: AppTheme.textSecondary.withValues(alpha: 0.65), size: 16),
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                contentPadding: const EdgeInsets.symmetric(vertical: 13),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _sectionHeader({
-    required IconData icon,
-    required String label,
-    required int count,
-    required Color color,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 28, 16, 12),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 19),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            label,
-            style: TextStyle(
-                color: color, fontSize: 15, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              '$count',
-              style: TextStyle(
-                  color: color, fontSize: 11, fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -279,19 +177,42 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
   }
 
   Widget _emptyState() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Center(
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off_rounded,
-                size: 56, color: Colors.grey.shade300),
-            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.search_off_rounded,
+                size: 40,
+                color: Colors.grey.shade400,
+              ),
+            ),
+            const SizedBox(height: 16),
             Text(
-              _search.isNotEmpty
-                  ? 'No exams match "$_search"'
-                  : 'All exams are in your goals!',
-              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+              'No exams found',
+              style: GoogleFonts.outfit(
+                color: AppTheme.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'We couldn\'t find any exams matching your search query. Try typing another keyword.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                color: AppTheme.textSecondary,
+                fontSize: 12.5,
+                height: 1.45,
+              ),
             ),
           ],
         ),
@@ -304,98 +225,107 @@ class _ExamCard extends StatelessWidget {
   const _ExamCard({
     required this.exam,
     required this.isGoal,
-    required this.onToggle,
   });
 
   final ExamModel exam;
   final bool isGoal;
-  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isGoal
-              ? AppTheme.primary.withValues(alpha: 0.3)
-              : AppTheme.borderLight,
-          width: 1.5,
+          color: isGoal ? AppTheme.primary : AppTheme.borderLight,
+          width: isGoal ? 2.0 : 1.5,
         ),
-        boxShadow: AppTheme.softShadow,
+        boxShadow: isGoal
+            ? [
+                BoxShadow(
+                  color: AppTheme.primary.withValues(alpha: 0.1),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                )
+              ]
+            : AppTheme.softShadow,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Stack(
         children: [
-          // Icon area
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            decoration: const BoxDecoration(
-              color: AppTheme.borderLight,
-              borderRadius:
-                  BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Center(
-              child: Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: Image.network(
-                    exam.icon,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const Icon(
-                      Icons.school_rounded,
-                      color: AppTheme.primary,
-                      size: 32,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Icon Area
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: isGoal
+                        ? AppTheme.primaryLight.withValues(alpha: 0.2)
+                        : AppTheme.borderLight.withValues(alpha: 0.35),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: Image.network(
+                          exam.icon,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.school_rounded,
+                            color: AppTheme.primary,
+                            size: 24,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
 
-          // Name + badge + button
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    exam.name,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      height: 1.3,
+              // Title and button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 34,
+                      child: Center(
+                        child: Text(
+                          exam.name,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.outfit(
+                            color: AppTheme.textPrimary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            height: 1.25,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  GestureDetector(
-                    onTap: onToggle,
-                    child: AnimatedContainer(
+                    const SizedBox(height: 8),
+                    AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 5),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isGoal
-                            ? AppTheme.primary
-                            : AppTheme.primaryLight,
+                        color: isGoal ? AppTheme.primary : AppTheme.primaryLight,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
@@ -404,28 +334,43 @@ class _ExamCard extends StatelessWidget {
                           Icon(
                             isGoal ? Icons.check_rounded : Icons.add_rounded,
                             size: 13,
-                            color:
-                                isGoal ? Colors.white : AppTheme.primary,
+                            color: isGoal ? Colors.white : AppTheme.primary,
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            isGoal ? 'Pinned' : 'Pin',
-                            style: TextStyle(
-                              color: isGoal
-                                  ? Colors.white
-                                  : AppTheme.primary,
-                              fontSize: 11,
+                            isGoal ? 'Goal Active' : 'Add Goal',
+                            style: GoogleFonts.inter(
+                              color: isGoal ? Colors.white : AppTheme.primary,
+                              fontSize: 10,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          // Checkmark Badge at top-right if selected
+          if (isGoal)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: AppTheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: Colors.white,
+                  size: 11,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

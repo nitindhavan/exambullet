@@ -1,5 +1,6 @@
 import 'package:percent/models/exam.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/shimmer.dart';
 
@@ -31,21 +32,21 @@ class ExploreSection extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Explore Exams',
-                style: TextStyle(
+                style: GoogleFonts.outfit(
                   color: AppTheme.textPrimary,
                   fontSize: 20,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: -0.3,
                 ),
               ),
               if (otherExams.length > 4)
                 GestureDetector(
                   onTap: onViewAllTap,
-                  child: const Text(
+                  child: Text(
                     'View All',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: AppTheme.primary,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -59,12 +60,12 @@ class ExploreSection extends StatelessWidget {
           _buildShimmer(context)
         else if (preview.isEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Text(
               otherExams.isEmpty
                   ? 'No exams available'
                   : 'All exams are in your goals!',
-              style: const TextStyle(color: AppTheme.textSecondary),
+              style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13),
             ),
           )
         else
@@ -74,7 +75,7 @@ class ExploreSection extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.78,
+              childAspectRatio: 0.85,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
@@ -84,7 +85,7 @@ class ExploreSection extends StatelessWidget {
           ),
         if (otherExams.length > 4)
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
             child: GestureDetector(
               onTap: onViewAllTap,
               child: Container(
@@ -99,7 +100,7 @@ class ExploreSection extends StatelessWidget {
                 child: Center(
                   child: Text(
                     'View All ${otherExams.length} Exams →',
-                    style: const TextStyle(
+                    style: GoogleFonts.outfit(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
@@ -122,7 +123,7 @@ class ExploreSection extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio: 0.78,
+            childAspectRatio: 0.85,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
           ),
@@ -225,7 +226,7 @@ class _ExploreCard extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: AppTheme.borderLight.withValues(alpha: 0.5),
+                  color: AppTheme.borderLight.withValues(alpha: 0.4),
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 child: Center(
@@ -261,17 +262,17 @@ class _ExploreCard extends StatelessWidget {
 
             // ── Name + pill ────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(
-                    height: 36,
+                    height: 34,
                     child: Center(
                       child: Text(
                         exam.name,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: GoogleFonts.outfit(
                           color: AppTheme.textPrimary,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -284,24 +285,24 @@ class _ExploreCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
                       color: AppTheme.primaryLight,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Practice',
-                          style: TextStyle(
+                          'Practice Now',
+                          style: GoogleFonts.inter(
                             color: AppTheme.primary,
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        SizedBox(width: 3),
-                        Icon(
+                        const SizedBox(width: 4),
+                        const Icon(
                           Icons.arrow_forward_rounded,
                           color: AppTheme.primary,
                           size: 10,
