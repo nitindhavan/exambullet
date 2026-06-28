@@ -19,7 +19,16 @@ class ScoreScreen extends StatelessWidget {
   int get _obtained {
     int o = 0;
     for (int i = 0; i < questions.length; i++) {
-      if (selection[i] == questions[i].answer) o += questions[i].marks;
+      final q        = questions[i];
+      final sel      = selection[i];
+      final negDeduct = q.negativeMarks >= 0
+          ? q.negativeMarks
+          : testModel.negativeMarks;
+      if (sel == q.answer) {
+        o += q.marks;
+      } else if (sel != -1 && negDeduct > 0) {
+        o -= negDeduct;
+      }
     }
     return o;
   }
@@ -30,7 +39,24 @@ class ScoreScreen extends StatelessWidget {
 
   int get _skipped => selection.where((s) => s == -1).length;
 
-  double get _pct => _total > 0 ? (_obtained / _total) : 0;
+  int get _deducted {
+    int d = 0;
+    for (int i = 0; i < questions.length; i++) {
+      final q   = questions[i];
+      final sel = selection[i];
+      if (sel != -1 && sel != q.answer) {
+        final neg = q.negativeMarks >= 0 ? q.negativeMarks : testModel.negativeMarks;
+        d += neg;
+      }
+    }
+    return d;
+  }
+
+  bool get _hasNegativeMarking =>
+      testModel.negativeMarks > 0 ||
+      questions.any((q) => q.negativeMarks > 0);
+
+  double get _pct => _total > 0 ? (_obtained.clamp(0, _total) / _total) : 0;
 
   Color get _resultColor {
     if (_pct >= 0.7) return AppTheme.success;
@@ -115,8 +141,10 @@ class ScoreScreen extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text('$_obtained/$_total',
-                                style: const TextStyle(
-                                    color: Colors.white,
+                                style: TextStyle(
+                                    color: _obtained < 0
+                                        ? AppTheme.error
+                                        : Colors.white,
                                     fontSize: 26,
                                     fontWeight: FontWeight.w900)),
                             Text('marks',
@@ -166,14 +194,33 @@ class ScoreScreen extends StatelessWidget {
                     icon: Icons.remove_circle_rounded,
                     color: AppTheme.warning),
                 const SizedBox(width: 12),
-                _StatCard(
-                    label: 'Accuracy',
-                    value: '${(_pct * 100).round()}%',
-                    icon: Icons.analytics_rounded,
-                    color: AppTheme.primary),
+                if (_hasNegativeMarking) ...[
+                  _StatCard(
+                      label: 'Deducted',
+                      value: '−$_deducted',
+                      icon: Icons.indeterminate_check_box_rounded,
+                      color: AppTheme.error),
+                ] else ...[
+                  _StatCard(
+                      label: 'Accuracy',
+                      value: '${(_pct * 100).round()}%',
+                      icon: Icons.analytics_rounded,
+                      color: AppTheme.primary),
+                ],
               ],
             ),
           ),
+          if (_hasNegativeMarking) ...[
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _StatCard(
+                  label: 'Accuracy',
+                  value: '${(_pct * 100).round()}%',
+                  icon: Icons.analytics_rounded,
+                  color: AppTheme.primary),
+            ),
+          ],
           const Spacer(),
           // CTA buttons
           Padding(

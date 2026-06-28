@@ -47,56 +47,58 @@ class _HomeState extends State<Home> {
     }
     final raw = snap.snapshot.value as Map;
     setState(() {
-      allExams =
-          raw.entries.map((e) => ExamModel.fromMap(e.value as Map, e.key as String)).toList();
+      allExams = raw.entries
+          .map((e) => ExamModel.fromMap(e.value as Map, e.key as String))
+          .toList();
       examsLoading = false;
     });
   }
 
   void _openAllExams(Set<String> goalIds) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AllExamsScreen(allExams: allExams, goalIds: goalIds),
-      ),
-    );
+    Navigator.push(context,
+        MaterialPageRoute(
+            builder: (_) => AllExamsScreen(allExams: allExams, goalIds: goalIds)));
   }
 
   void _openExamDashboard(ExamModel exam) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ExamDashboard(exam: exam, user: widget.user),
-      ),
-    );
+    Navigator.push(context,
+        MaterialPageRoute(
+            builder: (_) => ExamDashboard(exam: exam, user: widget.user)));
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: StreamBuilder<Set<String>>(
         stream: _goalIdsStream,
         initialData: const {},
         builder: (context, snap) {
-          final goalIds = snap.data ?? {};
-          final goalExams =
-              allExams.where((e) => goalIds.contains(e.id)).toList();
-          final otherExams =
-              allExams.where((e) => !goalIds.contains(e.id)).toList();
+          final goalIds   = snap.data ?? {};
+          final goalExams = allExams.where((e) => goalIds.contains(e.id)).toList();
+          final otherExams = allExams.where((e) => !goalIds.contains(e.id)).toList();
+
+          if (isDesktop) {
+            return _DesktopHome(
+              user: widget.user,
+              goalExams: goalExams,
+              otherExams: otherExams,
+              examsLoading: examsLoading,
+              goalIds: goalIds,
+              onManageTap: () => _openAllExams(goalIds),
+              onExamTap: _openExamDashboard,
+            );
+          }
 
           return SafeArea(
             top: false,
             child: CustomScrollView(
               slivers: [
-                // ── Sticky header ──────────────────────────
                 SliverToBoxAdapter(
-                  child: HomeHeader(
-                    user: widget.user,
-                    goalCount: goalExams.length,
-                  ),
+                  child: HomeHeader(user: widget.user, goalCount: goalExams.length),
                 ),
-
                 SliverToBoxAdapter(
                   child: GoalExamsSection(
                     goalExams: goalExams,
@@ -106,11 +108,7 @@ class _HomeState extends State<Home> {
                     onExamTap: _openExamDashboard,
                   ),
                 ),
-
-                SliverToBoxAdapter(
-                  child: NewsSection(goalExams: goalExams),
-                ),
-
+                SliverToBoxAdapter(child: NewsSection(goalExams: goalExams)),
                 SliverToBoxAdapter(
                   child: ExploreSection(
                     otherExams: otherExams,
@@ -120,12 +118,529 @@ class _HomeState extends State<Home> {
                     onExamTap: _openExamDashboard,
                   ),
                 ),
-
                 const SliverToBoxAdapter(child: SizedBox(height: 32)),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+// ── Desktop two-column home ───────────────────────────────────────────────────
+
+class _DesktopHome extends StatelessWidget {
+  const _DesktopHome({
+    required this.user,
+    required this.goalExams,
+    required this.otherExams,
+    required this.examsLoading,
+    required this.goalIds,
+    required this.onManageTap,
+    required this.onExamTap,
+  });
+
+  final UserModel user;
+  final List<ExamModel> goalExams;
+  final List<ExamModel> otherExams;
+  final bool examsLoading;
+  final Set<String> goalIds;
+  final VoidCallback onManageTap;
+  final void Function(ExamModel) onExamTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Left sidebar ──────────────────────────────────────────────────────
+        Container(
+          width: 280,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: AppTheme.primaryGradient,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primary.withValues(alpha: 0.18),
+                blurRadius: 24,
+                offset: const Offset(4, 0),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            right: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Avatar + name
+                  _DesktopAvatar(user: user),
+                  const SizedBox(height: 24),
+                  // Stat tiles
+                  _DesktopStatTile(
+                    icon: Icons.flag_rounded,
+                    value: '${goalExams.length} Active',
+                    label: 'Goal Exams',
+                  ),
+                  const SizedBox(height: 10),
+                  _DesktopStatTile(
+                    icon: Icons.local_fire_department_rounded,
+                    value: 'Daily',
+                    label: 'Practice Streak',
+                  ),
+                  const SizedBox(height: 28),
+                  // Goal exams list in sidebar
+                  Text('My Goals',
+                      style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.55),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8)),
+                  const SizedBox(height: 10),
+                  if (examsLoading)
+                    ...List.generate(3, (_) => _GoalShimmerTile())
+                  else if (goalExams.isEmpty)
+                    _EmptySidebarGoal(onTap: onManageTap)
+                  else ...[
+                    ...goalExams.map((e) => _SidebarExamTile(
+                          exam: e,
+                          onTap: () => onExamTap(e),
+                        )),
+                    const SizedBox(height: 4),
+                    _SidebarManageBtn(onTap: onManageTap),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // ── Main content ──────────────────────────────────────────────────────
+        Expanded(
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(child: SizedBox(height: topPad + 24)),
+
+              // Section: Explore Exams (full-width grid, more columns)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(28, 0, 28, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Explore Exams',
+                        style: TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                      if (otherExams.length > 6)
+                        TextButton(
+                          onPressed: onManageTap,
+                          child: const Text('View All',
+                              style: TextStyle(
+                                  color: AppTheme.primary,
+                                  fontWeight: FontWeight.w700)),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(28, 0, 28, 0),
+                sliver: _DesktopExamGrid(
+                  exams: otherExams,
+                  examsLoading: examsLoading,
+                  onExamTap: onExamTap,
+                ),
+              ),
+
+              // Section: News
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(28, 32, 28, 0),
+                  child: NewsSection(goalExams: goalExams),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 40)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Desktop sidebar widgets ───────────────────────────────────────────────────
+
+class _DesktopAvatar extends StatelessWidget {
+  const _DesktopAvatar({required this.user});
+  final UserModel user;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = user.name.trim();
+    String initials = '';
+    if (name.isNotEmpty) {
+      final parts = name.split(' ');
+      initials = parts.first.substring(0, 1);
+      if (parts.length > 1 && parts.last.isNotEmpty) {
+        initials += parts.last.substring(0, 1);
+      }
+    }
+    return Row(children: [
+      Container(
+        width: 48, height: 48,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.15),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 1.5),
+        ),
+        child: Center(
+          child: initials.isNotEmpty
+              ? Text(initials.toUpperCase(),
+                  style: const TextStyle(
+                      color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800))
+              : const Icon(Icons.person_rounded, color: Colors.white, size: 22),
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Hey, ${name.split(' ').first} 👋',
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                  color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 2),
+          Text('Ready to boost your percent?',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.65), fontSize: 11)),
+        ]),
+      ),
+    ]);
+  }
+}
+
+class _DesktopStatTile extends StatelessWidget {
+  const _DesktopStatTile(
+      {required this.icon, required this.value, required this.label});
+  final IconData icon;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      child: Row(children: [
+        Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: Colors.white, size: 16),
+        ),
+        const SizedBox(width: 10),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(value,
+              style: const TextStyle(
+                  color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
+          Text(label,
+              style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6), fontSize: 10)),
+        ]),
+      ]),
+    );
+  }
+}
+
+class _SidebarExamTile extends StatelessWidget {
+  const _SidebarExamTile({required this.exam, required this.onTap});
+  final ExamModel exam;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        child: Row(children: [
+          ClipOval(
+            child: Image.network(exam.icon,
+                width: 32, height: 32, fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 32, height: 32,
+                  decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      shape: BoxShape.circle),
+                  child: const Icon(Icons.school_rounded,
+                      color: Colors.white, size: 16),
+                )),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(exam.name,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600)),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: Colors.white54, size: 16),
+        ]),
+      ),
+    );
+  }
+}
+
+class _SidebarManageBtn extends StatelessWidget {
+  const _SidebarManageBtn({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+        ),
+        child: const Center(
+          child: Text('Manage Goals',
+              style: TextStyle(
+                  color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptySidebarGoal extends StatelessWidget {
+  const _EmptySidebarGoal({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+              color: Colors.white.withValues(alpha: 0.2), style: BorderStyle.solid),
+        ),
+        child: Column(children: [
+          Icon(Icons.flag_outlined, color: Colors.white.withValues(alpha: 0.6), size: 28),
+          const SizedBox(height: 8),
+          Text('No goals set',
+              style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          Text('Tap to add exams',
+              style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
+        ]),
+      ),
+    );
+  }
+}
+
+class _GoalShimmerTile extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      height: 50,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+}
+
+// ── Desktop exam grid sliver ──────────────────────────────────────────────────
+
+class _DesktopExamGrid extends StatelessWidget {
+  const _DesktopExamGrid({
+    required this.exams,
+    required this.examsLoading,
+    required this.onExamTap,
+  });
+  final List<ExamModel> exams;
+  final bool examsLoading;
+  final void Function(ExamModel) onExamTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width - 280; // subtract sidebar
+    final crossCount = width > 900 ? 4 : 3;
+
+    if (examsLoading) {
+      return SliverGrid(
+        delegate: SliverChildBuilderDelegate(
+          (_, __) => Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.borderLight),
+            ),
+          ),
+          childCount: crossCount * 2,
+        ),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossCount,
+          childAspectRatio: 0.85,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+        ),
+      );
+    }
+
+    if (exams.isEmpty) {
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 40),
+          child: Center(
+            child: Text('All exams are in your goals!',
+                style: TextStyle(color: AppTheme.textSecondary)),
+          ),
+        ),
+      );
+    }
+
+    return SliverGrid(
+      delegate: SliverChildBuilderDelegate(
+        (_, i) => _DesktopExamCard(exam: exams[i], onTap: () => onExamTap(exams[i])),
+        childCount: exams.length,
+      ),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossCount,
+        childAspectRatio: 0.85,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+      ),
+    );
+  }
+}
+
+class _DesktopExamCard extends StatelessWidget {
+  const _DesktopExamCard({required this.exam, required this.onTap});
+  final ExamModel exam;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.borderLight),
+          boxShadow: AppTheme.softShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryLight.withValues(alpha: 0.3),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                child: Center(
+                  child: Container(
+                    width: 56, height: 56,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primary.withValues(alpha: 0.08),
+                          blurRadius: 10, offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: Image.network(exam.icon,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(
+                              Icons.school_rounded,
+                              color: AppTheme.primary, size: 28)),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Text(exam.name,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        height: 1.25),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 10),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                        colors: AppTheme.primaryGradient),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text('Open',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700)),
+                ),
+              ]),
+            ),
+          ],
+        ),
       ),
     );
   }
