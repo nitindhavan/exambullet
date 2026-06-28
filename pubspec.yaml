@@ -41,11 +41,13 @@ dependencies:
   firebase_database: ^11.3.10
   google_fonts: ^4.0.3
   google_sign_in: ^6.2.1
-  razorpay_flutter_customui: ^1.4.2
+  cashfree_pg: ^2.0.12+32
   http: ^1.6.0
   webview_flutter: ^4.13.1
   url_launcher: ^6.1.11
   package_info_plus: ^9.0.1
+  flutter_cashfree_pg_sdk: ^2.4.0+52
+  web: ^1.1.1
 
 
 dev_dependencies:

@@ -38,6 +38,22 @@
   </script>
   <!-- This script adds the flutter initialization JS code -->
   <script src="flutter.js" defer></script>
+  <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+  <script>
+    function initiateCashfreePayment(paymentSessionId, mode) {
+      const cashfree = Cashfree({ mode: mode });
+      cashfree.checkout({
+        paymentSessionId: paymentSessionId,
+        redirectTarget: "_modal",
+      }).then(function(result) {
+        if (result.error) {
+          if (window._cashfreeCallback) window._cashfreeCallback('error', result.error.message);
+        } else if (result.paymentDetails) {
+          if (window._cashfreeCallback) window._cashfreeCallback('success', result.paymentDetails.paymentMessage);
+        }
+      });
+    }
+  </script>
 
   <style>
     .loading {

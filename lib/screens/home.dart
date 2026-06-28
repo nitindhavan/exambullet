@@ -1387,6 +1387,7 @@ class _ProfileTab extends StatefulWidget {
 
 class _ProfileTabState extends State<_ProfileTab> {
   List<String> _memberships = [];
+  Map<String, String> _membershipDates = {};
   bool _loading = true;
 
   @override
@@ -1398,6 +1399,7 @@ class _ProfileTabState extends State<_ProfileTab> {
   Future<void> _fetchMemberships() async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
     final active = <String>[];
+    final dates = <String, String>{};
     for (final exam in widget.goalExams) {
       try {
         final snap = await FirebaseDatabase.instance.ref('memberships/${exam.id}/$uid').once();
@@ -1405,6 +1407,9 @@ class _ProfileTabState extends State<_ProfileTab> {
           final raw = snap.snapshot.value;
           if (raw is Map && raw['isActive'] != false) {
             active.add(exam.id);
+            if (raw['membershipDate'] != null) {
+              dates[exam.id] = raw['membershipDate'].toString();
+            }
           } else if (raw != null && raw is! Map) {
             active.add(exam.id);
           }
@@ -1414,8 +1419,19 @@ class _ProfileTabState extends State<_ProfileTab> {
     if (mounted) {
       setState(() {
         _memberships = active;
+        _membershipDates = dates;
         _loading = false;
       });
+    }
+  }
+
+  String _formatDate(String raw) {
+    try {
+      final dt = DateTime.parse(raw);
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+    } catch (_) {
+      return raw;
     }
   }
 
@@ -1605,88 +1621,122 @@ class _ProfileTabState extends State<_ProfileTab> {
             ...widget.allExams
                 .where((e) => _memberships.contains(e.id))
                 .map((exam) {
+              final dateStr = _membershipDates[exam.id];
               return Container(
                 margin: const EdgeInsets.only(left: 20, right: 20, bottom: 12),
-                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppTheme.primary.withValues(alpha: 0.05),
-                      AppTheme.primary.withValues(alpha: 0.15),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: AppTheme.primary.withValues(alpha: 0.3), width: 1.5),
+                  border: Border.all(color: AppTheme.borderLight),
+                  boxShadow: AppTheme.softShadow,
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primary.withValues(alpha: 0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Image.network(
-                          exam.icon,
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Icon(
-                              Icons.school_rounded,
-                              color: AppTheme.primary,
-                              size: 24),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    // Top row: icon + exam name + active badge
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                      child: Row(
                         children: [
-                          Text(
-                            exam.name,
-                            style: const TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryLight,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Image.network(
+                                exam.icon,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.school_rounded,
+                                    color: AppTheme.primary,
+                                    size: 22),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              exam.name,
+                              style: GoogleFonts.outfit(
+                                color: AppTheme.textPrimary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
+                                horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppTheme.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
+                              color: AppTheme.successLight,
+                              borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.workspace_premium_rounded,
-                                    color: AppTheme.primary, size: 14),
-                                const SizedBox(width: 4),
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: const BoxDecoration(
+                                    color: AppTheme.success,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
                                 const Text(
-                                  'Premium Unlocked',
+                                  'Active',
                                   style: TextStyle(
-                                    color: AppTheme.primary,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
+                                    color: AppTheme.success,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ],
                             ),
                           ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1, color: AppTheme.borderLight),
+                    // Bottom row: plan type + joined date
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.workspace_premium_rounded,
+                              color: AppTheme.primary, size: 15),
+                          const SizedBox(width: 6),
+                          const Text(
+                            'Premium Plan',
+                            style: TextStyle(
+                              color: AppTheme.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (dateStr != null) ...[
+                            const SizedBox(width: 12),
+                            Container(
+                              width: 1,
+                              height: 12,
+                              color: AppTheme.border,
+                            ),
+                            const SizedBox(width: 12),
+                            const Icon(Icons.calendar_today_outlined,
+                                color: AppTheme.textSecondary, size: 13),
+                            const SizedBox(width: 5),
+                            Text(
+                              'Since ${_formatDate(dateStr)}',
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

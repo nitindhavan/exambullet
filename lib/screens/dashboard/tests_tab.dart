@@ -70,77 +70,65 @@ class _TestsTabState extends State<TestsTab> {
 
         final selected = tests[_selectedTest];
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        return CustomScrollView(
+          slivers: [
             // ── Header ──────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-              child: Row(
-                children: [
-                  const Text('Mock Tests',
-                      style: TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900)),
-                  const Spacer(),
-                  _Chip('${tests.length} tests'),
-                ],
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                child: Row(
+                  children: [
+                    const Text('Mock Tests',
+                        style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900)),
+                    const Spacer(),
+                    _Chip('${tests.length} tests'),
+                  ],
+                ),
               ),
             ),
 
             // ── Segmented test switcher ──────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AppTheme.borderLight,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: tests.asMap().entries.map((entry) {
-                    final i = entry.key;
-                    final test = entry.value;
-                    final isSelected = _selectedTest == i;
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          if (!widget.hasMembership) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    MemberShipScreen(model: widget.exam.id),
+            if (tests.length > 1)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.borderLight,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: tests.asMap().entries.map((entry) {
+                        final i = entry.key;
+                        final test = entry.value;
+                        final isSelected = _selectedTest == i;
+                        return Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(() => _selectedTest = i),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppTheme.primary
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: AppTheme.primary
+                                              .withValues(alpha: 0.25),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        )
+                                      ]
+                                    : [],
                               ),
-                            );
-                            return;
-                          }
-                          setState(() => _selectedTest = i);
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(vertical: 11),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppTheme.primary
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: AppTheme.primary
-                                          .withValues(alpha: 0.25),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    )
-                                  ]
-                                : [],
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
+                              child: Text(
                                 test.name,
                                 textAlign: TextAlign.center,
                                 maxLines: 1,
@@ -153,50 +141,40 @@ class _TestsTabState extends State<TestsTab> {
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              if (!widget.hasMembership && i > 0) ...[
-                                const SizedBox(height: 2),
-                                Icon(Icons.lock_rounded,
-                                    size: 10,
-                                    color: isSelected
-                                        ? Colors.white70
-                                        : AppTheme.warning),
-                              ]
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ),
+
+            // ── Selected test info ───────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.timer_outlined,
+                        size: 13, color: AppTheme.textLight),
+                    const SizedBox(width: 4),
+                    Text('${selected.time} mins',
+                        style: const TextStyle(
+                            color: AppTheme.textSecondary, fontSize: 12)),
+                  ],
                 ),
               ),
             ),
 
-            const SizedBox(height: 4),
-
-            // ── Selected test info ───────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Row(
-                children: [
-                  const Icon(Icons.timer_outlined,
-                      size: 13, color: AppTheme.textLight),
-                  const SizedBox(width: 4),
-                  Text('${selected.time} mins',
-                      style:
-                          const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-                ],
-              ),
-            ),
-
             // ── Papers for selected test ─────────────────────────
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: widget.hasMembership
-                    ? _PapersList(test: selected, examId: widget.exam.id)
-                    : _LockedState(examId: widget.exam.id),
-              ),
+            _PapersSliver(
+              test: selected,
+              examId: widget.exam.id,
+              hasMembership: widget.hasMembership,
             ),
+
+            const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
           ],
         );
       },
@@ -204,71 +182,13 @@ class _TestsTabState extends State<TestsTab> {
   }
 }
 
-class _LockedState extends StatelessWidget {
-  const _LockedState({required this.examId});
-  final String examId;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: const BoxDecoration(
-                color: AppTheme.warningLight,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.lock_rounded,
-                  size: 36, color: AppTheme.warning),
-            ),
-            const SizedBox(height: 16),
-            const Text('Members Only',
-                style: TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700)),
-            const SizedBox(height: 6),
-            const Text('Get membership to access all tests',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
-            const SizedBox(height: 20),
-            GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => MemberShipScreen(model: examId)),
-              ),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                      colors: AppTheme.primaryGradient),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: AppTheme.softShadow,
-                ),
-                child: const Text('Get Membership',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w700)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ── Papers list ───────────────────────────────────────────────────────────────
 
-class _PapersList extends StatelessWidget {
-  const _PapersList({required this.test, required this.examId});
+class _PapersSliver extends StatelessWidget {
+  const _PapersSliver({required this.test, required this.examId, required this.hasMembership});
   final TestModel test;
   final String examId;
+  final bool hasMembership;
 
   @override
   Widget build(BuildContext context) {
@@ -280,11 +200,13 @@ class _PapersList extends StatelessWidget {
           .once(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const SizedBox(
-            height: 120,
-            child: Center(
-                child: CircularProgressIndicator(
-                    color: AppTheme.primary, strokeWidth: 2)),
+          return const SliverToBoxAdapter(
+            child: SizedBox(
+              height: 120,
+              child: Center(
+                  child: CircularProgressIndicator(
+                      color: AppTheme.primary, strokeWidth: 2)),
+            ),
           );
         }
 
@@ -292,156 +214,180 @@ class _PapersList extends StatelessWidget {
 
         if (papers.isNotEmpty) {
           papers.sort((a, b) {
-            final mapA = a.value as Map?;
-            final mapB = b.value as Map?;
-            final nameA = mapA?['name'] as String? ?? '';
-            final nameB = mapB?['name'] as String? ?? '';
+            final nameA = (a.value as Map?)?['name'] as String? ?? '';
+            final nameB = (b.value as Map?)?['name'] as String? ?? '';
             return _compareNames(nameA, nameB);
           });
         }
 
         if (papers.isEmpty) {
-          return const SizedBox(
-            height: 120,
-            child: Center(
-              child: Text('No papers available',
-                  style: TextStyle(color: AppTheme.textLight, fontSize: 13)),
+          return const SliverToBoxAdapter(
+            child: SizedBox(
+              height: 120,
+              child: Center(
+                child: Text('No papers available',
+                    style: TextStyle(color: AppTheme.textLight, fontSize: 13)),
+              ),
             ),
           );
         }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ...papers.asMap().entries.map((entry) {
-              final i = entry.key;
-              final paperSnap = entry.value;
+        return SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, i) {
+                final paperSnap = papers[i];
+                final paperMap = paperSnap.value as Map?;
+                final paperId = paperMap?['id'] as String? ?? paperSnap.key!;
+                final name = paperMap?['name'] as String? ?? 'Paper ${i + 1}';
+                final paperTime = (paperMap?['time'] as int?) ?? test.time;
+                final easy = (paperMap?['easy'] as int?) ?? 0;
+                final medium = (paperMap?['medium'] as int?) ?? 0;
+                final hard = (paperMap?['hard'] as int?) ?? 0;
+                final questionCount =
+                    (paperMap?['questionCount'] as int?) ?? (easy + medium + hard);
+                final totalMarks = (paperMap?['totalMarks'] as int?) ?? 0;
+                final isLocked = !hasMembership && i > 0;
 
-              final paperMap = paperSnap.value as Map?;
-              final paperId = paperMap?['id'] as String? ?? paperSnap.key!;
-              final name = paperMap?['name'] as String? ?? 'Paper ${i + 1}';
-              final paperTime = (paperMap?['time'] as int?) ?? test.time;
-              final easy = (paperMap?['easy'] as int?) ?? 0;
-              final medium = (paperMap?['medium'] as int?) ?? 0;
-              final hard = (paperMap?['hard'] as int?) ?? 0;
-              final questionCount = (paperMap?['questionCount'] as int?) ??
-                  (easy + medium + hard);
-              final totalMarks = (paperMap?['totalMarks'] as int?) ?? 0;
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => TestScreen(
-                        testModel: test,
-                        examId: examId,
-                        paperId: paperId,
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: GestureDetector(
+                    onTap: () {
+                      if (isLocked) {
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (_) => MemberShipScreen(model: examId),
+                        ));
+                        return;
+                      }
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => TestScreen(
+                          testModel: test,
+                          examId: examId,
+                          paperId: paperId,
+                        ),
+                      ));
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isLocked ? AppTheme.borderLight : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppTheme.borderLight),
+                        boxShadow: isLocked ? [] : AppTheme.softShadow,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              gradient: isLocked
+                                  ? null
+                                  : const LinearGradient(
+                                      colors: AppTheme.primaryGradient,
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                              color: isLocked ? AppTheme.border : null,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: isLocked
+                                  ? const Icon(Icons.lock_rounded,
+                                      color: AppTheme.textSecondary, size: 18)
+                                  : Text('${i + 1}',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 16)),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(name,
+                                    style: TextStyle(
+                                        color: isLocked
+                                            ? AppTheme.textSecondary
+                                            : AppTheme.textPrimary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 5),
+                                Wrap(
+                                  spacing: 10,
+                                  runSpacing: 4,
+                                  children: [
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.help_outline_rounded,
+                                            size: 12, color: AppTheme.textLight),
+                                        const SizedBox(width: 4),
+                                        Text('$questionCount Qs',
+                                            style: const TextStyle(
+                                                color: AppTheme.textSecondary,
+                                                fontSize: 12)),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.timer_outlined,
+                                            size: 12, color: AppTheme.textLight),
+                                        const SizedBox(width: 4),
+                                        Text('$paperTime mins',
+                                            style: const TextStyle(
+                                                color: AppTheme.textSecondary,
+                                                fontSize: 12)),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.stars_rounded,
+                                            size: 12, color: AppTheme.textLight),
+                                        const SizedBox(width: 4),
+                                        Text('$totalMarks marks',
+                                            style: const TextStyle(
+                                                color: AppTheme.textSecondary,
+                                                fontSize: 12)),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: isLocked
+                                  ? AppTheme.border
+                                  : AppTheme.primaryLight,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              isLocked
+                                  ? Icons.lock_rounded
+                                  : Icons.play_arrow_rounded,
+                              color: isLocked
+                                  ? AppTheme.textSecondary
+                                  : AppTheme.primary,
+                              size: 18,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.borderLight),
-                      boxShadow: AppTheme.softShadow,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: AppTheme.primaryGradient,
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Center(
-                            child: Text('${i + 1}',
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 16)),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(name,
-                                  style: const TextStyle(
-                                      color: AppTheme.textPrimary,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700)),
-                              const SizedBox(height: 5),
-                              Wrap(
-                                spacing: 10,
-                                runSpacing: 4,
-                                children: [
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.help_outline_rounded,
-                                          size: 12, color: AppTheme.textLight),
-                                      const SizedBox(width: 4),
-                                      Text('$questionCount Qs',
-                                          style: const TextStyle(
-                                              color: AppTheme.textSecondary,
-                                              fontSize: 12)),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.timer_outlined,
-                                          size: 12, color: AppTheme.textLight),
-                                      const SizedBox(width: 4),
-                                      Text('$paperTime mins',
-                                          style: const TextStyle(
-                                              color: AppTheme.textSecondary,
-                                              fontSize: 12)),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.stars_rounded,
-                                          size: 12, color: AppTheme.textLight),
-                                      const SizedBox(width: 4),
-                                      Text('$totalMarks marks',
-                                          style: const TextStyle(
-                                              color: AppTheme.textSecondary,
-                                              fontSize: 12)),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryLight,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.play_arrow_rounded,
-                              color: AppTheme.primary, size: 18),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ],
+                );
+              },
+              childCount: papers.length,
+            ),
+          ),
         );
       },
     );
