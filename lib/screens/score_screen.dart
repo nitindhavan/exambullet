@@ -214,11 +214,15 @@ class ScoreScreen extends StatelessWidget {
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _StatCard(
-                  label: 'Accuracy',
-                  value: '${(_pct * 100).round()}%',
-                  icon: Icons.analytics_rounded,
-                  color: AppTheme.primary),
+              child: Row(
+                children: [
+                  _StatCard(
+                      label: 'Accuracy',
+                      value: '${(_pct * 100).round()}%',
+                      icon: Icons.analytics_rounded,
+                      color: AppTheme.primary),
+                ],
+              ),
             ),
           ],
           const Spacer(),

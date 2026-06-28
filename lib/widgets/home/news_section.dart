@@ -4,6 +4,8 @@ import 'package:percent/models/exam.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/shimmer.dart';
+import 'package:flutter/foundation.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class NewsSection extends StatefulWidget {
   const NewsSection({Key? key, required this.goalExams}) : super(key: key);
@@ -315,9 +317,16 @@ class _NewsCard extends StatelessWidget {
   final Map<String, String> item;
   final Color color;
 
-  void _open(BuildContext context) {
+  void _open(BuildContext context) async {
     final url = item['url'] ?? '';
     if (url.isEmpty) return;
+    if (kIsWeb) {
+      final uri = Uri.tryParse(url);
+      if (uri != null) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+      return;
+    }
     Navigator.push(
       context,
       MaterialPageRoute(

@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:percent/models/exam.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:flutter/foundation.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // ── Data model ────────────────────────────────────────────────────────────────
 
@@ -267,8 +269,15 @@ class _NewsCard extends StatelessWidget {
   final _Article article;
   final bool isLive;
 
-  void _open(BuildContext context) {
+  void _open(BuildContext context) async {
     if (article.url.isEmpty) return;
+    if (kIsWeb) {
+      final uri = Uri.tryParse(article.url);
+      if (uri != null) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+      return;
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
