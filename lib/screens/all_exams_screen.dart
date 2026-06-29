@@ -1,4 +1,5 @@
 import 'package:percent/models/exam.dart';
+import 'package:percent/screens/signin.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -47,7 +48,11 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
   }
 
   Future<void> _toggleGoal(String examId) async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const SignIn()));
+      return;
+    }
     final ref = FirebaseDatabase.instance.ref('users/$uid/goalExamIds/$examId');
     if (_goalIds.contains(examId)) {
       setState(() => _goalIds.remove(examId));

@@ -6,6 +6,7 @@ import 'package:percent/widgets/home/embedded_dashboard.dart';
 import 'package:percent/widgets/home/home_header.dart';
 import 'package:percent/widgets/home/news_section.dart';
 import 'package:percent/screens/privacy_policy_screen.dart';
+import 'package:percent/screens/signin.dart';
 import 'package:percent/screens/edit_profile_screen.dart';
 import 'package:percent/widgets/shimmer.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -38,14 +39,16 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    _goalIdsStream = FirebaseDatabase.instance
-        .ref('users/$uid/goalExamIds')
-        .onValue
-        .map((event) {
-      if (event.snapshot.value == null) return <String>{};
-      return (event.snapshot.value as Map).keys.cast<String>().toSet();
-    });
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    _goalIdsStream = uid == null
+        ? Stream.value(<String>{})
+        : FirebaseDatabase.instance
+            .ref('users/$uid/goalExamIds')
+            .onValue
+            .map((event) {
+            if (event.snapshot.value == null) return <String>{};
+            return (event.snapshot.value as Map).keys.cast<String>().toSet();
+          });
     _loadExams();
   }
 
@@ -574,7 +577,11 @@ class _HomeState extends State<Home> {
                         ),
                         GestureDetector(
                           onTap: () async {
-                            final uid = FirebaseAuth.instance.currentUser!.uid;
+                            final uid = FirebaseAuth.instance.currentUser?.uid;
+                            if (uid == null) {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const SignIn()));
+                              return;
+                            }
                             final ref = FirebaseDatabase.instance.ref('users/$uid/goalExamIds');
                             if (isGoal) {
                               await ref.child(exam.id).remove();
@@ -1339,6 +1346,7 @@ class _ProfileTab extends StatefulWidget {
   final List<ExamModel> goalExams;
   final List<ExamModel> allExams;
 
+
   @override
   State<_ProfileTab> createState() => _ProfileTabState();
 }
@@ -1355,7 +1363,11 @@ class _ProfileTabState extends State<_ProfileTab> {
   }
 
   Future<void> _fetchMemberships() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      setState(() => _loading = false);
+      return;
+    }
     final active = <String>[];
     final dates = <String, String>{};
     for (final exam in widget.goalExams) {
@@ -1732,11 +1744,26 @@ class _ProfileTabState extends State<_ProfileTab> {
           ),
           const SizedBox(height: 20),
           _ProfileOption(
-            icon: Icons.logout_rounded,
-            title: 'Log Out',
-            isDestructive: true,
+            icon: widget.user.isGuest ? Icons.login_rounded : Icons.logout_rounded,
+            title: widget.user.isGuest ? 'Sign In' : 'Log Out',
+            isDestructive: !widget.user.isGuest,
             onTap: () async {
+              if (widget.user.isGuest) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SignIn()),
+                  (r) => false,
+                );
+                return;
+              }
               await FirebaseAuth.instance.signOut();
+              if (context.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SignIn()),
+                  (r) => false,
+                );
+              }
             },
           ),
           const SizedBox(height: 40),

@@ -1,7 +1,9 @@
 import 'package:percent/models/exam.dart';
 import 'package:percent/models/test_model.dart';
 import 'package:percent/screens/membership_screen.dart';
+import 'package:percent/screens/signin.dart';
 import 'package:percent/screens/test_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
@@ -248,12 +250,19 @@ class _PapersSliver extends StatelessWidget {
                 final questionCount =
                     (paperMap?['questionCount'] as int?) ?? (easy + medium + hard);
                 final totalMarks = (paperMap?['totalMarks'] as int?) ?? 0;
-                final isLocked = !hasMembership && i > 0;
+                final isGuest = FirebaseAuth.instance.currentUser == null;
+                final isLocked = (!hasMembership && i > 0) || (isGuest && i > 0);
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: GestureDetector(
                     onTap: () {
+                      if (isGuest) {
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (_) => const SignIn(),
+                        ));
+                        return;
+                      }
                       if (isLocked) {
                         Navigator.push(context, MaterialPageRoute(
                           builder: (_) => MemberShipScreen(model: examId),

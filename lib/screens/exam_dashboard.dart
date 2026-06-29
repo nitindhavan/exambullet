@@ -44,7 +44,11 @@ class _ExamDashboardState extends State<ExamDashboard> {
   }
 
   void _listenToMembership() {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      setState(() => _membershipLoaded = true);
+      return;
+    }
     _membershipSub = FirebaseDatabase.instance
         .ref('memberships')
         .child(widget.exam.id)

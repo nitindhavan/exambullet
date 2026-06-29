@@ -73,8 +73,9 @@ class _SignInState extends State<SignIn> {
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     return Scaffold(
-      body: isDesktop ? _DesktopLayout(onSignIn: _signInWithGoogle, loading: visible)
-                      : _MobileLayout(onSignIn: _signInWithGoogle, loading: visible),
+      body: isDesktop
+          ? _DesktopLayout(onSignIn: _signInWithGoogle, loading: visible)
+          : _MobileLayout(onSignIn: _signInWithGoogle, loading: visible),
     );
   }
 }
@@ -303,140 +304,148 @@ class _MobileLayout extends StatelessWidget {
         ),
       ),
       child: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              flex: 5,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 90, height: 90,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3), width: 1.5),
-                      ),
-                      child: const Icon(Icons.percent, color: Colors.white, size: 52),
-                    ),
-                    const SizedBox(height: 28),
-                    const Text(
-                      'Percent',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 40,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -1,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Ace your exams with\nsmart practice tests',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 16,
-                        height: 1.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height -
+                  MediaQuery.of(context).padding.top -
+                  MediaQuery.of(context).padding.bottom,
             ),
-            Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: AppTheme.surface,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(36),
-                  topRight: Radius.circular(36),
-                ),
-                boxShadow: [
-                  BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -5)),
-                ],
-              ),
-              padding: const EdgeInsets.fromLTRB(28, 36, 28, 40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Get Started',
-                    style: TextStyle(
-                      fontSize: 28, fontWeight: FontWeight.w900, color: AppTheme.textPrimary),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Sign in to access your tests, scores\nand memberships.',
-                    style: TextStyle(
-                        fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
-                  ),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 58,
-                    child: ElevatedButton(
-                      onPressed: loading ? null : onSignIn,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        disabledBackgroundColor: Colors.white70,
-                        foregroundColor: AppTheme.primary,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: const BorderSide(color: AppTheme.border),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 90, height: 90,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+                        ),
+                        child: const Icon(Icons.percent, color: Colors.white, size: 52),
+                      ),
+                      const SizedBox(height: 28),
+                      const Text(
+                        'Percent',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 40,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -1,
                         ),
                       ),
-                      child: loading
-                          ? const SizedBox(
-                              width: 22, height: 22,
-                              child: CircularProgressIndicator(
-                                  color: AppTheme.primary, strokeWidth: 2.5))
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 24, height: 24,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle, color: AppTheme.primaryLight),
-                                  child: const Icon(Icons.g_mobiledata_rounded,
-                                      size: 18, color: AppTheme.primary),
-                                ),
-                                const SizedBox(width: 12),
-                                const Text(
-                                  'Continue with Google',
-                                  style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w700,
-                                    color: AppTheme.textPrimary),
-                                ),
-                              ],
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Center(
-                    child: Text(
-                      'By continuing, you agree to our Terms & Privacy Policy',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: AppTheme.textLight),
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _featureChip(Icons.quiz_outlined, 'Mock Tests'),
-                      _featureChip(Icons.bar_chart_rounded, 'Live Scores'),
-                      _featureChip(Icons.lock_open_rounded, 'Membership'),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Ace your exams with\nsmart practice tests',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontSize: 16,
+                          height: 1.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ],
                   ),
-                ],
-              ),
+                ),
+                Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: AppTheme.surface,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(36),
+                      topRight: Radius.circular(36),
+                    ),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -5)),
+                    ],
+                  ),
+                  padding: const EdgeInsets.fromLTRB(28, 36, 28, 40),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Get Started',
+                        style: TextStyle(
+                            fontSize: 28, fontWeight: FontWeight.w900, color: AppTheme.textPrimary),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Sign in to access your tests, scores\nand memberships.',
+                        style: TextStyle(
+                            fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
+                      ),
+                      const SizedBox(height: 32),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 58,
+                        child: ElevatedButton(
+                          onPressed: loading ? null : onSignIn,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            disabledBackgroundColor: Colors.white70,
+                            foregroundColor: AppTheme.primary,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              side: const BorderSide(color: AppTheme.border),
+                            ),
+                          ),
+                          child: loading
+                              ? const SizedBox(
+                                  width: 22, height: 22,
+                                  child: CircularProgressIndicator(
+                                      color: AppTheme.primary, strokeWidth: 2.5))
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 24, height: 24,
+                                      decoration: const BoxDecoration(
+                                          shape: BoxShape.circle, color: AppTheme.primaryLight),
+                                      child: const Icon(Icons.g_mobiledata_rounded,
+                                          size: 18, color: AppTheme.primary),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    const Text(
+                                      'Continue with Google',
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppTheme.textPrimary),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Center(
+                        child: Text(
+                          'By continuing, you agree to our Terms & Privacy Policy',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12, color: AppTheme.textLight),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _featureChip(Icons.quiz_outlined, 'Mock Tests'),
+                          _featureChip(Icons.bar_chart_rounded, 'Live Scores'),
+                          _featureChip(Icons.lock_open_rounded, 'Membership'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

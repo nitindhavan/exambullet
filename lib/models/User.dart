@@ -1,9 +1,13 @@
 class UserModel{
+  static final UserModel guest = UserModel('Guest', '', '__guest__', []);
+
   String name;
   String phone;
   String uid;
   List<dynamic>? memberships;
   String? createdAt;
+
+  bool get isGuest => uid == '__guest__';
 
   UserModel(this.name, this.phone, this.uid, this.memberships, [this.createdAt]);
 
