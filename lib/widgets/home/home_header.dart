@@ -19,10 +19,9 @@ class HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double topPadding = MediaQuery.of(context).padding.top;
     return Container(
       color: Colors.white,
-      padding: EdgeInsets.fromLTRB(20, topPadding + 14, 20, 14),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -66,14 +65,8 @@ class HomeHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              // Right: Streak + Notifications
-              Row(
-                children: [
-                  _buildStreakBadge(),
-                  const SizedBox(width: 10),
-                  _NotificationBell(userId: user.uid),
-                ],
-              ),
+              // Right: Notifications
+              _NotificationBell(userId: user.uid),
             ],
           ),
         ],
@@ -125,35 +118,6 @@ class HomeHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildStreakBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xffFFF7ED),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xffFED7AA), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.local_fire_department_rounded,
-            color: Color(0xffEA580C),
-            size: 15,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            'Daily Prep',
-            style: GoogleFonts.inter(
-              color: const Color(0xffC2410C),
-              fontSize: 10.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _NotificationBell extends StatelessWidget {

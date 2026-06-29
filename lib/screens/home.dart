@@ -106,14 +106,10 @@ class _HomeState extends State<Home> {
         }
 
 
-        final double topPadding = MediaQuery.of(context).padding.top;
-
         return Scaffold(
           backgroundColor: AppTheme.background,
           body: SafeArea(
-            top: false,
             child: _buildTabBody(
-              topPadding: topPadding,
               goalExams: goalExams,
               otherExams: otherExams,
               goalIds: goalIds,
@@ -131,7 +127,6 @@ class _HomeState extends State<Home> {
   }
 
   Widget _buildTabBody({
-    required double topPadding,
     required List<ExamModel> goalExams,
     required List<ExamModel> otherExams,
     required Set<String> goalIds,
@@ -139,32 +134,31 @@ class _HomeState extends State<Home> {
   }) {
     switch (_activeTab) {
       case 0:
-        return _buildRoomsTab(topPadding, goalExams, goalIds, examsLoading);
+        return _buildRoomsTab(goalExams, goalIds, examsLoading);
       case 1:
-        return _buildExploreTab(topPadding, allExams, goalIds, examsLoading);
+        return _buildExploreTab(allExams, goalIds, examsLoading);
       case 2:
         return _ProfileTab(
           user: widget.user,
           goalExams: goalExams,
           allExams: allExams,
-          topPadding: topPadding,
         );
       default:
         return const SizedBox();
     }
   }
 
-  Widget _buildRoomsTab(double topPadding, List<ExamModel> goalExams, Set<String> goalIds, bool examsLoading) {
+  Widget _buildRoomsTab(List<ExamModel> goalExams, Set<String> goalIds, bool examsLoading) {
     if (goalExams.isNotEmpty) {
       final containsSelected = goalExams.any((e) => e.id == _selectedRoomsExamId);
-      if (!containsSelected) {
-        _selectedRoomsExamId = goalExams.first.id;
-      }
+      if (!containsSelected) _selectedRoomsExamId = goalExams.first.id;
     } else {
       _selectedRoomsExamId = null;
     }
 
-    return Column(
+    // Header + section title (scrolls away)
+    Widget header = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         HomeHeader(
           user: widget.user,
@@ -176,72 +170,72 @@ class _HomeState extends State<Home> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'My Prep Rooms',
-                style: GoogleFonts.outfit(
-                  color: AppTheme.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+              Text('My Prep Rooms',
+                  style: GoogleFonts.outfit(
+                      color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.w800)),
               if (goalExams.isNotEmpty)
                 GestureDetector(
                   onTap: () => setState(() => _activeTab = 1),
-                  child: Text(
-                    'Manage',
-                    style: GoogleFonts.inter(
-                      color: AppTheme.primary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  child: Text('Manage',
+                      style: GoogleFonts.inter(
+                          color: AppTheme.primary, fontSize: 13, fontWeight: FontWeight.w700)),
                 ),
             ],
           ),
         ),
-        if (examsLoading)
+      ],
+    );
+
+    if (examsLoading) {
+      return Column(
+        children: [
+          header,
           Expanded(
             child: ShimmerLoading(
-              builder: (context, color) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 8),
-                      // Mock top switcher
-                      Row(
-                        children: List.generate(4, (index) => Container(
-                          width: 72,
-                          height: 72,
+              builder: (context, color) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 8),
+                    Row(
+                      children: List.generate(
+                        4,
+                        (_) => Container(
+                          width: 72, height: 72,
                           margin: const EdgeInsets.only(right: 16),
                           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                        )),
-                      ),
-                      const SizedBox(height: 24),
-                      // Mock inner tabs
-                      Container(
-                        height: 46,
-                        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(24)),
-                      ),
-                      const SizedBox(height: 16),
-                      // Mock list items
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: 3,
-                          itemBuilder: (_, __) => Container(
-                            height: 80,
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
-                          ),
                         ),
                       ),
-                    ],
-                  ),
-                );
-              },
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      height: 46,
+                      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(24)),
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: 3,
+                        itemBuilder: (_, __) => Container(
+                          height: 80,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          )
-        else if (goalExams.isEmpty)
+          ),
+        ],
+      );
+    }
+
+    if (goalExams.isEmpty) {
+      return Column(
+        children: [
+          header,
           Expanded(
             child: Center(
               child: Padding(
@@ -251,34 +245,18 @@ class _HomeState extends State<Home> {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(20),
-                      decoration: const BoxDecoration(
-                        color: AppTheme.primaryLight,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.school_rounded,
-                        color: AppTheme.primary,
-                        size: 40,
-                      ),
+                      decoration: const BoxDecoration(color: AppTheme.primaryLight, shape: BoxShape.circle),
+                      child: const Icon(Icons.school_rounded, color: AppTheme.primary, size: 40),
                     ),
                     const SizedBox(height: 20),
-                    Text(
-                      'No Prep Rooms Active',
-                      style: GoogleFonts.outfit(
-                        color: AppTheme.textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+                    Text('No Prep Rooms Active',
+                        style: GoogleFonts.outfit(
+                            color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.w800)),
                     const SizedBox(height: 8),
                     Text(
                       'Select the exams you are preparing for in the Explore tab to customize your mock tests and start learning.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        color: AppTheme.textSecondary,
-                        fontSize: 13,
-                        height: 1.45,
-                      ),
+                      style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13, height: 1.45),
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(
@@ -287,28 +265,31 @@ class _HomeState extends State<Home> {
                         backgroundColor: AppTheme.primary,
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       ),
-                      child: Text(
-                        'Explore Exams',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13.5,
-                        ),
-                      ),
+                      child: Text('Explore Exams',
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5)),
                     ),
                   ],
                 ),
               ),
             ),
-          )
-        else ...[
-          // "Story Style" Circular Switcher Tabs
-          SizedBox(
-            height: 130, // Increased height to allow 3 lines of text
+          ),
+        ],
+      );
+    }
+
+    // Has goals: use NestedScrollView so header + exam switcher scroll,
+    // then the inner tab bar sticks and EmbeddedDashboard fills the rest.
+    final selectedExam = goalExams.firstWhere((e) => e.id == _selectedRoomsExamId);
+    return NestedScrollView(
+      headerSliverBuilder: (context, _) => [
+        SliverToBoxAdapter(child: header),
+        // Horizontal exam switcher scrolls with the header
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: 130,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -316,17 +297,12 @@ class _HomeState extends State<Home> {
               itemBuilder: (context, index) {
                 final exam = goalExams[index];
                 final isSelected = exam.id == _selectedRoomsExamId;
-
                 return Padding(
                   padding: const EdgeInsets.only(right: 16),
                   child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedRoomsExamId = exam.id;
-                      });
-                    },
+                    onTap: () => setState(() => _selectedRoomsExamId = exam.id),
                     child: SizedBox(
-                      width: 72, // Fixed width to force text wrapping
+                      width: 72,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -345,13 +321,9 @@ class _HomeState extends State<Home> {
                               color: isSelected ? null : Colors.grey.shade200,
                             ),
                             child: Container(
-                              width: 48,
-                              height: 48,
+                              width: 48, height: 48,
                               padding: const EdgeInsets.all(3),
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
+                              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: AppTheme.primaryLight.withValues(alpha: 0.5),
@@ -361,11 +333,8 @@ class _HomeState extends State<Home> {
                                   child: Image.network(
                                     exam.icon,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Icon(
-                                      Icons.school_rounded,
-                                      color: AppTheme.primary,
-                                      size: 22,
-                                    ),
+                                    errorBuilder: (_, __, ___) =>
+                                        const Icon(Icons.school_rounded, color: AppTheme.primary, size: 22),
                                   ),
                                 ),
                               ),
@@ -392,26 +361,17 @@ class _HomeState extends State<Home> {
               },
             ),
           ),
-          // Embedded Dashboard Inner Screen
-          if (_selectedRoomsExamId != null)
-            Expanded(
-              child: Builder(
-                builder: (context) {
-                  final selectedExam = goalExams.firstWhere((e) => e.id == _selectedRoomsExamId);
-                  return EmbeddedDashboard(
-                    key: ValueKey(selectedExam.id),
-                    exam: selectedExam,
-                    user: widget.user,
-                  );
-                },
-              ),
-            ),
-        ],
+        ),
       ],
+      body: EmbeddedDashboard(
+        key: ValueKey(selectedExam.id),
+        exam: selectedExam,
+        user: widget.user,
+      ),
     );
   }
 
-  Widget _buildExploreTab(double topPadding, List<ExamModel> allExams, Set<String> goalIds, bool examsLoading) {
+  Widget _buildExploreTab(List<ExamModel> allExams, Set<String> goalIds, bool examsLoading) {
     final filteredExams = allExams.where((e) {
       final query = _exploreSearchQuery.toLowerCase();
       return e.name.toLowerCase().contains(query);
@@ -421,7 +381,7 @@ class _HomeState extends State<Home> {
       slivers: [
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(20, topPadding + 14, 20, 4),
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
             child: Text(
               'Explore Exams',
               style: GoogleFonts.outfit(
@@ -1373,13 +1333,11 @@ class _ProfileTab extends StatefulWidget {
     required this.user,
     required this.goalExams,
     required this.allExams,
-    required this.topPadding,
   }) : super(key: key);
 
   final UserModel user;
   final List<ExamModel> goalExams;
   final List<ExamModel> allExams;
-  final double topPadding;
 
   @override
   State<_ProfileTab> createState() => _ProfileTabState();
@@ -1441,7 +1399,7 @@ class _ProfileTabState extends State<_ProfileTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: widget.topPadding + 20),
+          const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
             child: Text(
