@@ -7,6 +7,7 @@ import 'package:percent/widgets/home/home_header.dart';
 import 'package:percent/widgets/home/news_section.dart';
 import 'package:percent/screens/privacy_policy_screen.dart';
 import 'package:percent/screens/signin.dart';
+import 'package:percent/widgets/sign_in_sheet.dart';
 import 'package:percent/screens/edit_profile_screen.dart';
 import 'package:percent/widgets/shimmer.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -579,7 +580,7 @@ class _HomeState extends State<Home> {
                           onTap: () async {
                             final uid = FirebaseAuth.instance.currentUser?.uid;
                             if (uid == null) {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const SignIn()));
+                              showSignInSheet(context);
                               return;
                             }
                             final ref = FirebaseDatabase.instance.ref('users/$uid/goalExamIds');
@@ -1749,11 +1750,7 @@ class _ProfileTabState extends State<_ProfileTab> {
             isDestructive: !widget.user.isGuest,
             onTap: () async {
               if (widget.user.isGuest) {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SignIn()),
-                  (r) => false,
-                );
+                showSignInSheet(context);
                 return;
               }
               await FirebaseAuth.instance.signOut();

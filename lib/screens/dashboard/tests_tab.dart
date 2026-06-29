@@ -1,8 +1,8 @@
 import 'package:percent/models/exam.dart';
 import 'package:percent/models/test_model.dart';
 import 'package:percent/screens/membership_screen.dart';
-import 'package:percent/screens/signin.dart';
 import 'package:percent/screens/test_screen.dart';
+import 'package:percent/widgets/sign_in_sheet.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -258,9 +258,7 @@ class _PapersSliver extends StatelessWidget {
                   child: GestureDetector(
                     onTap: () {
                       if (isGuest) {
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (_) => const SignIn(),
-                        ));
+                        showSignInSheet(context);
                         return;
                       }
                       if (isLocked) {
