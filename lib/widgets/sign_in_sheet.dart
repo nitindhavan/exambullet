@@ -1,22 +1,27 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:percent/screens/splash.dart';
+import 'package:percent/models/User.dart';
+import 'package:percent/screens/home.dart';
 import 'package:percent/utils/theme.dart';
 
 Future<void> showSignInSheet(BuildContext context) {
+  // Keep a reference to the root navigator before the sheet opens
+  final rootNavigator = Navigator.of(context, rootNavigator: true);
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => const _SignInSheet(),
+    builder: (_) => _SignInSheet(rootNavigator: rootNavigator),
   );
 }
 
 class _SignInSheet extends StatefulWidget {
-  const _SignInSheet();
+  const _SignInSheet({required this.rootNavigator});
+  final NavigatorState rootNavigator;
 
   @override
   State<_SignInSheet> createState() => _SignInSheetState();
@@ -46,9 +51,23 @@ class _SignInSheetState extends State<_SignInSheet> {
       }
 
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const Splash()),
+      final firebaseUser = FirebaseAuth.instance.currentUser!;
+      final snap = await FirebaseDatabase.instance.ref('users/${firebaseUser.uid}').once();
+      if (!mounted) return;
+      UserModel userModel;
+      if (snap.snapshot.exists && snap.snapshot.value != null) {
+        userModel = UserModel.fromMap(snap.snapshot.value as Map);
+      } else {
+        userModel = UserModel(
+          firebaseUser.displayName ?? 'User',
+          firebaseUser.phoneNumber ?? firebaseUser.email ?? '',
+          firebaseUser.uid,
+          [],
+        );
+        await FirebaseDatabase.instance.ref('users/${firebaseUser.uid}').set(userModel.toMap());
+      }
+      widget.rootNavigator.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => Home(user: userModel)),
         (r) => false,
       );
     } catch (e) {
