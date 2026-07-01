@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/utils/notification_helper.dart';
 import 'dart:math';
 import 'home.dart';
 import 'signin.dart';
@@ -165,6 +166,7 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
         if (!mounted) return;
         if (value.snapshot.exists && value.snapshot.value != null) {
           final userModel = UserModel.fromMap(value.snapshot.value as Map);
+          NotificationHelper.saveToken(currentUser.uid);
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => Home(user: userModel)),
@@ -179,7 +181,8 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
           FirebaseDatabase.instance
               .ref('users')
               .child(model.uid)
-              .set(model.toMap());
+              .set(model.toMap())
+              .then((_) => NotificationHelper.saveToken(model.uid));
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => Home(user: model)),

@@ -1,10 +1,20 @@
 import 'package:flutter/services.dart';
 import 'package:percent/screens/splash.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/utils/notification_helper.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
+
+// Must be a top-level function (runs in a separate isolate).
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // FCM shows the system notification itself when the app is backgrounded;
+  // no extra work needed here.
+  debugPrint('Background message: ${message.notification?.title}');
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +34,9 @@ Future<void> main() async {
       debugPrint('$st');
     }
   }
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  await NotificationHelper.init();
 
   runApp(const MyApp());
 }

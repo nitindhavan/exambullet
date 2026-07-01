@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:percent/models/User.dart';
 import 'package:percent/screens/home.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/utils/notification_helper.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
 Future<void> showSignInSheet(BuildContext context) {
@@ -67,6 +68,7 @@ class _SignInSheetState extends State<_SignInSheet> {
         );
         await FirebaseDatabase.instance.ref('users/${firebaseUser.uid}').set(userModel.toMap());
       }
+      NotificationHelper.saveToken(firebaseUser.uid);
       widget.rootNavigator.pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => Home(user: userModel)),
         (r) => false,
