@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/ui/ui.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:percent/models/User.dart';
@@ -50,18 +50,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppTheme.textPrimary),
-        title: Text(
-          'Edit Profile',
-          style: GoogleFonts.outfit(
-            color: AppTheme.textPrimary,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
+      appBar: const AppTopBar(title: 'Edit Profile'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -99,11 +88,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             const SizedBox(height: 48),
             Text(
               'Full Name',
-              style: GoogleFonts.outfit(
-                color: AppTheme.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
+              style: AppTheme.headingSm.copyWith(fontSize: 16),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -112,17 +97,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 hintText: 'Enter your name',
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.space6, vertical: AppTheme.space5),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppTheme.borderLight),
+                  borderRadius: AppTheme.brMd,
+                  borderSide: const BorderSide(color: AppTheme.borderLight),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppTheme.borderLight),
+                  borderRadius: AppTheme.brMd,
+                  borderSide: const BorderSide(color: AppTheme.borderLight),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: AppTheme.brMd,
                   borderSide: const BorderSide(color: AppTheme.primary, width: 2),
                 ),
               ),
@@ -130,56 +116,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             const SizedBox(height: 24),
             Text(
               'Phone Number',
-              style: GoogleFonts.outfit(
-                color: AppTheme.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
+              style: AppTheme.headingSm.copyWith(fontSize: 16),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: TextEditingController(text: widget.user.phone),
               enabled: false,
-              style: TextStyle(color: AppTheme.textSecondary),
+              style: const TextStyle(color: AppTheme.textSecondary),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.grey.shade100,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.space6, vertical: AppTheme.space5),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: AppTheme.brMd,
                   borderSide: BorderSide.none,
                 ),
                 suffixIcon: const Icon(Icons.lock_outline_rounded, color: AppTheme.textSecondary),
               ),
             ),
             const SizedBox(height: 48),
-            SizedBox(
-              width: double.infinity,
+            AppButton(
+              label: 'Save Changes',
+              loading: _saving,
+              onPressed: _save,
               height: 56,
-              child: ElevatedButton(
-                onPressed: _saving ? null : _save,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
-                ),
-                child: _saving
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                      )
-                    : Text(
-                        'Save Changes',
-                        style: GoogleFonts.outfit(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-              ),
             ),
           ],
         ),

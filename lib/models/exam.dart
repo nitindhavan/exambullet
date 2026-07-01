@@ -7,6 +7,7 @@ class ExamModel {
   bool editable;
   bool visible;
   int price; // in paise (₹1 = 100 paise), default ₹100
+  int membershipDurationDays; // 0 = lifetime / no expiry, default 365 (1 year)
 
   ExamModel.fromMap(Map<dynamic, dynamic> map, [String? key])
       : name = map['name'] ?? '',
@@ -16,7 +17,9 @@ class ExamModel {
         icon = map['icon'] ?? '',
         editable = (map['editable'] ?? 0) == 1,
         visible = map['visible'] ?? false,
-        price = (map['price'] as num?)?.toInt() ?? 10000;
+        price = (map['price'] as num?)?.toInt() ?? 10000,
+        membershipDurationDays =
+            (map['membershipDurationDays'] as num?)?.toInt() ?? 365;
 
   Map<String, Object?> toMap() => {
         'name': name,
@@ -27,5 +30,6 @@ class ExamModel {
         'editable': editable ? 1 : 0,
         'visible': visible,
         'price': price,
+        'membershipDurationDays': membershipDurationDays,
       };
 }

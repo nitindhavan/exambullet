@@ -8,6 +8,7 @@ import 'package:percent/screens/dashboard/tests_tab.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/shimmer_loading.dart';
 class ExamDashboard extends StatefulWidget {
@@ -151,7 +152,9 @@ class _ExamDashboardState extends State<ExamDashboard> {
   // ── Mobile: original layout ─────────────────────────────────────────────────
 
   Widget _buildMobile() {
-    return Scaffold(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: AppTheme.darkSurface,
+      child: Scaffold(
       backgroundColor: AppTheme.background,
       body: Column(
         children: [
@@ -175,6 +178,7 @@ class _ExamDashboardState extends State<ExamDashboard> {
         items: _navItems,
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
+      ),
       ),
     );
   }

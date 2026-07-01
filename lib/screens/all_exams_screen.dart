@@ -3,8 +3,8 @@ import 'package:percent/widgets/sign_in_sheet.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/ui/ui.dart';
 
 class AllExamsScreen extends StatefulWidget {
   const AllExamsScreen({
@@ -69,10 +69,11 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
+      appBar: const AppTopBar(title: 'Choose Your Goals'),
       body: Column(
         children: [
-          // ── Premium White Header with Search ──
-          _buildHeader(context),
+          // ── Search ──
+          _buildSearchBar(context),
 
           // ── Catalog Grid ──
           Expanded(
@@ -105,43 +106,13 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    final double topPadding = MediaQuery.of(context).padding.top;
+  Widget _buildSearchBar(BuildContext context) {
     return Container(
       color: Colors.white,
-      padding: EdgeInsets.fromLTRB(16, topPadding + 14, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryLight,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.arrow_back_ios_new_rounded,
-                      color: AppTheme.primary, size: 16),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Choose Your Goals',
-                  style: GoogleFonts.outfit(
-                    color: AppTheme.textPrimary,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
           // ── Minimalist Search Input ──
           Container(
             height: 46,
@@ -153,11 +124,11 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
             child: TextField(
               controller: _searchCtrl,
               onChanged: (v) => setState(() => _search = v),
-              style: GoogleFonts.inter(color: AppTheme.textPrimary, fontSize: 14),
+              style: AppTheme.body.copyWith(color: AppTheme.textPrimary),
               cursorColor: AppTheme.primary,
               decoration: InputDecoration(
                 hintText: 'Search exams (e.g. JEE, UPSC...)',
-                hintStyle: GoogleFonts.inter(
+                hintStyle: AppTheme.body.copyWith(
                     color: AppTheme.textSecondary.withValues(alpha: 0.55), fontSize: 13.5),
                 prefixIcon: Icon(Icons.search_rounded,
                     color: AppTheme.textSecondary.withValues(alpha: 0.65), size: 18),
@@ -203,21 +174,13 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
             const SizedBox(height: 16),
             Text(
               'No exams found',
-              style: GoogleFonts.outfit(
-                color: AppTheme.textPrimary,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
+              style: AppTheme.headingSm,
             ),
             const SizedBox(height: 6),
             Text(
               'We couldn\'t find any exams matching your search query. Try typing another keyword.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                color: AppTheme.textSecondary,
-                fontSize: 12.5,
-                height: 1.45,
-              ),
+              style: AppTheme.bodySm,
             ),
           ],
         ),
@@ -314,10 +277,8 @@ class _ExamCard extends StatelessWidget {
                         child: Text(
                           exam.name,
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(
-                            color: AppTheme.textPrimary,
+                          style: AppTheme.headingSm.copyWith(
                             fontSize: 12,
-                            fontWeight: FontWeight.w700,
                             height: 1.25,
                           ),
                           maxLines: 2,
@@ -344,10 +305,9 @@ class _ExamCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             isGoal ? 'Goal Active' : 'Add Goal',
-                            style: GoogleFonts.inter(
+                            style: AppTheme.label.copyWith(
                               color: isGoal ? Colors.white : AppTheme.primary,
                               fontSize: 10,
-                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],

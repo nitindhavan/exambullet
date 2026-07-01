@@ -145,11 +145,11 @@ class _EmbeddedDashboardState extends State<EmbeddedDashboard> {
       children: [
         // Inner Tab Switcher
         Container(
-          height: 46,
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          height: 44,
+          margin: const EdgeInsets.fromLTRB(20, 12, 20, 4),
           decoration: BoxDecoration(
             color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(22),
           ),
           child: Row(
             children: List.generate(_tabs.length, (index) {
@@ -180,10 +180,15 @@ class _EmbeddedDashboardState extends State<EmbeddedDashboard> {
                     alignment: Alignment.center,
                     child: Text(
                       _tabs[index],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
-                        color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
+                        color: isSelected
+                            ? AppTheme.primary
+                            : AppTheme.textSecondary,
                         fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w600,
                       ),
                     ),
                   ),

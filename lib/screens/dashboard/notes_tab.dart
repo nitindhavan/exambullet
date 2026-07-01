@@ -4,6 +4,7 @@ import 'package:percent/models/exam.dart';
 import 'package:percent/screens/membership_screen.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/shimmer.dart';
+import 'package:percent/widgets/ui/ui.dart';
 
 class NotesTab extends StatelessWidget {
   const NotesTab(
@@ -75,11 +76,7 @@ class NotesTab extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
               child: Row(
                 children: [
-                  const Text('Study Notes',
-                      style: TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900)),
+                  Text('Study Notes', style: AppTheme.headingMd),
                   const Spacer(),
                   _Chip('${notes.length}'),
                 ],
@@ -166,20 +163,13 @@ class _NoteCardState extends State<_NoteCard> {
               ],
             ),
             const SizedBox(height: 10),
-            Text(title,
-                style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700)),
+            Text(title, style: AppTheme.headingSm),
             if (_expanded && content.isNotEmpty) ...[
               const SizedBox(height: 10),
               const Divider(color: AppTheme.borderLight),
               const SizedBox(height: 8),
               Text(content,
-                  style: const TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 13,
-                      height: 1.65)),
+                  style: AppTheme.body.copyWith(fontSize: 13, height: 1.65)),
             ],
           ],
         ),
@@ -250,29 +240,11 @@ class _LockedState extends StatelessWidget {
               style: TextStyle(
                   color: AppTheme.textSecondary, fontSize: 13, height: 1.5),
             ),
-            const SizedBox(height: 24),
-            GestureDetector(
-              onTap: onUnlock,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                      colors: AppTheme.primaryGradient),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                        color: AppTheme.primary.withValues(alpha: 0.3),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6))
-                  ],
-                ),
-                child: const Text('Unlock Pro',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15)),
-              ),
+            const SizedBox(height: AppTheme.space7),
+            AppButton(
+              label: 'Unlock Pro',
+              onPressed: onUnlock,
+              expand: false,
             ),
           ],
         ),

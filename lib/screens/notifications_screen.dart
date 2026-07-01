@@ -1,8 +1,8 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:percent/models/notification.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/ui/ui.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({Key? key, required this.userId}) : super(key: key);
@@ -72,25 +72,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        backgroundColor: AppTheme.background,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.textPrimary, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Notifications',
-          style: GoogleFonts.outfit(
-            color: AppTheme.textPrimary,
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-          ),
-        ),
-      ),
+      appBar: const AppTopBar(title: 'Notifications'),
       body: !_isReadTimeLoaded
           ? const Center(child: CircularProgressIndicator(color: AppTheme.primary, strokeWidth: 2.5))
           : StreamBuilder<DatabaseEvent>(
@@ -158,21 +140,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             const SizedBox(height: 24),
             Text(
               "You're all caught up!",
-              style: GoogleFonts.outfit(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary,
-              ),
+              style: AppTheme.headingMd.copyWith(fontSize: 20),
             ),
             const SizedBox(height: 8),
             Text(
               "When you receive new updates, announcements, or test reminders, they will appear here.",
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                height: 1.5,
-                color: AppTheme.textSecondary,
-              ),
+              style: AppTheme.body,
             ),
           ],
         ),
@@ -185,7 +159,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: isUnread ? AppTheme.primaryLight.withValues(alpha: 0.25) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppTheme.brMd,
         border: Border.all(
           color: isUnread ? AppTheme.primary.withValues(alpha: 0.2) : AppTheme.borderLight,
           width: isUnread ? 1.5 : 1,
@@ -193,7 +167,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         boxShadow: AppTheme.softShadow,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppTheme.brMd,
         child: InkWell(
           onTap: () {},
           child: Padding(
@@ -238,11 +212,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           Expanded(
                             child: Text(
                               notification.title,
-                              style: GoogleFonts.outfit(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.textPrimary,
-                              ),
+                              style: AppTheme.headingSm.copyWith(fontSize: 16),
                             ),
                           ),
                           if (isUnread)
@@ -254,7 +224,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               ),
                               child: Text(
                                 'NEW',
-                                style: GoogleFonts.outfit(
+                                style: AppTheme.label.copyWith(
                                   color: Colors.white,
                                   fontSize: 9,
                                   fontWeight: FontWeight.w800,
@@ -267,11 +237,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       const SizedBox(height: 6),
                       Text(
                         notification.body,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          height: 1.45,
-                          color: AppTheme.textSecondary,
-                        ),
+                        style: AppTheme.bodySm.copyWith(fontSize: 13),
                       ),
                       const SizedBox(height: 10),
                       Row(
@@ -279,10 +245,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         children: [
                           Text(
                             _formatTimeAgo(notification.timestamp),
-                            style: GoogleFonts.inter(
+                            style: AppTheme.caption.copyWith(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: AppTheme.textLight,
                             ),
                           ),
                           // Subtle indicator of read status

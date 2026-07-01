@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:percent/models/User.dart';
 import 'package:percent/screens/home.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/ui/ui.dart';
 
 Future<void> showSignInSheet(BuildContext context) {
   // Keep a reference to the root navigator before the sheet opens
@@ -186,12 +187,7 @@ class _SignInSheetState extends State<_SignInSheet> {
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            'By continuing, you agree to our Terms & Privacy Policy',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-                fontSize: 11, color: AppTheme.textLight),
-          ),
+          const LegalConsentText(fontSize: 11),
         ],
       ),
     );

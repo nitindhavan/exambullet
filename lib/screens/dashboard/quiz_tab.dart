@@ -6,6 +6,7 @@ import 'package:percent/models/topic_model.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/shimmer.dart';
 import 'package:percent/widgets/shimmer_loading.dart';
+import 'package:percent/widgets/ui/ui.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // QuizTab  —  subjects list
@@ -81,13 +82,9 @@ class _QuizTabState extends State<QuizTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, 4),
-          child: Text('Choose a Subject',
-              style: TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+          child: Text('Choose a Subject', style: AppTheme.headingMd),
         ),
         Expanded(
           child: ListView.builder(
@@ -131,11 +128,7 @@ class _QuizTabState extends State<QuizTab> {
                       ),
                       const SizedBox(width: 14),
                       Expanded(
-                        child: Text(subject.name,
-                            style: const TextStyle(
-                                color: AppTheme.textPrimary,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700)),
+                        child: Text(subject.name, style: AppTheme.headingSm),
                       ),
                       Icon(Icons.chevron_right_rounded,
                           color: Colors.grey.shade400, size: 22),
@@ -658,29 +651,12 @@ class _QuizPlayerScreenState extends State<_QuizPlayerScreen> {
                   ),
                 ],
                 if (_answered) ...[
-                  const SizedBox(height: 20),
-                  GestureDetector(
-                    onTap: _next,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                            colors: AppTheme.primaryGradient),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Center(
-                        child: Text(
-                          _currentIndex < _questions.length - 1
-                              ? 'Next Question →'
-                              : 'See Results',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15),
-                        ),
-                      ),
-                    ),
+                  const SizedBox(height: AppTheme.space6),
+                  AppButton(
+                    label: _currentIndex < _questions.length - 1
+                        ? 'Next Question →'
+                        : 'See Results',
+                    onPressed: _next,
                   ),
                 ],
               ],
@@ -741,25 +717,12 @@ class _ResultCard extends StatelessWidget {
                     fontSize: 20,
                     fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
-            Text('$score out of $total correct',
-                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
-            const SizedBox(height: 24),
-            GestureDetector(
-              onTap: onRestart,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                      colors: AppTheme.primaryGradient),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Text('Practice Again',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15)),
-              ),
+            Text('$score out of $total correct', style: AppTheme.body),
+            const SizedBox(height: AppTheme.space7),
+            AppButton(
+              label: 'Practice Again',
+              onPressed: onRestart,
+              expand: false,
             ),
           ],
         ),
@@ -802,23 +765,11 @@ class _LockedState extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     color: AppTheme.textSecondary, fontSize: 13, height: 1.5)),
-            const SizedBox(height: 24),
-            GestureDetector(
-              onTap: onUnlock,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                      colors: AppTheme.primaryGradient),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Text('Unlock Pro',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15)),
-              ),
+            const SizedBox(height: AppTheme.space7),
+            AppButton(
+              label: 'Unlock Pro',
+              onPressed: onUnlock,
+              expand: false,
             ),
           ],
         ),

@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/ui/ui.dart';
 
 import '../models/User.dart';
 import 'home.dart';
@@ -48,23 +49,17 @@ class _RegisterState extends State<Register> {
                 const SizedBox(height: 40),
 
                 // ── Heading ────────────────────────────────────
-                const Text(
+                Text(
                   "What's your\nname?",
-                  style: TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 36,
-                    fontWeight: FontWeight.w900,
+                  style: AppTheme.displayLg.copyWith(
+                    fontSize: 32,
                     height: 1.2,
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
+                const SizedBox(height: AppTheme.space3),
+                Text(
                   "This is how you'll appear in the app.",
-                  style: TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: AppTheme.body.copyWith(fontSize: 15),
                 ),
 
                 const SizedBox(height: 40),
@@ -73,7 +68,7 @@ class _RegisterState extends State<Register> {
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: AppTheme.brMd,
                     border: Border.all(color: AppTheme.border),
                     boxShadow: AppTheme.softShadow,
                   ),
@@ -95,113 +90,75 @@ class _RegisterState extends State<Register> {
                         color: AppTheme.primary,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: AppTheme.brMd,
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
                       fillColor: Colors.white,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 18),
+                          horizontal: AppTheme.space6, vertical: 18),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: AppTheme.space8),
 
                 // ── Continue button ────────────────────────────
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: visible
-                        ? null
-                        : () async {
-                            final name = nameController.text.trim();
-                            if (name.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('Please enter your name')),
-                              );
-                              return;
-                            }
-                            if (name.length < 3) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('Name must be at least 3 characters long')),
-                              );
-                              return;
-                            }
-                            setState(() => visible = true);
-                            final authUser = FirebaseAuth.instance.currentUser!;
-                            UserModel model = UserModel(
-                              nameController.text.trim(),
-                              authUser.phoneNumber ?? authUser.email ?? '',
-                              authUser.uid,
-                              [],
-                              DateTime.now().toIso8601String(),
+                AppButton(
+                  label: 'Continue',
+                  icon: Icons.arrow_forward_rounded,
+                  variant: AppButtonVariant.primary,
+                  loading: visible,
+                  onPressed: visible
+                      ? null
+                      : () async {
+                          final name = nameController.text.trim();
+                          if (name.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Please enter your name')),
                             );
-                            FirebaseDatabase.instance
-                                .ref('users')
-                                .child(model.uid)
-                                .set(model.toMap())
-                                .then((value) {
-                              if (mounted) {
-                                Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => Home(user: model)));
-                              }
-                            });
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      disabledBackgroundColor:
-                          AppTheme.primary.withValues(alpha: 0.6),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: visible
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Continue',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward_rounded,
-                                  color: Colors.white, size: 20),
-                            ],
-                          ),
-                  ),
+                            return;
+                          }
+                          if (name.length < 3) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Name must be at least 3 characters long')),
+                            );
+                            return;
+                          }
+                          setState(() => visible = true);
+                          final authUser = FirebaseAuth.instance.currentUser!;
+                          UserModel model = UserModel(
+                            nameController.text.trim(),
+                            authUser.phoneNumber ?? authUser.email ?? '',
+                            authUser.uid,
+                            [],
+                            DateTime.now().toIso8601String(),
+                          );
+                          FirebaseDatabase.instance
+                              .ref('users')
+                              .child(model.uid)
+                              .set(model.toMap())
+                              .then((value) {
+                            if (mounted) {
+                              Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => Home(user: model)));
+                            }
+                          });
+                        },
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: AppTheme.space7),
 
                 // ── Footer note ────────────────────────────────
-                const Center(
+                Center(
                   child: Text(
                     'Your name can be changed later from your profile.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppTheme.textLight,
-                      fontSize: 13,
-                    ),
+                    style: AppTheme.caption.copyWith(fontSize: 13),
                   ),
                 ),
               ],

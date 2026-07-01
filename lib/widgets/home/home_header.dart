@@ -66,7 +66,7 @@ class HomeHeader extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               // Right: Notifications
-              _NotificationBell(userId: user.uid),
+              NotificationBell(userId: user.uid),
             ],
           ),
         ],
@@ -120,8 +120,8 @@ class HomeHeader extends StatelessWidget {
 
 }
 
-class _NotificationBell extends StatelessWidget {
-  const _NotificationBell({Key? key, required this.userId}) : super(key: key);
+class NotificationBell extends StatelessWidget {
+  const NotificationBell({Key? key, required this.userId}) : super(key: key);
   final String userId;
 
   @override

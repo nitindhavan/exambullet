@@ -1,7 +1,7 @@
 import 'package:percent/screens/splash.dart';
-import 'package:percent/widgets/button.dart';
 import 'package:percent/widgets/heading.dart';
 import 'package:percent/widgets/inputfield.dart';
+import 'package:percent/widgets/ui/ui.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -22,9 +22,8 @@ class _VerifyOTPState extends State<VerifyOTP> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Verify'),
-      ),
+      backgroundColor: AppTheme.background,
+      appBar: const AppTopBar(title: 'Verify'),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -33,24 +32,32 @@ class _VerifyOTPState extends State<VerifyOTP> {
             controller: otpController,
             hint: 'Enter OTP',
           ),
-          Button(
-              onPressed: () async {
-                setState(() {
-                  visible = true;
-                });
-                await widget.result.confirm(otpController.text).then((value) {
-                  if (mounted) {
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Splash()));
-                  }
-                });
-              },
-              text: 'Continue'),
-          const SizedBox(height: 32),
-          if (visible)
-            const Center(
-                child: CircularProgressIndicator(
-              color: AppTheme.primary,
-            )),
+          Padding(
+            padding: AppTheme.screenPadding,
+            child: AppButton(
+              label: 'Continue',
+              variant: AppButtonVariant.primary,
+              loading: visible,
+              onPressed: visible
+                  ? null
+                  : () async {
+                      setState(() {
+                        visible = true;
+                      });
+                      await widget.result
+                          .confirm(otpController.text)
+                          .then((value) {
+                        if (mounted) {
+                          Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const Splash()));
+                        }
+                      });
+                    },
+            ),
+          ),
+          const SizedBox(height: AppTheme.space8),
         ],
       ),
     );

@@ -12,12 +12,7 @@ class Heading extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Text(
         heading,
-        style: const TextStyle(
-          color: AppTheme.textPrimary,
-          fontSize: 22,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.3,
-        ),
+        style: AppTheme.displayLg.copyWith(fontSize: 22),
       ),
     );
   }

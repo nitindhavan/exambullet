@@ -1,10 +1,12 @@
 import 'package:percent/models/exam.dart';
 import 'package:percent/models/membership_model.dart';
+import 'package:percent/screens/terms_conditions_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/ui/ui.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
@@ -167,6 +169,12 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
       if (verifyData['txStatus'] != 'SUCCESS') throw Exception('Payment not verified');
 
       final uid = FirebaseAuth.instance.currentUser!.uid;
+      // Stamp the expiry at purchase from the exam's duration (0 = lifetime).
+      final now = DateTime.now();
+      final durationDays = _exam?.membershipDurationDays ?? 365;
+      final expiry = durationDays > 0
+          ? now.add(Duration(days: durationDays)).toIso8601String()
+          : null;
       await FirebaseDatabase.instance
           .ref('memberships')
           .child(widget.model)
@@ -174,8 +182,9 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
           .set(MembershipModel(
             widget.model,
             uid,
-            DateTime.now().toIso8601String(),
+            now.toIso8601String(),
             paymentId: orderId,
+            expiryDate: expiry,
           ).toMap());
 
       if (mounted) Navigator.pop(context);
@@ -193,6 +202,7 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.background,
+      appBar: AppTopBar(title: _exam?.name ?? 'Membership'),
       body: FutureBuilder(
         future: FirebaseDatabase.instance.ref('exams').child(widget.model).once(),
         builder: (BuildContext context, AsyncSnapshot<DatabaseEvent> snapshot) {
@@ -211,30 +221,52 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
             });
           }
 
-          return Column(
-            children: [
-              _Header(examName: exam.name, onBack: () => Navigator.pop(context)),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-                  child: Column(
-                    children: [
-                      _PriceCard(price: exam.price),
-                      const SizedBox(height: 20),
-                      _BenefitsCard(),
-                      const SizedBox(height: 32),
-                      _GetMembershipButton(isLoading: _isLoading, onPressed: _startPayment),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'One-time payment · Lifetime access',
-                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+                AppTheme.space6, AppTheme.space7, AppTheme.space6, AppTheme.space8),
+            child: Column(
+              children: [
+                _PriceCard(
+                    price: exam.price,
+                    durationDays: exam.membershipDurationDays),
+                const SizedBox(height: AppTheme.space6),
+                _BenefitsCard(durationDays: exam.membershipDurationDays),
+                const SizedBox(height: AppTheme.space8),
+                _GetMembershipButton(isLoading: _isLoading, onPressed: _startPayment),
+                const SizedBox(height: AppTheme.space4),
+                Text(
+                  exam.membershipDurationDays == 0
+                      ? 'One-time payment · Lifetime access'
+                      : 'One-time payment · ${_durationLabel(exam.membershipDurationDays)} access',
+                  style: AppTheme.bodySm,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppTheme.space3),
+                GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const TermsConditionsScreen()),
+                  ),
+                  child: Text.rich(
+                    TextSpan(
+                      text: 'By purchasing, you agree to our ',
+                      style: AppTheme.caption,
+                      children: [
+                        TextSpan(
+                          text: 'Terms & Conditions',
+                          style: AppTheme.caption.copyWith(
+                            color: AppTheme.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -242,97 +274,52 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
   }
 }
 
-// ── Header ────────────────────────────────────────────────────────────────────
+// ── Duration helper ───────────────────────────────────────────────────────────
 
-class _Header extends StatelessWidget {
-  const _Header({required this.examName, required this.onBack});
-  final String examName;
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    final topPad = MediaQuery.of(context).padding.top;
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(16, topPad + 12, 16, 32),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: AppTheme.primaryGradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          IconButton(
-            onPressed: onBack,
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(Icons.workspace_premium_rounded, size: 36, color: Colors.white),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Unlock Premium',
-                        style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 4),
-                    Text(examName,
-                        style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+/// Human-friendly label for a membership duration in days.
+/// 0 → 'Lifetime'; multiples of 365 → 'N year(s)'; 30 → '1 month'; else 'N days'.
+String _durationLabel(int days) {
+  if (days <= 0) return 'Lifetime';
+  if (days % 365 == 0) {
+    final y = days ~/ 365;
+    return y == 1 ? '1 year' : '$y years';
   }
+  if (days % 30 == 0) {
+    final m = days ~/ 30;
+    return m == 1 ? '1 month' : '$m months';
+  }
+  return days == 1 ? '1 day' : '$days days';
 }
 
 // ── Price Card ────────────────────────────────────────────────────────────────
 
 class _PriceCard extends StatelessWidget {
-  const _PriceCard({required this.price});
+  const _PriceCard({required this.price, required this.durationDays});
   final int price;
+  final int durationDays;
 
   @override
   Widget build(BuildContext context) {
     final rupees = price ~/ 100;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.borderLight),
-        boxShadow: AppTheme.softShadow,
-      ),
+    final isLifetime = durationDays <= 0;
+    final label = _durationLabel(durationDays);
+    return AppCard(
+      padding: const EdgeInsets.symmetric(
+          vertical: AppTheme.space7, horizontal: AppTheme.space7),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Lifetime Membership',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
-                SizedBox(height: 4),
-                Text('Pay once, access forever',
-                    style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                Text(isLifetime ? 'Lifetime Membership' : '$label Membership',
+                    style: AppTheme.headingSm),
+                const SizedBox(height: 4),
+                Text(
+                    isLifetime
+                        ? 'Unlock this exam forever'
+                        : 'Unlock this exam for $label',
+                    style: AppTheme.bodySm),
               ],
             ),
           ),
@@ -342,7 +329,7 @@ class _PriceCard extends StatelessWidget {
               Text('₹$rupees',
                   style: const TextStyle(
                       color: AppTheme.primary, fontSize: 36, fontWeight: FontWeight.w900, height: 1)),
-              const Text('one-time', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+              Text(isLifetime ? 'one-time' : 'for $label', style: AppTheme.bodySm),
             ],
           ),
         ],
@@ -354,30 +341,27 @@ class _PriceCard extends StatelessWidget {
 // ── Benefits Card ─────────────────────────────────────────────────────────────
 
 class _BenefitsCard extends StatelessWidget {
-  static const List<Map<String, dynamic>> _items = [
-    {'icon': Icons.lock_open_rounded, 'label': 'Full Access to All Content'},
-    {'icon': Icons.update_rounded, 'label': 'All Future Updates Included'},
-    {'icon': Icons.all_inclusive_rounded, 'label': 'No Expiry · Lifetime Access'},
-    {'icon': Icons.support_agent_rounded, 'label': 'Priority Support'},
-  ];
+  const _BenefitsCard({required this.durationDays});
+  final int durationDays;
+
+  List<Map<String, dynamic>> get _items => [
+        const {'icon': Icons.lock_open_rounded, 'label': 'Full access to all content of this exam'},
+        const {'icon': Icons.update_rounded, 'label': 'All future updates for this exam included'},
+        durationDays <= 0
+            ? const {'icon': Icons.all_inclusive_rounded, 'label': 'No expiry · Lifetime access'}
+            : {'icon': Icons.schedule_rounded, 'label': 'Valid for ${_durationLabel(durationDays)}'},
+        const {'icon': Icons.support_agent_rounded, 'label': 'Priority support'},
+      ];
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.borderLight),
-        boxShadow: AppTheme.softShadow,
-      ),
+    return AppCard(
+      padding: const EdgeInsets.all(AppTheme.space6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('What you get',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
-          const SizedBox(height: 16),
+          Text('What you get', style: AppTheme.headingMd),
+          const SizedBox(height: AppTheme.space5),
           ..._items.map((item) => Padding(
                 padding: const EdgeInsets.only(bottom: 14),
                 child: Row(
@@ -385,12 +369,15 @@ class _BenefitsCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(9),
                       decoration: BoxDecoration(
-                          color: AppTheme.primaryLight, borderRadius: BorderRadius.circular(10)),
+                          color: AppTheme.primaryLight, borderRadius: AppTheme.brSm),
                       child: Icon(item['icon'] as IconData, color: AppTheme.primary, size: 18),
                     ),
                     const SizedBox(width: 14),
-                    Text(item['label'] as String,
-                        style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary)),
+                    Expanded(
+                      child: Text(item['label'] as String,
+                          style: AppTheme.body
+                              .copyWith(color: AppTheme.textPrimary)),
+                    ),
                   ],
                 ),
               )),
@@ -409,46 +396,12 @@ class _GetMembershipButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
+    return AppButton(
+      label: 'Get Membership',
+      icon: Icons.workspace_premium_rounded,
+      loading: isLoading,
+      onPressed: onPressed,
       height: 56,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-              colors: AppTheme.primaryGradient,
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-                color: AppTheme.primary.withValues(alpha: 0.35),
-                blurRadius: 14,
-                offset: const Offset(0, 5))
-          ],
-        ),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          ),
-          onPressed: isLoading ? null : onPressed,
-          child: isLoading
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-              : const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 20),
-                    SizedBox(width: 10),
-                    Text('Get Membership',
-                        style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-        ),
-      ),
     );
   }
 }

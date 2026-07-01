@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../models/test_model.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/shimmer.dart';
+import 'package:percent/widgets/ui/ui.dart';
 
 class TestScreen extends StatefulWidget {
   const TestScreen({
@@ -163,41 +164,46 @@ class _TestScreenState extends State<TestScreen> {
   @override
   Widget build(BuildContext context) {
     if (!_loaded) {
+      // Keep the real app bar; shimmer only the content area so the page
+      // doesn't jump when questions arrive.
       return Scaffold(
         backgroundColor: AppTheme.background,
-        body: SafeArea(
-          child: ShimmerLoading(
-            builder: (context, color) => Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    height: 120,
+        appBar: AppTopBar(
+          title: widget.testModel.name,
+          onBack: () => Navigator.of(context).pop(),
+        ),
+        body: ShimmerLoading(
+          builder: (context, color) => Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppTheme.space5, AppTheme.space5, AppTheme.space5, AppTheme.space5),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Progress bar placeholder
+                Container(
+                  height: 6,
+                  decoration: BoxDecoration(
+                      color: color, borderRadius: BorderRadius.circular(6)),
+                ),
+                const SizedBox(height: AppTheme.space6),
+                // Question card placeholder
+                Container(
+                  height: 140,
+                  decoration: BoxDecoration(
+                      color: color, borderRadius: AppTheme.brLg),
+                ),
+                const SizedBox(height: AppTheme.space6),
+                // Option placeholders
+                ...List.generate(
+                  4,
+                  (i) => Container(
+                    height: 58,
+                    margin: const EdgeInsets.only(bottom: AppTheme.space4),
                     decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(20)),
+                        color: color, borderRadius: AppTheme.brMd),
                   ),
-                  const SizedBox(height: 30),
-                  Container(
-                    height: 180,
-                    decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(20)),
-                  ),
-                  const SizedBox(height: 20),
-                  ...List.generate(
-                    4,
-                    (i) => Container(
-                      height: 60,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                          color: color,
-                          borderRadius: BorderRadius.circular(16)),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -207,34 +213,31 @@ class _TestScreenState extends State<TestScreen> {
     if (_questions.isEmpty) {
       return Scaffold(
         backgroundColor: AppTheme.background,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.textPrimary),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.quiz_outlined, size: 64, color: AppTheme.textLight),
-              SizedBox(height: 16),
-              Text(
-                'No questions available',
-                style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.textPrimary),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'This test currently has no questions added to it.',
-                style: TextStyle(
-                    fontSize: 14, color: AppTheme.textSecondary),
-              ),
-            ],
+        appBar: AppTopBar(title: widget.testModel.name),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppTheme.space8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 88,
+                  height: 88,
+                  decoration: const BoxDecoration(
+                      color: AppTheme.primaryLight, shape: BoxShape.circle),
+                  child: const Icon(Icons.quiz_outlined,
+                      size: 40, color: AppTheme.primary),
+                ),
+                const SizedBox(height: AppTheme.space5),
+                Text('No questions available', style: AppTheme.headingMd),
+                const SizedBox(height: AppTheme.space3),
+                Text(
+                  'This test currently has no questions added to it.',
+                  textAlign: TextAlign.center,
+                  style: AppTheme.body,
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -242,54 +245,68 @@ class _TestScreenState extends State<TestScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
+      appBar: AppTopBar(
+        title: widget.testModel.name,
+        onBack: _confirmFinish,
+        actions: [
+          Center(child: _TimerChip(timerNotifier: _timerNotifier)),
+          const SizedBox(width: AppTheme.space5),
+        ],
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _TestHeader(
-            testName: widget.testModel.name,
-            timerNotifier: _timerNotifier,
-            answeredNotifier: _answeredNotifier,
+          _ProgressBar(
+            current: _current,
             total: _questions.length,
-            onFinish: _confirmFinish,
-            onBack: _confirmFinish,
+            answeredNotifier: _answeredNotifier,
           ),
-          _ProgressBar(current: _current, total: _questions.length),
           Expanded(
             child: ListView(
               controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              padding: const EdgeInsets.fromLTRB(
+                  AppTheme.space5, AppTheme.space4, AppTheme.space5, AppTheme.space7),
               children: [
-                // ── Question text ───────────────────────────────────────
+                // ── Question text (light card) ──────────────────────────
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(AppTheme.space5),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: AppTheme.primaryGradient,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                          color: AppTheme.primary.withValues(alpha: 0.25),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4))
-                    ],
+                    color: AppTheme.surface,
+                    borderRadius: AppTheme.brLg,
+                    border: Border.all(color: AppTheme.borderLight),
+                    boxShadow: AppTheme.softShadow,
                   ),
-                  child: Text(
-                    _questions[_current].questionText,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        height: 1.5),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryLight,
+                          borderRadius: AppTheme.brSm,
+                        ),
+                        child: Text('Question ${_current + 1}',
+                            style: AppTheme.label.copyWith(
+                                color: AppTheme.primary, fontSize: 11.5)),
+                      ),
+                      const SizedBox(height: AppTheme.space4),
+                      Text(
+                        _questions[_current].questionText,
+                        style: AppTheme.body.copyWith(
+                            color: AppTheme.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            height: 1.5),
+                      ),
+                    ],
                   ),
                 ),
                 if (_questions[_current].imageUrl.isNotEmpty) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppTheme.space4),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: AppTheme.brMd,
                     child: Image.network(
                       _questions[_current].imageUrl,
                       fit: BoxFit.fitWidth,
@@ -303,8 +320,8 @@ class _TestScreenState extends State<TestScreen> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 20),
-// ── Options A–D ─────────────────────────────────────────
+                const SizedBox(height: AppTheme.space6),
+                // ── Options A–D ─────────────────────────────────────────
                 ...[1, 2, 3, 4].map((opt) => _OptionButton(
                       label: String.fromCharCode(64 + opt),
                       optionText: _questions[_current].optionText(opt),
@@ -317,45 +334,21 @@ class _TestScreenState extends State<TestScreen> {
                             _selected.where((s) => s != -1).length;
                       },
                     )),
-                const SizedBox(height: 8),
-                // ── Prev / Next ─────────────────────────────────────────
-                Row(
-                  children: [
-                    _NavButton(
-                      icon: Icons.arrow_back_ios_new_rounded,
-                      label: 'Prev',
-                      enabled: _current > 0,
-                      trailing: false,
-                      onTap: () => _goTo(_current - 1),
-                    ),
-                    const SizedBox(width: 12),
-                    _NavButton(
-                      icon: Icons.arrow_forward_ios_rounded,
-                      label: 'Next',
-                      enabled: _current < _questions.length - 1,
-                      trailing: true,
-                      onTap: () => _goTo(_current + 1),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
-        ],
-      ),
-      floatingActionButton: ValueListenableBuilder<int>(
-        valueListenable: _answeredNotifier,
-        builder: (_, answered, __) => FloatingActionButton.extended(
-          backgroundColor: AppTheme.primary,
-          onPressed: () => _showPalette(context),
-          icon: const Icon(Icons.grid_view_rounded,
-              color: Colors.white, size: 20),
-          label: Text(
-            '$answered/${_questions.length}',
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+          // ── Bottom action bar: Prev · Palette · Next / Submit ─────────
+          _BottomBar(
+            isFirst: _current == 0,
+            isLast: _current == _questions.length - 1,
+            answeredNotifier: _answeredNotifier,
+            total: _questions.length,
+            onPrev: () => _goTo(_current - 1),
+            onNext: () => _goTo(_current + 1),
+            onPalette: () => _showPalette(context),
+            onSubmit: _confirmFinish,
           ),
-        ),
+        ],
       ),
     );
   }
@@ -384,21 +377,11 @@ class _TestScreenState extends State<TestScreen> {
 
 // ── Header ────────────────────────────────────────────────────────────────────
 
-class _TestHeader extends StatelessWidget {
-  const _TestHeader({
-    required this.testName,
-    required this.timerNotifier,
-    required this.answeredNotifier,
-    required this.total,
-    required this.onFinish,
-    required this.onBack,
-  });
-  final String testName;
+// ── Timer chip (light, for the app bar) ───────────────────────────────────────
+
+class _TimerChip extends StatelessWidget {
+  const _TimerChip({required this.timerNotifier});
   final ValueNotifier<int> timerNotifier;
-  final ValueNotifier<int> answeredNotifier;
-  final int total;
-  final VoidCallback onFinish;
-  final VoidCallback onBack;
 
   String _fmt(int seconds) {
     final d = Duration(seconds: seconds);
@@ -411,136 +394,80 @@ class _TestHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final topPad = MediaQuery.of(context).padding.top;
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: AppTheme.primaryGradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
-        ),
-      ),
-      padding: EdgeInsets.fromLTRB(8, topPad + 8, 16, 18),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: onBack,
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: Colors.white, size: 20),
-            padding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
+    return ValueListenableBuilder<int>(
+      valueListenable: timerNotifier,
+      builder: (_, seconds, __) {
+        final isLow = seconds <= 60;
+        final Color fg = isLow ? AppTheme.error : AppTheme.primary;
+        final Color bg =
+            isLow ? AppTheme.errorLight : AppTheme.primaryLight;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: AppTheme.brSm,
           ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(testName,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3)),
-                const SizedBox(height: 3),
-                // Only this Text rebuilds when answered changes
-                ValueListenableBuilder<int>(
-                  valueListenable: answeredNotifier,
-                  builder: (_, answered, __) => Text(
-                    '$answered / $total answered',
-                    style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Only this chip rebuilds every second
-          ValueListenableBuilder<int>(
-            valueListenable: timerNotifier,
-            builder: (_, seconds, __) {
-              final isLow = seconds <= 60;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 400),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-                decoration: BoxDecoration(
-                  color: isLow
-                      ? AppTheme.error
-                      : Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: isLow
-                          ? AppTheme.error
-                          : Colors.white.withValues(alpha: 0.25)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isLow ? Icons.warning_amber_rounded : Icons.timer_rounded,
-                      color: Colors.white,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 5),
-                    Text(_fmt(seconds),
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13)),
-                  ],
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: onFinish,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isLow ? Icons.warning_amber_rounded : Icons.timer_rounded,
+                color: fg,
+                size: 15,
               ),
-              child: const Text('Submit',
+              const SizedBox(width: 6),
+              Text(_fmt(seconds),
                   style: TextStyle(
-                      color: AppTheme.primary,
+                      color: fg,
                       fontWeight: FontWeight.w800,
-                      fontSize: 13)),
-            ),
+                      fontSize: 14,
+                      fontFeatures: const [FontFeature.tabularFigures()])),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-// ── Progress bar ──────────────────────────────────────────────────────────────
+// ── Progress bar (position + answered count) ──────────────────────────────────
 
 class _ProgressBar extends StatelessWidget {
-  const _ProgressBar({required this.current, required this.total});
+  const _ProgressBar({
+    required this.current,
+    required this.total,
+    required this.answeredNotifier,
+  });
   final int current;
   final int total;
+  final ValueNotifier<int> answeredNotifier;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+      padding: const EdgeInsets.fromLTRB(
+          AppTheme.space5, AppTheme.space4, AppTheme.space5, 0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
-            child: Text('Q ${current + 1} of $total',
-                style: const TextStyle(
-                    color: AppTheme.primary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ValueListenableBuilder<int>(
+                  valueListenable: answeredNotifier,
+                  builder: (_, answered, __) => Text(
+                    '$answered of $total answered',
+                    style: AppTheme.caption
+                        .copyWith(color: AppTheme.textSecondary),
+                  ),
+                ),
+                Text('Question ${current + 1} of $total',
+                    style: AppTheme.label
+                        .copyWith(color: AppTheme.primary, fontSize: 12)),
+              ],
+            ),
           ),
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
@@ -580,11 +507,11 @@ class _OptionButton extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: AppTheme.space4),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: isSelected ? AppTheme.primaryLight : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppTheme.brMd,
           border: Border.all(
             color: isSelected ? AppTheme.primary : AppTheme.borderLight,
             width: isSelected ? 2.0 : 1.5,
@@ -598,7 +525,7 @@ class _OptionButton extends StatelessWidget {
               height: 34,
               decoration: BoxDecoration(
                 color: isSelected ? AppTheme.primary : AppTheme.primaryLight,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: AppTheme.brSm,
               ),
               child: Center(
                 child: Text(label,
@@ -627,62 +554,153 @@ class _OptionButton extends StatelessWidget {
     );
   }
 }
-// ── Nav button ────────────────────────────────────────────────────────────────
+// ── Bottom action bar ─────────────────────────────────────────────────────────
 
-class _NavButton extends StatelessWidget {
-  const _NavButton({
-    required this.icon,
-    required this.label,
-    required this.enabled,
-    required this.trailing,
-    required this.onTap,
+class _BottomBar extends StatelessWidget {
+  const _BottomBar({
+    required this.isFirst,
+    required this.isLast,
+    required this.answeredNotifier,
+    required this.total,
+    required this.onPrev,
+    required this.onNext,
+    required this.onPalette,
+    required this.onSubmit,
   });
+  final bool isFirst;
+  final bool isLast;
+  final ValueNotifier<int> answeredNotifier;
+  final int total;
+  final VoidCallback onPrev;
+  final VoidCallback onNext;
+  final VoidCallback onPalette;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+          AppTheme.space5, AppTheme.space4, AppTheme.space5, bottomPad + AppTheme.space4),
+      decoration: const BoxDecoration(
+        color: AppTheme.surface,
+        border: Border(top: BorderSide(color: AppTheme.borderLight)),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 16, offset: Offset(0, -4)),
+        ],
+      ),
+      child: Row(
+        children: [
+          _GhostBtn(
+            icon: Icons.arrow_back_ios_new_rounded,
+            enabled: !isFirst,
+            onTap: onPrev,
+          ),
+          const SizedBox(width: AppTheme.space3),
+          // Palette button with live answered count
+          Expanded(
+            child: GestureDetector(
+              onTap: onPalette,
+              child: Container(
+                height: 48,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryLight,
+                  borderRadius: AppTheme.brMd,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.grid_view_rounded,
+                        color: AppTheme.primary, size: 18),
+                    const SizedBox(width: 8),
+                    ValueListenableBuilder<int>(
+                      valueListenable: answeredNotifier,
+                      builder: (_, answered, __) => Text(
+                        '$answered / $total',
+                        style: AppTheme.label.copyWith(
+                            color: AppTheme.primary, fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppTheme.space3),
+          // Next (or Submit on the last question)
+          isLast
+              ? _PrimaryBtn(
+                  label: 'Submit', icon: Icons.check_rounded, onTap: onSubmit)
+              : _GhostBtn(
+                  icon: Icons.arrow_forward_ios_rounded,
+                  enabled: true,
+                  onTap: onNext,
+                ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GhostBtn extends StatelessWidget {
+  const _GhostBtn(
+      {required this.icon, required this.enabled, required this.onTap});
   final IconData icon;
-  final String label;
   final bool enabled;
-  final bool trailing;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: enabled ? onTap : null,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: enabled ? Colors.white : Colors.white.withValues(alpha: 0.45),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.borderLight),
-            boxShadow: enabled ? AppTheme.softShadow : [],
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: AppTheme.brMd,
+          border: Border.all(color: AppTheme.border),
+        ),
+        child: Icon(icon,
+            size: 16,
+            color: enabled ? AppTheme.primary : AppTheme.border),
+      ),
+    );
+  }
+}
+
+class _PrimaryBtn extends StatelessWidget {
+  const _PrimaryBtn(
+      {required this.label, required this.icon, required this.onTap});
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: AppTheme.primaryGradient,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (!trailing)
-                Icon(icon,
-                    size: 15,
-                    color: enabled
-                        ? AppTheme.primary
-                        : Colors.grey.shade300),
-              if (!trailing) const SizedBox(width: 6),
-              Text(label,
-                  style: TextStyle(
-                      color: enabled
-                          ? AppTheme.primary
-                          : Colors.grey.shade300,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14)),
-              if (trailing) const SizedBox(width: 6),
-              if (trailing)
-                Icon(icon,
-                    size: 15,
-                    color: enabled
-                        ? AppTheme.primary
-                        : Colors.grey.shade300),
-            ],
-          ),
+          borderRadius: AppTheme.brMd,
+          boxShadow: AppTheme.softShadow,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label,
+                style: AppTheme.label.copyWith(color: Colors.white)),
+            const SizedBox(width: 6),
+            Icon(icon, color: Colors.white, size: 18),
+          ],
         ),
       ),
     );

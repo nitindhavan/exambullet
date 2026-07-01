@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:percent/models/exam.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:percent/utils/theme.dart';
-import 'package:percent/widgets/shimmer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 

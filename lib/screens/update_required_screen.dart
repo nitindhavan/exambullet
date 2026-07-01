@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/ui/ui.dart';
 
 class UpdateRequiredScreen extends StatelessWidget {
   const UpdateRequiredScreen({Key? key, required this.updateUrl}) : super(key: key);
@@ -79,68 +80,31 @@ class UpdateRequiredScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppTheme.space8),
               // Heading
-              const Text(
+              Text(
                 'Update Required',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.5,
-                ),
+                style: AppTheme.displayLg,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.space4),
               // Subheading
-              const Text(
+              Text(
                 'A newer, faster, and more stable version of the app is available. Please update now to continue your exam preparation.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 14,
-                  height: 1.5,
-                ),
+                style: AppTheme.body.copyWith(height: 1.5),
               ),
               const Spacer(),
               // Update Button
-              GestureDetector(
-                onTap: _launchUpdate,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: AppTheme.primaryGradient,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.primary.withValues(alpha: 0.24),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'Update Now',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                  ),
-                ),
+              AppButton(
+                label: 'Update Now',
+                variant: AppButtonVariant.primary,
+                onPressed: _launchUpdate,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.space4),
               Text(
                 'Percent App Version 1.0.0',
-                style: TextStyle(
+                style: AppTheme.caption.copyWith(
                   color: AppTheme.textLight.withValues(alpha: 0.8),
                   fontSize: 11,
                   fontWeight: FontWeight.w600,

@@ -5,11 +5,14 @@ import 'package:percent/screens/exam_dashboard.dart';
 import 'package:percent/widgets/home/embedded_dashboard.dart';
 import 'package:percent/widgets/home/home_header.dart';
 import 'package:percent/widgets/home/news_section.dart';
+import 'package:percent/screens/memberships_screen.dart';
 import 'package:percent/screens/privacy_policy_screen.dart';
+import 'package:percent/screens/terms_conditions_screen.dart';
 import 'package:percent/screens/signin.dart';
 import 'package:percent/widgets/sign_in_sheet.dart';
 import 'package:percent/screens/edit_profile_screen.dart';
 import 'package:percent/widgets/shimmer.dart';
+import 'package:percent/widgets/ui/ui.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -112,7 +115,17 @@ class _HomeState extends State<Home> {
 
         return Scaffold(
           backgroundColor: AppTheme.background,
+          appBar: AppTopBar(
+            title: 'Percent',
+            showBack: false,
+            leadingIcon: Icons.percent_rounded,
+            actions: [
+              NotificationBell(userId: widget.user.uid),
+              const SizedBox(width: AppTheme.space5),
+            ],
+          ),
           body: SafeArea(
+            top: false,
             child: _buildTabBody(
               goalExams: goalExams,
               otherExams: otherExams,
@@ -160,23 +173,25 @@ class _HomeState extends State<Home> {
       _selectedRoomsExamId = null;
     }
 
-    // Header + section title (scrolls away)
+    // Section title (scrolls away)
     Widget header = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        HomeHeader(
-          user: widget.user,
-          goalCount: goalExams.length,
-          onTapSearch: () => setState(() => _activeTab = 1),
-        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('My Prep Rooms',
-                  style: GoogleFonts.outfit(
-                      color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.w800)),
+              Row(
+                children: [
+                  const Icon(Icons.meeting_room_rounded,
+                      color: AppTheme.primary, size: 20),
+                  const SizedBox(width: 8),
+                  Text('My Prep Rooms',
+                      style: GoogleFonts.outfit(
+                          color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.w800)),
+                ],
+              ),
               if (goalExams.isNotEmpty)
                 GestureDetector(
                   onTap: () => setState(() => _activeTab = 1),
@@ -201,10 +216,13 @@ class _HomeState extends State<Home> {
                 child: Column(
                   children: [
                     const SizedBox(height: 8),
-                    Row(
-                      children: List.generate(
-                        4,
-                        (_) => Container(
+                    SizedBox(
+                      height: 72,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: 4,
+                        itemBuilder: (_, __) => Container(
                           width: 72, height: 72,
                           margin: const EdgeInsets.only(right: 16),
                           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
@@ -263,17 +281,11 @@ class _HomeState extends State<Home> {
                       style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13, height: 1.45),
                     ),
                     const SizedBox(height: 20),
-                    ElevatedButton(
+                    AppButton(
+                      label: 'Explore Exams',
                       onPressed: () => setState(() => _activeTab = 1),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      ),
-                      child: Text('Explore Exams',
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                      expand: false,
+                      height: 46,
                     ),
                   ],
                 ),
@@ -284,94 +296,139 @@ class _HomeState extends State<Home> {
       );
     }
 
-    // Has goals: use NestedScrollView so header + exam switcher scroll,
-    // then the inner tab bar sticks and EmbeddedDashboard fills the rest.
+    // Has goals: header + exam switcher rail, then a single connected white
+    // "room" panel holding the selected exam's identity + tabbed dashboard.
     final selectedExam = goalExams.firstWhere((e) => e.id == _selectedRoomsExamId);
-    return NestedScrollView(
-      headerSliverBuilder: (context, _) => [
-        SliverToBoxAdapter(child: header),
-        // Horizontal exam switcher scrolls with the header
-        SliverToBoxAdapter(
-          child: SizedBox(
-            height: 130,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              itemCount: goalExams.length,
-              itemBuilder: (context, index) {
-                final exam = goalExams[index];
-                final isSelected = exam.id == _selectedRoomsExamId;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 16),
-                  child: GestureDetector(
-                    onTap: () => setState(() => _selectedRoomsExamId = exam.id),
-                    child: SizedBox(
-                      width: 72,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 250),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Compact title row
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.meeting_room_rounded,
+                      color: AppTheme.primary, size: 20),
+                  const SizedBox(width: 8),
+                  Text('My Prep Rooms',
+                      style: GoogleFonts.outfit(
+                          color: AppTheme.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800)),
+                ],
+              ),
+              GestureDetector(
+                onTap: () => setState(() => _activeTab = 1),
+                child: Text('Manage',
+                    style: GoogleFonts.inter(
+                        color: AppTheme.primary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        ),
+        // Horizontal exam switcher rail
+        SizedBox(
+          height: 96,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+            itemCount: goalExams.length,
+            itemBuilder: (context, index) {
+              final exam = goalExams[index];
+              final isSelected = exam.id == _selectedRoomsExamId;
+              return Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: GestureDetector(
+                  onTap: () => setState(() => _selectedRoomsExamId = exam.id),
+                  child: SizedBox(
+                    width: 64,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: isSelected
+                                ? const LinearGradient(
+                                    colors: AppTheme.primaryGradient,
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  )
+                                : null,
+                            color: isSelected ? null : Colors.grey.shade200,
+                          ),
+                          child: Container(
+                            width: 46, height: 46,
                             padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: isSelected
-                                  ? const LinearGradient(
-                                      colors: AppTheme.primaryGradient,
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    )
-                                  : null,
-                              color: isSelected ? null : Colors.grey.shade200,
-                            ),
+                            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                             child: Container(
-                              width: 48, height: 48,
-                              padding: const EdgeInsets.all(3),
-                              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primaryLight.withValues(alpha: 0.5),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: ClipOval(
-                                  child: Image.network(
-                                    exam.icon,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) =>
-                                        const Icon(Icons.school_rounded, color: AppTheme.primary, size: 22),
-                                  ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryLight.withValues(alpha: 0.5),
+                                shape: BoxShape.circle,
+                              ),
+                              child: ClipOval(
+                                child: Image.network(
+                                  exam.icon,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) =>
+                                      const Icon(Icons.school_rounded, color: AppTheme.primary, size: 22),
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            exam.name,
-                            textAlign: TextAlign.center,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
-                              color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
-                              fontSize: 11,
-                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                              height: 1.2,
-                            ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          exam.name,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
+                            fontSize: 11,
+                            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                            height: 1.15,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
+                ),
+              );
+            },
+          ),
+        ),
+        // Connected "room" panel: selected exam identity + tabbed dashboard
+        Expanded(
+          child: Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(top: 4),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 20,
+                  offset: Offset(0, -4),
+                ),
+              ],
+            ),
+            child: EmbeddedDashboard(
+              key: ValueKey(selectedExam.id),
+              exam: selectedExam,
+              user: widget.user,
             ),
           ),
         ),
       ],
-      body: EmbeddedDashboard(
-        key: ValueKey(selectedExam.id),
-        exam: selectedExam,
-        user: widget.user,
-      ),
     );
   }
 
@@ -386,14 +443,21 @@ class _HomeState extends State<Home> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
-            child: Text(
-              'Explore Exams',
-              style: GoogleFonts.outfit(
-                color: AppTheme.textPrimary,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.4,
-              ),
+            child: Row(
+              children: [
+                const Icon(Icons.explore_rounded,
+                    color: AppTheme.primary, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  'Explore Exams',
+                  style: GoogleFonts.outfit(
+                    color: AppTheme.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -503,135 +567,148 @@ class _HomeState extends State<Home> {
               ),
             ),
           )
-        else
+        else ...[
+          // Result count
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+              child: Text(
+                '${filteredExams.length} ${filteredExams.length == 1 ? 'exam' : 'exams'} available',
+                style: AppTheme.bodySm,
+              ),
+            ),
+          ),
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 0.78,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                // Responsive: ~3 per row on phones, 4+ on wider screens.
+                crossAxisCount:
+                    (MediaQuery.of(context).size.width / 110).floor().clamp(3, 6),
+                mainAxisSpacing: 18,
+                crossAxisSpacing: 8,
+                childAspectRatio: 0.80,
               ),
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final exam = filteredExams[index];
                   final isGoal = goalIds.contains(exam.id);
 
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isGoal ? AppTheme.primary.withValues(alpha: 0.3) : AppTheme.borderLight,
-                        width: 1.5,
-                      ),
-                      boxShadow: AppTheme.softShadow,
-                    ),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration: BoxDecoration(
-                                    color: isGoal ? AppTheme.primaryLight : Colors.grey.shade50,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: isGoal ? AppTheme.primary.withValues(alpha: 0.2) : AppTheme.borderLight,
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: ClipOval(
-                                    child: Image.network(
-                                      exam.icon,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Icon(
-                                        Icons.school_rounded,
-                                        color: isGoal ? AppTheme.primary : AppTheme.textSecondary,
-                                        size: 24,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  exam.name,
-                                  textAlign: TextAlign.center,
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.outfit(
-                                    color: AppTheme.textPrimary,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
-                                    height: 1.2,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () async {
-                            final uid = FirebaseAuth.instance.currentUser?.uid;
-                            if (uid == null) {
-                              showSignInSheet(context);
-                              return;
-                            }
-                            final ref = FirebaseDatabase.instance.ref('users/$uid/goalExamIds');
-                            if (isGoal) {
-                              await ref.child(exam.id).remove();
-                            } else {
-                              await ref.child(exam.id).set(true);
-                            }
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            width: double.infinity,
-                            height: 44,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: isGoal ? AppTheme.primaryLight : AppTheme.primary,
-                              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(22.5)),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  isGoal ? Icons.check_circle_rounded : Icons.add_circle_rounded,
-                                  color: isGoal ? AppTheme.primary : Colors.white,
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  isGoal ? 'Added' : 'Add Goal',
-                                  style: GoogleFonts.inter(
-                                    color: isGoal ? AppTheme.primary : Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  return _ExploreExamCard(
+                    exam: exam,
+                    isGoal: isGoal,
+                    onToggle: () async {
+                      final uid = FirebaseAuth.instance.currentUser?.uid;
+                      if (uid == null) {
+                        showSignInSheet(context);
+                        return;
+                      }
+                      final ref = FirebaseDatabase.instance.ref('users/$uid/goalExamIds');
+                      if (isGoal) {
+                        await ref.child(exam.id).remove();
+                      } else {
+                        await ref.child(exam.id).set(true);
+                      }
+                    },
                   );
                 },
                 childCount: filteredExams.length,
               ),
             ),
           ),
+        ],
         const SliverToBoxAdapter(
           child: SizedBox(height: 32),
         ),
       ],
+    );
+  }
+}
+
+/// Lightweight explore tile: a circular exam icon with a name below. Tapping
+/// the whole tile toggles the goal; a check badge marks added exams. No card
+/// chrome — keeps the grid airy so more exams fit per row.
+class _ExploreExamCard extends StatelessWidget {
+  const _ExploreExamCard({
+    required this.exam,
+    required this.isGoal,
+    required this.onToggle,
+  });
+
+  final ExamModel exam;
+  final bool isGoal;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onToggle,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 58,
+                height: 58,
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: isGoal ? AppTheme.primaryLight : Colors.grey.shade50,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isGoal
+                        ? AppTheme.primary
+                        : AppTheme.borderLight,
+                    width: isGoal ? 2 : 1.5,
+                  ),
+                ),
+                child: ClipOval(
+                  child: Image.network(
+                    exam.icon,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Icon(
+                      Icons.school_rounded,
+                      color: isGoal ? AppTheme.primary : AppTheme.textSecondary,
+                      size: 26,
+                    ),
+                  ),
+                ),
+              ),
+              if (isGoal)
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: const Icon(Icons.check_rounded,
+                        color: Colors.white, size: 11),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: Text(
+              exam.name,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.headingSm.copyWith(
+                fontSize: 11.5,
+                height: 1.15,
+                color: isGoal ? AppTheme.primary : AppTheme.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1353,59 +1430,6 @@ class _ProfileTab extends StatefulWidget {
 }
 
 class _ProfileTabState extends State<_ProfileTab> {
-  List<String> _memberships = [];
-  Map<String, String> _membershipDates = {};
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchMemberships();
-  }
-
-  Future<void> _fetchMemberships() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) {
-      setState(() => _loading = false);
-      return;
-    }
-    final active = <String>[];
-    final dates = <String, String>{};
-    for (final exam in widget.goalExams) {
-      try {
-        final snap = await FirebaseDatabase.instance.ref('memberships/${exam.id}/$uid').once();
-        if (snap.snapshot.exists) {
-          final raw = snap.snapshot.value;
-          if (raw is Map && raw['isActive'] != false) {
-            active.add(exam.id);
-            if (raw['membershipDate'] != null) {
-              dates[exam.id] = raw['membershipDate'].toString();
-            }
-          } else if (raw != null && raw is! Map) {
-            active.add(exam.id);
-          }
-        }
-      } catch (_) {}
-    }
-    if (mounted) {
-      setState(() {
-        _memberships = active;
-        _membershipDates = dates;
-        _loading = false;
-      });
-    }
-  }
-
-  String _formatDate(String raw) {
-    try {
-      final dt = DateTime.parse(raw);
-      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
-    } catch (_) {
-      return raw;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -1415,14 +1439,21 @@ class _ProfileTabState extends State<_ProfileTab> {
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            child: Text(
-              'My Profile',
-              style: GoogleFonts.outfit(
-                color: AppTheme.textPrimary,
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
-              ),
+            child: Row(
+              children: [
+                const Icon(Icons.person_rounded,
+                    color: AppTheme.primary, size: 26),
+                const SizedBox(width: 8),
+                Text(
+                  'My Profile',
+                  style: GoogleFonts.outfit(
+                    color: AppTheme.textPrimary,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
@@ -1498,226 +1529,19 @@ class _ProfileTabState extends State<_ProfileTab> {
           ),
           const SizedBox(height: 32),
 
-          // Membership Dashboard Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              'Membership Details',
-              style: GoogleFonts.outfit(
-                color: AppTheme.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (_loading)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Column(
-                children: [
-                  ShimmerLoading(
-                    builder: (context, color) => Container(
-                      height: 84,
-                      decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ShimmerLoading(
-                    builder: (context, color) => Container(
-                      height: 84,
-                      decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else if (_memberships.isEmpty)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppTheme.borderLight),
-                boxShadow: AppTheme.softShadow,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.star_border_rounded,
-                        color: AppTheme.textSecondary, size: 24),
-                  ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Free Plan',
-                          style: TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Upgrade inside prep rooms to unlock premium mock tests & features.',
-                          style: TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 13,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            ...widget.allExams
-                .where((e) => _memberships.contains(e.id))
-                .map((exam) {
-              final dateStr = _membershipDates[exam.id];
-              return Container(
-                margin: const EdgeInsets.only(left: 20, right: 20, bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.borderLight),
-                  boxShadow: AppTheme.softShadow,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Top row: icon + exam name + active badge
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryLight,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Image.network(
-                                exam.icon,
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, __, ___) => const Icon(
-                                    Icons.school_rounded,
-                                    color: AppTheme.primary,
-                                    size: 22),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              exam.name,
-                              style: GoogleFonts.outfit(
-                                color: AppTheme.textPrimary,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppTheme.successLight,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: const BoxDecoration(
-                                    color: AppTheme.success,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 5),
-                                const Text(
-                                  'Active',
-                                  style: TextStyle(
-                                    color: AppTheme.success,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 1, color: AppTheme.borderLight),
-                    // Bottom row: plan type + joined date
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.workspace_premium_rounded,
-                              color: AppTheme.primary, size: 15),
-                          const SizedBox(width: 6),
-                          const Text(
-                            'Premium Plan',
-                            style: TextStyle(
-                              color: AppTheme.primary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if (dateStr != null) ...[
-                            const SizedBox(width: 12),
-                            Container(
-                              width: 1,
-                              height: 12,
-                              color: AppTheme.border,
-                            ),
-                            const SizedBox(width: 12),
-                            const Icon(Icons.calendar_today_outlined,
-                                color: AppTheme.textSecondary, size: 13),
-                            const SizedBox(width: 5),
-                            Text(
-                              'Since ${_formatDate(dateStr)}',
-                              style: const TextStyle(
-                                color: AppTheme.textSecondary,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
+          // Options
+          _ProfileOption(
+            icon: Icons.workspace_premium_outlined,
+            title: 'My Memberships',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MembershipsScreen(allExams: widget.allExams),
                 ),
               );
-            }).toList(),
-          const SizedBox(height: 32),
-
-          // Options
+            },
+          ),
           _ProfileOption(
             icon: Icons.person_outline_rounded,
             title: 'Edit Profile',
@@ -1741,6 +1565,16 @@ class _ProfileTabState extends State<_ProfileTab> {
                   context,
                   MaterialPageRoute(
                       builder: (_) => const PrivacyPolicyScreen()));
+            },
+          ),
+          _ProfileOption(
+            icon: Icons.description_outlined,
+            title: 'Terms & Conditions',
+            onTap: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const TermsConditionsScreen()));
             },
           ),
           const SizedBox(height: 20),

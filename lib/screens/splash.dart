@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
 import 'dart:math';
 import 'home.dart';
+import 'signin.dart';
 import 'update_required_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -154,7 +155,7 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (_) => Home(user: UserModel.guest)));
+          context, MaterialPageRoute(builder: (_) => const SignIn()));
     } else {
       FirebaseDatabase.instance
           .ref('users')

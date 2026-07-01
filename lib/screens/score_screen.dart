@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/question_model.dart';
 import '../models/test_model.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/ui/ui.dart';
 
 class ScoreScreen extends StatelessWidget {
   const ScoreScreen({
@@ -70,116 +71,121 @@ class ScoreScreen extends StatelessWidget {
     return 'Keep Practising';
   }
 
+  IconData get _resultIcon {
+    if (_pct >= 0.7) return Icons.emoji_events_rounded;
+    if (_pct >= 0.4) return Icons.thumb_up_rounded;
+    return Icons.trending_up_rounded;
+  }
+
+  String get _resultSubtitle {
+    if (_pct >= 0.7) return 'Great work — you\'ve mastered this one.';
+    if (_pct >= 0.4) return 'You\'re getting there. Review and retry.';
+    return 'Keep going — review the answers and try again.';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.background,
+      appBar: AppTopBar(title: testModel.name),
       body: Column(
         children: [
-          // Header
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: AppTheme.primaryGradient,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(32),
-                bottomRight: Radius.circular(32),
-              ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 8, 16, 28),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                              color: Colors.white, size: 20),
-                          padding: EdgeInsets.zero,
-                          visualDensity: VisualDensity.compact,
+          const SizedBox(height: AppTheme.space6),
+          // Score hero card
+          Padding(
+            padding: AppTheme.screenPadding,
+            child: AppCard(
+              padding: const EdgeInsets.symmetric(
+                  vertical: AppTheme.space7, horizontal: AppTheme.space6),
+              child: Column(
+                children: [
+                  // Score ring
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 130,
+                        height: 130,
+                        child: TweenAnimationBuilder<double>(
+                          duration: const Duration(milliseconds: 1400),
+                          curve: Curves.easeOutCubic,
+                          tween: Tween<double>(begin: 0, end: _pct),
+                          builder: (context, value, child) {
+                            return CustomPaint(
+                              painter: _ScoreRingPainter(
+                                percentage: value,
+                                color: _resultColor,
+                                backgroundColor: AppTheme.borderLight,
+                              ),
+                            );
+                          },
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(testModel.name,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w800)),
-                        ),
-                      ],
+                      ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('$_obtained/$_total',
+                              style: TextStyle(
+                                  color: _obtained < 0
+                                      ? AppTheme.error
+                                      : AppTheme.textPrimary,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w900)),
+                          Text('marks',
+                              style: AppTheme.caption),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppTheme.space5),
+                  // Result banner: icon + label + encouraging subtitle
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.space5, vertical: AppTheme.space4),
+                    decoration: BoxDecoration(
+                      color: _resultColor.withValues(alpha: 0.10),
+                      borderRadius: AppTheme.brMd,
+                      border:
+                          Border.all(color: _resultColor.withValues(alpha: 0.25)),
                     ),
-                    const SizedBox(height: 20),
-                    // Score ring
-                    Stack(
-                      alignment: Alignment.center,
+                    child: Row(
                       children: [
-                        SizedBox(
-                          width: 130,
-                          height: 130,
-                          child: TweenAnimationBuilder<double>(
-                            duration: const Duration(milliseconds: 1400),
-                            curve: Curves.easeOutCubic,
-                            tween: Tween<double>(begin: 0, end: _pct),
-                            builder: (context, value, child) {
-                              return CustomPaint(
-                                painter: _ScoreRingPainter(
-                                  percentage: value,
-                                  color: _resultColor,
-                                  backgroundColor: Colors.white.withValues(alpha: 0.15),
-                                ),
-                              );
-                            },
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: _resultColor.withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(_resultIcon, color: _resultColor, size: 22),
+                        ),
+                        const SizedBox(width: AppTheme.space4),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(_resultLabel,
+                                  style: AppTheme.headingSm
+                                      .copyWith(color: _resultColor)),
+                              const SizedBox(height: 2),
+                              Text(_resultSubtitle,
+                                  style: AppTheme.caption
+                                      .copyWith(color: AppTheme.textSecondary)),
+                            ],
                           ),
                         ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('$_obtained/$_total',
-                                style: TextStyle(
-                                    color: _obtained < 0
-                                        ? AppTheme.error
-                                        : Colors.white,
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.w900)),
-                            Text('marks',
-                                style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.6),
-                                    fontSize: 12)),
-                          ],
-                        ),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: _resultColor.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
-                        border:
-                            Border.all(color: _resultColor.withValues(alpha: 0.5)),
-                      ),
-                      child: Text(_resultLabel,
-                          style: TextStyle(
-                              color: _resultColor,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14)),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.space7),
           // Stat cards
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: AppTheme.screenPadding,
             child: Row(
               children: [
                 _StatCard(
@@ -187,13 +193,13 @@ class ScoreScreen extends StatelessWidget {
                     value: '$_answered',
                     icon: Icons.check_circle_rounded,
                     color: AppTheme.success),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppTheme.space4),
                 _StatCard(
                     label: 'Skipped',
                     value: '$_skipped',
                     icon: Icons.remove_circle_rounded,
                     color: AppTheme.warning),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppTheme.space4),
                 if (_hasNegativeMarking) ...[
                   _StatCard(
                       label: 'Deducted',
@@ -211,9 +217,9 @@ class ScoreScreen extends StatelessWidget {
             ),
           ),
           if (_hasNegativeMarking) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.space4),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: AppTheme.screenPadding,
               child: Row(
                 children: [
                   _StatCard(
@@ -229,11 +235,13 @@ class ScoreScreen extends StatelessWidget {
           // CTA buttons
           Padding(
             padding: EdgeInsets.fromLTRB(
-                20, 0, 20, MediaQuery.of(context).padding.bottom + 16),
+                AppTheme.space6, 0, AppTheme.space6,
+                MediaQuery.of(context).padding.bottom + AppTheme.space5),
             child: Column(
               children: [
-                GestureDetector(
-                  onTap: () => Navigator.push(
+                AppButton(
+                  label: 'Review Answers',
+                  onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => ResultScreen(
@@ -243,49 +251,13 @@ class ScoreScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                          colors: AppTheme.primaryGradient),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                            color: AppTheme.primary.withValues(alpha: 0.3),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6))
-                      ],
-                    ),
-                    child: const Center(
-                      child: Text('Review Answers',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 16)),
-                    ),
-                  ),
                 ),
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: AppTheme.border),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: AppTheme.softShadow,
-                    ),
-                    child: const Center(
-                      child: Text('Back to Tests',
-                          style: TextStyle(
-                              color: AppTheme.primary,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16)),
-                    ),
-                  ),
+                const SizedBox(height: AppTheme.space4),
+                AppButton(
+                  label: 'Back to Tests',
+                  variant: AppButtonVariant.outline,
+                  onPressed: () =>
+                      Navigator.popUntil(context, (r) => r.isFirst),
                 ),
               ],
             ),
@@ -312,10 +284,10 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: AppTheme.space5),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: AppTheme.brLg,
           border: Border.all(color: AppTheme.borderLight),
           boxShadow: AppTheme.softShadow,
         ),

@@ -80,11 +80,7 @@ class _TestsTabState extends State<TestsTab> {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
                 child: Row(
                   children: [
-                    const Text('Mock Tests',
-                        style: TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900)),
+                    Text('Mock Tests', style: AppTheme.headingMd),
                     const Spacer(),
                     _Chip('${tests.length} tests'),
                   ],
@@ -92,82 +88,59 @@ class _TestsTabState extends State<TestsTab> {
               ),
             ),
 
-            // ── Segmented test switcher ──────────────────────────
+            // ── Test selector chip rail (distinct from the outer
+            //    Tests/Updates pill switcher so they don't look duplicated) ──
             if (tests.length > 1)
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: AppTheme.borderLight,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: tests.asMap().entries.map((entry) {
-                        final i = entry.key;
-                        final test = entry.value;
-                        final isSelected = _selectedTest == i;
-                        return Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _selectedTest = i),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(vertical: 11),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppTheme.primary
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: isSelected
-                                    ? [
-                                        BoxShadow(
-                                          color: AppTheme.primary
-                                              .withValues(alpha: 0.25),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        )
-                                      ]
-                                    : [],
-                              ),
-                              child: Text(
-                                test.name,
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: isSelected
-                                      ? Colors.white
-                                      : AppTheme.textSecondary,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
+                child: SizedBox(
+                  height: 40,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                    itemCount: tests.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, i) {
+                      final test = tests[i];
+                      final isSelected = _selectedTest == i;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedTest = i),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 9),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppTheme.primary
+                                : AppTheme.surface,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppTheme.primary
+                                  : AppTheme.border,
+                              width: 1.5,
                             ),
                           ),
-                        );
-                      }).toList(),
-                    ),
+                          child: Text(
+                            test.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppTheme.textSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
 
-            // ── Selected test info ───────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-                child: Row(
-                  children: [
-                    const Icon(Icons.timer_outlined,
-                        size: 13, color: AppTheme.textLight),
-                    const SizedBox(width: 4),
-                    Text('${selected.time} mins',
-                        style: const TextStyle(
-                            color: AppTheme.textSecondary, fontSize: 12)),
-                  ],
-                ),
-              ),
-            ),
+            const SliverPadding(padding: EdgeInsets.only(top: 12)),
 
             // ── Papers for selected test ─────────────────────────
             _PapersSliver(
@@ -276,7 +249,7 @@ class _PapersSliver extends StatelessWidget {
                       ));
                     },
                     child: Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: isLocked ? AppTheme.borderLight : Colors.white,
                         borderRadius: BorderRadius.circular(16),
@@ -316,6 +289,8 @@ class _PapersSliver extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                         color: isLocked
                                             ? AppTheme.textSecondary
@@ -327,47 +302,21 @@ class _PapersSliver extends StatelessWidget {
                                   spacing: 10,
                                   runSpacing: 4,
                                   children: [
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(Icons.help_outline_rounded,
-                                            size: 12, color: AppTheme.textLight),
-                                        const SizedBox(width: 4),
-                                        Text('$questionCount Qs',
-                                            style: const TextStyle(
-                                                color: AppTheme.textSecondary,
-                                                fontSize: 12)),
-                                      ],
-                                    ),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(Icons.timer_outlined,
-                                            size: 12, color: AppTheme.textLight),
-                                        const SizedBox(width: 4),
-                                        Text('$paperTime mins',
-                                            style: const TextStyle(
-                                                color: AppTheme.textSecondary,
-                                                fontSize: 12)),
-                                      ],
-                                    ),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(Icons.stars_rounded,
-                                            size: 12, color: AppTheme.textLight),
-                                        const SizedBox(width: 4),
-                                        Text('$totalMarks marks',
-                                            style: const TextStyle(
-                                                color: AppTheme.textSecondary,
-                                                fontSize: 12)),
-                                      ],
-                                    ),
+                                    _MetaInfo(
+                                        icon: Icons.help_outline_rounded,
+                                        label: '$questionCount Qs'),
+                                    _MetaInfo(
+                                        icon: Icons.timer_outlined,
+                                        label: '$paperTime mins'),
+                                    _MetaInfo(
+                                        icon: Icons.stars_rounded,
+                                        label: '$totalMarks marks'),
                                   ],
                                 ),
                               ],
                             ),
                           ),
+                          const SizedBox(width: 10),
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
@@ -397,6 +346,26 @@ class _PapersSliver extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _MetaInfo extends StatelessWidget {
+  const _MetaInfo({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: AppTheme.textLight),
+        const SizedBox(width: 4),
+        Text(label,
+            style: const TextStyle(
+                color: AppTheme.textSecondary, fontSize: 12)),
+      ],
     );
   }
 }

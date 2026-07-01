@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:percent/models/exam.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/ui/ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -199,13 +200,7 @@ class _ExamNewsTabState extends State<ExamNewsTab> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Latest News',
-                    style: TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900),
-                  ),
+                  Text('Latest News', style: AppTheme.headingMd),
                   const SizedBox(height: 2),
                   if (!_loading)
                     Row(
@@ -223,7 +218,7 @@ class _ExamNewsTabState extends State<ExamNewsTab> {
                         const SizedBox(width: 5),
                         Text(
                           _isLive ? 'Live · Google News' : 'Curated tips',
-                          style: const TextStyle(
+                          style: AppTheme.caption.copyWith(
                               color: AppTheme.textSecondary, fontSize: 11),
                         ),
                       ],
@@ -295,42 +290,32 @@ class _NewsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = isLive ? AppTheme.secondary : AppTheme.primary;
     final tappable = article.url.isNotEmpty;
-    return GestureDetector(
+    return AppCard(
+      margin: const EdgeInsets.only(bottom: AppTheme.space4),
       onTap: tappable ? () => _open(context) : null,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppTheme.borderLight),
-          boxShadow: AppTheme.softShadow,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                article.title,
-                style: const TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  height: 1.4,
-                ),
+      child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              article.title,
+              style: AppTheme.body.copyWith(
+                color: AppTheme.textPrimary,
+                fontWeight: FontWeight.w700,
+                height: 1.4,
               ),
-              if (article.description.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  article.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                      color: Colors.grey.shade600, fontSize: 12, height: 1.5),
-                ),
-              ],
-              const SizedBox(height: 10),
-              Row(
+            ),
+            if (article.description.isNotEmpty) ...[
+              const SizedBox(height: AppTheme.space3),
+              Text(
+                article.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTheme.bodySm.copyWith(
+                    color: Colors.grey.shade600, height: 1.5),
+              ),
+            ],
+            const SizedBox(height: AppTheme.space4),
+            Row(
                 children: [
                   if (article.source.isNotEmpty)
                     Container(
@@ -382,8 +367,6 @@ class _NewsCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 }

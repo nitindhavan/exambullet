@@ -2,8 +2,10 @@ import 'package:percent/screens/splash.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/ui/ui.dart';
 
 class _Feature {
   final IconData icon;
@@ -13,8 +15,8 @@ class _Feature {
 
 const _kFeatures = [
   _Feature(Icons.quiz_outlined, 'Full-length mock tests with detailed analytics'),
-  _Feature(Icons.bar_chart_rounded, 'Live score tracking & performance insights'),
-  _Feature(Icons.auto_stories_rounded, 'Curated notes & practice questions'),
+  _Feature(Icons.menu_book_rounded, 'Curated notes & practice questions'),
+  _Feature(Icons.campaign_rounded, 'Latest exam news & updates'),
 ];
 
 class SignIn extends StatefulWidget {
@@ -268,11 +270,7 @@ class _DesktopLayout extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
                       const Center(
-                        child: Text(
-                          'By continuing, you agree to our Terms & Privacy Policy',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12, color: AppTheme.textLight),
-                        ),
+                        child: LegalConsentText(),
                       ),
                     ],
                   ),
@@ -295,7 +293,9 @@ class _MobileLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: AppTheme.darkSurface,
+      child: Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: AppTheme.primaryGradient,
@@ -425,19 +425,15 @@ class _MobileLayout extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       const Center(
-                        child: Text(
-                          'By continuing, you agree to our Terms & Privacy Policy',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12, color: AppTheme.textLight),
-                        ),
+                        child: LegalConsentText(),
                       ),
                       const SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           _featureChip(Icons.quiz_outlined, 'Mock Tests'),
-                          _featureChip(Icons.bar_chart_rounded, 'Live Scores'),
-                          _featureChip(Icons.lock_open_rounded, 'Membership'),
+                          _featureChip(Icons.menu_book_rounded, 'Notes'),
+                          _featureChip(Icons.campaign_rounded, 'News'),
                         ],
                       ),
                     ],
@@ -447,6 +443,7 @@ class _MobileLayout extends StatelessWidget {
             ),
           ),
         ),
+      ),
       ),
     );
   }

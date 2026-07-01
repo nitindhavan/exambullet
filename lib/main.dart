@@ -9,6 +9,9 @@ import 'firebase_options.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // App-wide default: transparent status bar with dark icons over our light UI.
+  SystemChrome.setSystemUIOverlayStyle(AppTheme.lightSurface);
+
   try {
     Firebase.app();
   } catch (e) {
@@ -38,13 +41,11 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: AppTheme.background,
         textTheme: GoogleFonts.outfitTextTheme(Theme.of(context).textTheme),
         appBarTheme: const AppBarTheme(
-          backgroundColor: AppTheme.primary,
+          backgroundColor: AppTheme.surface,
+          foregroundColor: AppTheme.textPrimary,
           toolbarHeight: 70,
           elevation: 0,
-          systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: AppTheme.primary,
-            statusBarIconBrightness: Brightness.light,
-          ),
+          systemOverlayStyle: AppTheme.lightSurface,
         ),
       ),
       home: const Splash(),

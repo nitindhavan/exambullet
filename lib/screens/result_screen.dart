@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/test_model.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/ui/ui.dart';
 
 class ResultScreen extends StatefulWidget {
   const ResultScreen({
@@ -40,60 +41,103 @@ class _ResultScreenState extends State<ResultScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
+      appBar: AppTopBar(
+        title: widget.testModel.name,
+        onBack: () => Navigator.pop(context),
+        actions: [
+          Center(
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryLight,
+                borderRadius: AppTheme.brSm,
+              ),
+              child: Text(
+                'Q ${_current + 1} / $total',
+                style: AppTheme.label
+                    .copyWith(color: AppTheme.primary, fontSize: 13),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppTheme.space5),
+        ],
+      ),
       body: Column(
         children: [
-          // ── Header ────────────────────────────────────────────
-          _Header(
-            testName: widget.testModel.name,
-            current: _current,
-            total: total,
-            onBack: () => Navigator.pop(context),
-          ),
-
-          // ── Progress bar ──────────────────────────────────────
+          // ── Progress row (position + bar) ─────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: (_current + 1) / total,
-                backgroundColor: AppTheme.primaryLight,
-                color: AppTheme.primary,
-                minHeight: 5,
-              ),
+            padding: const EdgeInsets.fromLTRB(
+                AppTheme.space5, AppTheme.space4, AppTheme.space5, 0),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Reviewing answers',
+                          style: AppTheme.caption
+                              .copyWith(color: AppTheme.textSecondary)),
+                      Text('Question ${_current + 1} of $total',
+                          style: AppTheme.label.copyWith(
+                              color: AppTheme.primary, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: (_current + 1) / total,
+                    backgroundColor: AppTheme.primaryLight,
+                    color: AppTheme.primary,
+                    minHeight: 6,
+                  ),
+                ),
+              ],
             ),
           ),
 
           // ── Scrollable question content ───────────────────────
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+              padding: const EdgeInsets.fromLTRB(
+                  AppTheme.space5, AppTheme.space4, AppTheme.space5, AppTheme.space7),
               children: [
-                // Question text card
+                // Question text card (light)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(AppTheme.space5),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: AppTheme.primaryGradient,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                          color: AppTheme.primary.withValues(alpha: 0.25),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4))
-                    ],
+                    color: AppTheme.surface,
+                    borderRadius: AppTheme.brLg,
+                    border: Border.all(color: AppTheme.borderLight),
+                    boxShadow: AppTheme.softShadow,
                   ),
-                  child: Text(
-                    question.questionText,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        height: 1.5),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryLight,
+                          borderRadius: AppTheme.brSm,
+                        ),
+                        child: Text('Question ${_current + 1}',
+                            style: AppTheme.label.copyWith(
+                                color: AppTheme.primary, fontSize: 11.5)),
+                      ),
+                      const SizedBox(height: AppTheme.space4),
+                      Text(
+                        question.questionText,
+                        style: AppTheme.body.copyWith(
+                            color: AppTheme.textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            height: 1.5),
+                      ),
+                    ],
                   ),
                 ),
 
@@ -165,45 +209,21 @@ class _ResultScreenState extends State<ResultScreen> {
                   ),
                 ],
 
-                const SizedBox(height: 16),
-
-                // Prev / Next
-                Row(
-                  children: [
-                    _NavBtn(
-                      icon: Icons.arrow_back_ios_new_rounded,
-                      label: 'Prev',
-                      trailing: false,
-                      enabled: _current > 0,
-                      onTap: () => _goTo(_current - 1),
-                    ),
-                    const SizedBox(width: 12),
-                    _NavBtn(
-                      icon: Icons.arrow_forward_ios_rounded,
-                      label: 'Next',
-                      trailing: true,
-                      enabled: _current < total - 1,
-                      onTap: () => _goTo(_current + 1),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
+          // ── Bottom action bar: Prev · Palette · Next / Done ───
+          _BottomBar(
+            isFirst: _current == 0,
+            isLast: _current == total - 1,
+            current: _current,
+            total: total,
+            onPrev: () => _goTo(_current - 1),
+            onNext: () => _goTo(_current + 1),
+            onPalette: () => _showPalette(context),
+            onDone: () => Navigator.pop(context),
+          ),
         ],
-      ),
-
-      // ── Question palette FAB ──────────────────────────────────
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: _primary,
-        onPressed: () => _showPalette(context),
-        icon:
-            const Icon(Icons.grid_view_rounded, color: Colors.white, size: 20),
-        label: Text(
-          '${_current + 1}/$total',
-          style: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
-        ),
       ),
     );
   }
@@ -322,80 +342,6 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 }
 
-// ── Header ─────────────────────────────────────────────────────────────────────
-
-class _Header extends StatelessWidget {
-  const _Header({
-    required this.testName,
-    required this.current,
-    required this.total,
-    required this.onBack,
-  });
-  final String testName;
-  final int current;
-  final int total;
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    final topPad = MediaQuery.of(context).padding.top;
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: AppTheme.primaryGradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
-      ),
-      padding: EdgeInsets.fromLTRB(8, topPad + 8, 16, 18),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: onBack,
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: Colors.white, size: 20),
-            padding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(testName,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800)),
-                const SizedBox(height: 2),
-                Text('Review Answers',
-                    style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              'Q ${current + 1} / $total',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // ── Option tile ────────────────────────────────────────────────────────────────
 
 class _ResultOption extends StatelessWidget {
@@ -490,59 +436,144 @@ class _ResultOption extends StatelessWidget {
 
 // ── Nav button ────────────────────────────────────────────────────────────────
 
-class _NavBtn extends StatelessWidget {
-  const _NavBtn({
-    required this.icon,
-    required this.label,
-    required this.trailing,
-    required this.enabled,
-    required this.onTap,
+// ── Bottom action bar ─────────────────────────────────────────────────────────
+
+class _BottomBar extends StatelessWidget {
+  const _BottomBar({
+    required this.isFirst,
+    required this.isLast,
+    required this.current,
+    required this.total,
+    required this.onPrev,
+    required this.onNext,
+    required this.onPalette,
+    required this.onDone,
   });
+  final bool isFirst;
+  final bool isLast;
+  final int current;
+  final int total;
+  final VoidCallback onPrev;
+  final VoidCallback onNext;
+  final VoidCallback onPalette;
+  final VoidCallback onDone;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+          AppTheme.space5, AppTheme.space4, AppTheme.space5, bottomPad + AppTheme.space4),
+      decoration: const BoxDecoration(
+        color: AppTheme.surface,
+        border: Border(top: BorderSide(color: AppTheme.borderLight)),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 16, offset: Offset(0, -4)),
+        ],
+      ),
+      child: Row(
+        children: [
+          _GhostBtn(
+            icon: Icons.arrow_back_ios_new_rounded,
+            enabled: !isFirst,
+            onTap: onPrev,
+          ),
+          const SizedBox(width: AppTheme.space3),
+          Expanded(
+            child: GestureDetector(
+              onTap: onPalette,
+              child: Container(
+                height: 48,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryLight,
+                  borderRadius: AppTheme.brMd,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.grid_view_rounded,
+                        color: AppTheme.primary, size: 18),
+                    const SizedBox(width: 8),
+                    Text('${current + 1} / $total',
+                        style: AppTheme.label.copyWith(
+                            color: AppTheme.primary, fontSize: 14)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppTheme.space3),
+          isLast
+              ? _PrimaryBtn(
+                  label: 'Done', icon: Icons.check_rounded, onTap: onDone)
+              : _GhostBtn(
+                  icon: Icons.arrow_forward_ios_rounded,
+                  enabled: true,
+                  onTap: onNext,
+                ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GhostBtn extends StatelessWidget {
+  const _GhostBtn(
+      {required this.icon, required this.enabled, required this.onTap});
   final IconData icon;
-  final String label;
-  final bool trailing;
   final bool enabled;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: enabled ? onTap : null,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: enabled ? Colors.white : Colors.white.withValues(alpha: 0.45),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.borderLight),
-            boxShadow: enabled ? AppTheme.softShadow : [],
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: AppTheme.brMd,
+          border: Border.all(color: AppTheme.border),
+        ),
+        child: Icon(icon,
+            size: 16, color: enabled ? AppTheme.primary : AppTheme.border),
+      ),
+    );
+  }
+}
+
+class _PrimaryBtn extends StatelessWidget {
+  const _PrimaryBtn(
+      {required this.label, required this.icon, required this.onTap});
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: AppTheme.primaryGradient,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (!trailing)
-                Icon(icon,
-                    size: 14,
-                    color: enabled
-                        ? AppTheme.primary
-                        : Colors.grey.shade300),
-              if (!trailing) const SizedBox(width: 6),
-              Text(label,
-                  style: TextStyle(
-                      color: enabled
-                          ? AppTheme.primary
-                          : Colors.grey.shade300,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14)),
-              if (trailing) const SizedBox(width: 6),
-              if (trailing)
-                Icon(icon,
-                    size: 14,
-                    color: enabled
-                        ? AppTheme.primary
-                        : Colors.grey.shade300),
-            ],
-          ),
+          borderRadius: AppTheme.brMd,
+          boxShadow: AppTheme.softShadow,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label, style: AppTheme.label.copyWith(color: Colors.white)),
+            const SizedBox(width: 6),
+            Icon(icon, color: Colors.white, size: 18),
+          ],
         ),
       ),
     );
