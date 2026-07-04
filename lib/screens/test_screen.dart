@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:percent/models/question_model.dart';
 import 'package:percent/screens/score_screen.dart';
+import 'package:percent/services/test_result_service.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -29,6 +30,8 @@ class _TestScreenState extends State<TestScreen> {
   List<Question> _questions = [];
   bool _loaded = false;
   Timer? _timer;
+  DateTime? _startedAt; // when the test actually began, for elapsed-time capture
+  bool _saved = false; // guard against double-saving on auto + manual submit
   late final ScrollController _scrollController = ScrollController();
 
   // ValueNotifiers — update WITHOUT calling setState on the whole tree
@@ -73,6 +76,7 @@ class _TestScreenState extends State<TestScreen> {
       _timerNotifier.value = widget.testModel.time * 60;
       _loaded = true;
     });
+    _startedAt = DateTime.now();
     _startTimer();
   }
 
@@ -90,6 +94,23 @@ class _TestScreenState extends State<TestScreen> {
 
   void _finish() {
     _timer?.cancel();
+    // Persist the attempt for the analytics dashboard (fire-and-forget so the
+    // score screen shows immediately). Guarded so auto + manual submit can't
+    // both save.
+    if (!_saved) {
+      _saved = true;
+      final elapsedSec = _startedAt == null
+          ? widget.testModel.time * 60
+          : DateTime.now().difference(_startedAt!).inSeconds;
+      TestResultService.saveAttempt(
+        test: widget.testModel,
+        examId: widget.examId,
+        paperId: widget.paperId ?? '',
+        questions: _questions,
+        selection: _selected,
+        elapsedSec: elapsedSec,
+      );
+    }
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(

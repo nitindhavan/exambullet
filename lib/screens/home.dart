@@ -1,6 +1,7 @@
 import 'package:percent/models/User.dart';
 import 'package:percent/models/exam.dart';
 import 'package:percent/screens/all_exams_screen.dart';
+import 'package:percent/screens/analytics_screen.dart';
 import 'package:percent/screens/exam_dashboard.dart';
 import 'package:percent/screens/dashboard/planner_tab.dart';
 import 'package:percent/screens/dashboard/focus_tab.dart';
@@ -159,6 +160,8 @@ class _HomeState extends State<Home> {
       case 2:
         return FocusTab(goalExams: goalExams);
       case 3:
+        return AnalyticsScreen(allExams: allExams, embedded: true);
+      case 4:
         return _ProfileTab(
           user: widget.user,
           goalExams: goalExams,
@@ -455,6 +458,7 @@ class _BottomNav extends StatelessWidget {
       const _NavItem(Icons.assignment_rounded, 'Tests'),
       const _NavItem(Icons.checklist_rounded, 'Planner'),
       const _NavItem(Icons.timer_rounded, 'Focus'),
+      const _NavItem(Icons.insights_rounded, 'Progress'),
       const _NavItem(Icons.person_rounded, 'Profile'),
     ];
 
@@ -474,7 +478,7 @@ class _BottomNav extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.fromLTRB(24, 12, 24, bottomPad + 10),
+        padding: EdgeInsets.fromLTRB(10, 12, 10, bottomPad + 10),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: items.asMap().entries.map((entry) {
@@ -489,8 +493,8 @@ class _BottomNav extends StatelessWidget {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOut,
-                  margin: const EdgeInsets.symmetric(horizontal: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
                   decoration: BoxDecoration(
                     color: selected ? AppTheme.primaryLight : Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
@@ -506,6 +510,9 @@ class _BottomNav extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         item.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
                           fontSize: 10,
                           fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
