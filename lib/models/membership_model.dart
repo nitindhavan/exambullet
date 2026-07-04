@@ -1,17 +1,15 @@
 class MembershipModel {
-  String examId;
   String userId;
   String membershipDate;
   bool isActive;
   String? paymentId;
   String? expiryDate; // ISO-8601; null = lifetime / no expiry
 
-  MembershipModel(this.examId, this.userId, this.membershipDate,
+  MembershipModel(this.userId, this.membershipDate,
       {this.isActive = true, this.paymentId, this.expiryDate});
 
   MembershipModel.fromMap(Map<dynamic, dynamic> map)
-      : examId = map['examId'],
-        userId = map['userId'],
+      : userId = map['userId'],
         membershipDate = map['membershipDate'],
         isActive = map['isActive'] ?? true,
         paymentId = map['paymentId'] as String?,
@@ -27,7 +25,6 @@ class MembershipModel {
 
   Map<String, Object?> toMap() {
     final map = <String, Object?>{
-      'examId': examId,
       'userId': userId,
       'membershipDate': membershipDate,
       'isActive': isActive,

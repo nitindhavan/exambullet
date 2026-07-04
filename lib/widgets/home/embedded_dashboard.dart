@@ -9,6 +9,7 @@ import 'package:percent/screens/dashboard/exam_news_tab.dart';
 import 'package:percent/screens/dashboard/notes_tab.dart';
 import 'package:percent/screens/dashboard/quiz_tab.dart';
 import 'package:percent/screens/dashboard/tests_tab.dart';
+import 'package:percent/services/membership_service.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/shimmer_loading.dart';
 
@@ -30,7 +31,7 @@ class _EmbeddedDashboardState extends State<EmbeddedDashboard> {
   int _currentIndex = 0;
   bool _hasMembership = false;
   bool _membershipLoaded = false;
-  StreamSubscription<DatabaseEvent>? _membershipSub;
+  StreamSubscription<bool>? _membershipSub;
 
   List<String> _tabs = ['Tests', 'Updates'];
   bool _tabsLoaded = false;
@@ -67,24 +68,11 @@ class _EmbeddedDashboardState extends State<EmbeddedDashboard> {
       setState(() => _membershipLoaded = true);
       return;
     }
-    _membershipSub = FirebaseDatabase.instance
-        .ref('memberships')
-        .child(widget.exam.id)
-        .child(uid)
-        .onValue
-        .listen((event) {
+    // App-wide membership: one active record unlocks every exam.
+    _membershipSub = MembershipService.hasAccessStream().listen((hasAccess) {
       if (!mounted) return;
       setState(() {
-        if (event.snapshot.exists) {
-          final rawData = event.snapshot.value;
-          if (rawData is Map) {
-            _hasMembership = rawData['isActive'] != false;
-          } else {
-            _hasMembership = true;
-          }
-        } else {
-          _hasMembership = false;
-        }
+        _hasMembership = hasAccess;
         _membershipLoaded = true;
       });
     }, onError: (err) {

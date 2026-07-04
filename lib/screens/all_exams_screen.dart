@@ -1,4 +1,6 @@
 import 'package:percent/models/exam.dart';
+import 'package:percent/utils/category_icons.dart';
+import 'package:percent/widgets/exam_icon.dart';
 import 'package:percent/widgets/sign_in_sheet.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -22,10 +24,22 @@ class AllExamsScreen extends StatefulWidget {
   State<AllExamsScreen> createState() => _AllExamsScreenState();
 }
 
+class _Category {
+  _Category(this.id, this.label, this.order, this.icon);
+  final String id;
+  final String label;
+  final int order;
+  final String icon;
+}
+
 class _AllExamsScreenState extends State<AllExamsScreen> {
   late final TextEditingController _searchCtrl;
   String _search = '';
   late Set<String> _goalIds;
+
+  List<_Category> _categories = [];
+  String? _selectedCategory; // null = showing category tiles
+  bool _categoriesLoaded = false;
 
   @override
   void initState() {
@@ -33,6 +47,35 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
     _search = widget.initialSearch;
     _searchCtrl = TextEditingController(text: widget.initialSearch);
     _goalIds = Set<String>.from(widget.goalIds);
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final snap = await FirebaseDatabase.instance.ref('categories').once();
+      final cats = <_Category>[];
+      if (snap.snapshot.exists && snap.snapshot.value != null) {
+        final data = snap.snapshot.value as Map;
+        data.forEach((key, v) {
+          final m = v as Map;
+          cats.add(_Category(
+            key.toString(),
+            (m['label'] ?? key).toString(),
+            (m['order'] as num?)?.toInt() ?? 999,
+            (m['icon'] ?? '').toString(),
+          ));
+        });
+      }
+      cats.sort((a, b) => a.order.compareTo(b.order));
+      if (mounted) {
+        setState(() {
+          _categories = cats;
+          _categoriesLoaded = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _categoriesLoaded = true);
+    }
   }
 
   @override
@@ -41,10 +84,24 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
     super.dispose();
   }
 
-  List<ExamModel> _filterExams() {
-    if (_search.isEmpty) return widget.allExams;
-    final q = _search.toLowerCase();
-    return widget.allExams.where((e) => e.name.toLowerCase().contains(q)).toList();
+  int _countInCategory(String catId) =>
+      widget.allExams.where((e) => e.category == catId).length;
+
+  /// Exams for the current view: search results (across all) if searching,
+  /// otherwise the selected category's exams.
+  List<ExamModel> _visibleExams() {
+    if (_search.isNotEmpty) {
+      final q = _search.toLowerCase();
+      return widget.allExams
+          .where((e) => e.name.toLowerCase().contains(q))
+          .toList();
+    }
+    if (_selectedCategory != null) {
+      return widget.allExams
+          .where((e) => e.category == _selectedCategory)
+          .toList();
+    }
+    return const [];
   }
 
   Future<void> _toggleGoal(String examId) async {
@@ -65,44 +122,99 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filterExams();
+    // Show category tiles only when not searching and no category picked.
+    final showingCategories = _search.isEmpty && _selectedCategory == null;
+    final exams = _visibleExams();
 
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      appBar: const AppTopBar(title: 'Choose Your Goals'),
-      body: Column(
-        children: [
-          // ── Search ──
-          _buildSearchBar(context),
+    // When viewing a category's exams, back should return to the category grid.
+    final inCategoryView = _selectedCategory != null && _search.isEmpty;
 
-          // ── Catalog Grid ──
-          Expanded(
-            child: filtered.isEmpty
-                ? _emptyState()
-                : GridView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    itemCount: filtered.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.84,
-                    ),
-                    itemBuilder: (context, index) {
-                      final exam = filtered[index];
-                      final isGoal = _goalIds.contains(exam.id);
-                      return GestureDetector(
-                        onTap: () => _toggleGoal(exam.id),
-                        child: _ExamCard(
-                          exam: exam,
-                          isGoal: isGoal,
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
+    return PopScope(
+      canPop: !inCategoryView,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && inCategoryView) {
+          setState(() => _selectedCategory = null);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppTopBar(
+          title: inCategoryView ? _categoryLabel(_selectedCategory!) : 'Add Exams',
+          onBack: inCategoryView
+              ? () => setState(() => _selectedCategory = null)
+              : null,
+        ),
+        body: Column(
+          children: [
+            _buildSearchBar(context),
+            Expanded(
+              child: showingCategories
+                  ? _buildCategoryGrid()
+                  : (exams.isEmpty
+                      ? _emptyState()
+                      : _buildExamGrid(exams)),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  String _categoryLabel(String id) =>
+      _categories.firstWhere((c) => c.id == id,
+              orElse: () => _Category(id, id, 0, ''))
+          .label;
+
+  Widget _buildCategoryGrid() {
+    if (!_categoriesLoaded) {
+      return const Center(
+          child: CircularProgressIndicator(color: AppTheme.primary));
+    }
+    // Hide empty categories.
+    final visible =
+        _categories.where((c) => _countInCategory(c.id) > 0).toList();
+    if (visible.isEmpty) return _emptyState();
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      itemCount: visible.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.25,
+      ),
+      itemBuilder: (context, index) {
+        final c = visible[index];
+        return GestureDetector(
+          onTap: () => setState(() => _selectedCategory = c.id),
+          child: _CategoryCard(
+            label: c.label,
+            count: _countInCategory(c.id),
+            icon: categoryIconFor(c.icon),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildExamGrid(List<ExamModel> exams) {
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      itemCount: exams.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.84,
+      ),
+      itemBuilder: (context, index) {
+        final exam = exams[index];
+        final isGoal = _goalIds.contains(exam.id);
+        return GestureDetector(
+          onTap: () => _toggleGoal(exam.id),
+          child: _ExamCard(exam: exam, isGoal: isGoal),
+        );
+      },
     );
   }
 
@@ -189,6 +301,61 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
   }
 }
 
+class _CategoryCard extends StatelessWidget {
+  const _CategoryCard(
+      {required this.label, required this.count, required this.icon});
+  final String label;
+  final int count;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.borderLight, width: 1.5),
+        boxShadow: AppTheme.softShadow,
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryLight,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppTheme.primary, size: 20),
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Flexible(
+                  child: Text(
+                    label,
+                    style: AppTheme.headingSm.copyWith(fontSize: 14, height: 1.15),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text('$count ${count == 1 ? 'exam' : 'exams'}',
+                    style: AppTheme.bodySm),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ExamCard extends StatelessWidget {
   const _ExamCard({
     required this.exam,
@@ -250,14 +417,10 @@ class _ExamCard extends StatelessWidget {
                         ],
                       ),
                       child: ClipOval(
-                        child: Image.network(
-                          exam.icon,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.school_rounded,
-                            color: AppTheme.primary,
-                            size: 24,
-                          ),
+                        child: ExamIcon(
+                          iconKey: exam.iconKey,
+                          imageUrl: exam.icon,
+                          size: 24,
                         ),
                       ),
                     ),

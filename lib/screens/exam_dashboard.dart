@@ -6,10 +6,11 @@ import 'package:percent/screens/dashboard/notes_tab.dart';
 import 'package:percent/screens/dashboard/quiz_tab.dart';
 import 'package:percent/screens/dashboard/tests_tab.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:percent/services/membership_service.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/exam_icon.dart';
 import 'package:percent/widgets/shimmer_loading.dart';
 class ExamDashboard extends StatefulWidget {
   const ExamDashboard({
@@ -31,7 +32,7 @@ class _ExamDashboardState extends State<ExamDashboard> {
   late int _currentIndex;
   bool _hasMembership = false;
   bool _membershipLoaded = false;
-  StreamSubscription<DatabaseEvent>? _membershipSub;
+  StreamSubscription<bool>? _membershipSub;
 
   @override
   void initState() {
@@ -50,24 +51,11 @@ class _ExamDashboardState extends State<ExamDashboard> {
       setState(() => _membershipLoaded = true);
       return;
     }
-    _membershipSub = FirebaseDatabase.instance
-        .ref('memberships')
-        .child(widget.exam.id)
-        .child(uid)
-        .onValue
-        .listen((event) {
+    // App-wide membership: one active record unlocks every exam.
+    _membershipSub = MembershipService.hasAccessStream().listen((hasAccess) {
       if (!mounted) return;
       setState(() {
-        if (event.snapshot.exists) {
-          final rawData = event.snapshot.value;
-          if (rawData is Map) {
-            _hasMembership = rawData['isActive'] != false;
-          } else {
-            _hasMembership = true;
-          }
-        } else {
-          _hasMembership = false;
-        }
+        _hasMembership = hasAccess;
         _membershipLoaded = true;
       });
     }, onError: (err) {
@@ -242,16 +230,14 @@ class _DesktopRail extends StatelessWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      exam.icon,
-                      height: 44, width: 44, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        height: 44, width: 44,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.school_rounded, color: Colors.white, size: 24),
+                    child: SizedBox(
+                      height: 44,
+                      width: 44,
+                      child: ExamIcon(
+                        iconKey: exam.iconKey,
+                        imageUrl: exam.icon,
+                        size: 24,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -480,17 +466,14 @@ class _DashboardHeader extends StatelessWidget {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(13),
-                          child: Image.network(
-                            exam.icon,
-                            height: 54, width: 54, fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              height: 54, width: 54,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(13),
-                              ),
-                              child: const Icon(Icons.school_rounded,
-                                  color: Colors.white, size: 28),
+                          child: SizedBox(
+                            height: 54,
+                            width: 54,
+                            child: ExamIcon(
+                              iconKey: exam.iconKey,
+                              imageUrl: exam.icon,
+                              size: 28,
+                              color: Colors.white,
                             ),
                           ),
                         ),

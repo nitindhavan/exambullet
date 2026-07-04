@@ -17,7 +17,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           children: [
             _buildSection(
                 'Information We Collect',
-                'We collect information to provide better services to our users. This includes your name, phone number, and app usage data.'),
+                'We collect information to provide better services to our users. This includes your name, email address, and app usage data.'),
             const SizedBox(height: 24),
             _buildSection(
                 'How We Use Information',

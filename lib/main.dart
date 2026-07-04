@@ -22,6 +22,12 @@ Future<void> main() async {
   // App-wide default: transparent status bar with dark icons over our light UI.
   SystemChrome.setSystemUIOverlayStyle(AppTheme.lightSurface);
 
+  // Lock the app to portrait orientation (no landscape / rotation).
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   try {
     Firebase.app();
   } catch (e) {

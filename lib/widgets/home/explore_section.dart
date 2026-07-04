@@ -2,6 +2,7 @@ import 'package:percent/models/exam.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/exam_icon.dart';
 import 'package:percent/widgets/shimmer.dart';
 
 class ExploreSection extends StatelessWidget {
@@ -245,14 +246,10 @@ class _ExploreCard extends StatelessWidget {
                       ],
                     ),
                     child: ClipOval(
-                      child: Image.network(
-                        exam.icon,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(
-                          Icons.school_rounded,
-                          color: AppTheme.primary,
-                          size: 28,
-                        ),
+                      child: ExamIcon(
+                        iconKey: exam.iconKey,
+                        imageUrl: exam.icon,
+                        size: 28,
                       ),
                     ),
                   ),

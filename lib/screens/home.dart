@@ -2,6 +2,8 @@ import 'package:percent/models/User.dart';
 import 'package:percent/models/exam.dart';
 import 'package:percent/screens/all_exams_screen.dart';
 import 'package:percent/screens/exam_dashboard.dart';
+import 'package:percent/screens/dashboard/planner_tab.dart';
+import 'package:percent/screens/dashboard/focus_tab.dart';
 import 'package:percent/widgets/home/embedded_dashboard.dart';
 import 'package:percent/widgets/home/home_header.dart';
 import 'package:percent/widgets/home/news_section.dart';
@@ -10,6 +12,7 @@ import 'package:percent/screens/privacy_policy_screen.dart';
 import 'package:percent/screens/terms_conditions_screen.dart';
 import 'package:percent/screens/signin.dart';
 import 'package:percent/widgets/sign_in_sheet.dart';
+import 'package:percent/widgets/exam_icon.dart';
 import 'package:percent/screens/edit_profile_screen.dart';
 import 'package:percent/widgets/shimmer.dart';
 import 'package:percent/widgets/ui/ui.dart';
@@ -31,15 +34,8 @@ class _HomeState extends State<Home> {
   bool examsLoading = true;
   late final Stream<Set<String>> _goalIdsStream;
   int _activeTab = 0;
-  String _exploreSearchQuery = '';
   String? _selectedRoomsExamId;
-  final TextEditingController _exploreSearchController = TextEditingController();
 
-  @override
-  void dispose() {
-    _exploreSearchController.dispose();
-    super.dispose();
-  }
   @override
   void initState() {
     super.initState();
@@ -120,6 +116,12 @@ class _HomeState extends State<Home> {
             showBack: false,
             leadingIcon: Icons.percent_rounded,
             actions: [
+              IconButton(
+                onPressed: () => _openAllExams(goalIds),
+                icon: const Icon(Icons.add_circle_outline_rounded,
+                    color: AppTheme.primary),
+                tooltip: 'Add Exams',
+              ),
               NotificationBell(userId: widget.user.uid),
               const SizedBox(width: AppTheme.space5),
             ],
@@ -153,8 +155,10 @@ class _HomeState extends State<Home> {
       case 0:
         return _buildRoomsTab(goalExams, goalIds, examsLoading);
       case 1:
-        return _buildExploreTab(allExams, goalIds, examsLoading);
+        return PlannerTab(goalExams: goalExams);
       case 2:
+        return FocusTab(goalExams: goalExams);
+      case 3:
         return _ProfileTab(
           user: widget.user,
           goalExams: goalExams,
@@ -194,7 +198,7 @@ class _HomeState extends State<Home> {
               ),
               if (goalExams.isNotEmpty)
                 GestureDetector(
-                  onTap: () => setState(() => _activeTab = 1),
+                  onTap: () => _openAllExams(goalIds),
                   child: Text('Manage',
                       style: GoogleFonts.inter(
                           color: AppTheme.primary, fontSize: 13, fontWeight: FontWeight.w700)),
@@ -282,8 +286,8 @@ class _HomeState extends State<Home> {
                     ),
                     const SizedBox(height: 20),
                     AppButton(
-                      label: 'Explore Exams',
-                      onPressed: () => setState(() => _activeTab = 1),
+                      label: 'Add Exams',
+                      onPressed: () => _openAllExams(goalIds),
                       expand: false,
                       height: 46,
                     ),
@@ -321,7 +325,7 @@ class _HomeState extends State<Home> {
                 ],
               ),
               GestureDetector(
-                onTap: () => setState(() => _activeTab = 1),
+                onTap: () => _openAllExams(goalIds),
                 child: Text('Manage',
                     style: GoogleFonts.inter(
                         color: AppTheme.primary,
@@ -374,11 +378,10 @@ class _HomeState extends State<Home> {
                                 shape: BoxShape.circle,
                               ),
                               child: ClipOval(
-                                child: Image.network(
-                                  exam.icon,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) =>
-                                      const Icon(Icons.school_rounded, color: AppTheme.primary, size: 22),
+                                child: ExamIcon(
+                                  iconKey: exam.iconKey,
+                                  imageUrl: exam.icon,
+                                  size: 22,
                                 ),
                               ),
                             ),
@@ -431,286 +434,6 @@ class _HomeState extends State<Home> {
       ],
     );
   }
-
-  Widget _buildExploreTab(List<ExamModel> allExams, Set<String> goalIds, bool examsLoading) {
-    final filteredExams = allExams.where((e) {
-      final query = _exploreSearchQuery.toLowerCase();
-      return e.name.toLowerCase().contains(query);
-    }).toList();
-
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
-            child: Row(
-              children: [
-                const Icon(Icons.explore_rounded,
-                    color: AppTheme.primary, size: 24),
-                const SizedBox(width: 8),
-                Text(
-                  'Explore Exams',
-                  style: GoogleFonts.outfit(
-                    color: AppTheme.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        // Search Input Bar
-        SliverToBoxAdapter(
-          child: Container(
-            height: 46,
-            margin: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.borderLight, width: 1.5),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.search_rounded,
-                  color: AppTheme.textSecondary.withValues(alpha: 0.65),
-                  size: 18,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _exploreSearchController,
-                    onChanged: (val) {
-                      setState(() {
-                        _exploreSearchQuery = val;
-                      });
-                    },
-                    style: GoogleFonts.inter(
-                      color: AppTheme.textPrimary,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Search for exams...',
-                      hintStyle: GoogleFonts.inter(
-                        color: AppTheme.textSecondary.withValues(alpha: 0.55),
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ),
-                if (_exploreSearchQuery.isNotEmpty)
-                  GestureDetector(
-                    onTap: () {
-                      _exploreSearchController.clear();
-                      setState(() {
-                        _exploreSearchQuery = '';
-                      });
-                    },
-                    child: Icon(
-                      Icons.close_rounded,
-                      color: AppTheme.textSecondary.withValues(alpha: 0.65),
-                      size: 18,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        if (examsLoading)
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(
-              child: CircularProgressIndicator(),
-            ),
-          )
-        else if (filteredExams.isEmpty)
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 48),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.search_off_rounded,
-                      color: AppTheme.textSecondary.withValues(alpha: 0.35),
-                      size: 48,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'No Exams Found',
-                      style: GoogleFonts.outfit(
-                        color: AppTheme.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Try searching for other keywords.',
-                      style: GoogleFonts.inter(
-                        color: AppTheme.textSecondary,
-                        fontSize: 12.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          )
-        else ...[
-          // Result count
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
-              child: Text(
-                '${filteredExams.length} ${filteredExams.length == 1 ? 'exam' : 'exams'} available',
-                style: AppTheme.bodySm,
-              ),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            sliver: SliverGrid(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                // Responsive: ~3 per row on phones, 4+ on wider screens.
-                crossAxisCount:
-                    (MediaQuery.of(context).size.width / 110).floor().clamp(3, 6),
-                mainAxisSpacing: 18,
-                crossAxisSpacing: 8,
-                childAspectRatio: 0.80,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final exam = filteredExams[index];
-                  final isGoal = goalIds.contains(exam.id);
-
-                  return _ExploreExamCard(
-                    exam: exam,
-                    isGoal: isGoal,
-                    onToggle: () async {
-                      final uid = FirebaseAuth.instance.currentUser?.uid;
-                      if (uid == null) {
-                        showSignInSheet(context);
-                        return;
-                      }
-                      final ref = FirebaseDatabase.instance.ref('users/$uid/goalExamIds');
-                      if (isGoal) {
-                        await ref.child(exam.id).remove();
-                      } else {
-                        await ref.child(exam.id).set(true);
-                      }
-                    },
-                  );
-                },
-                childCount: filteredExams.length,
-              ),
-            ),
-          ),
-        ],
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 32),
-        ),
-      ],
-    );
-  }
-}
-
-/// Lightweight explore tile: a circular exam icon with a name below. Tapping
-/// the whole tile toggles the goal; a check badge marks added exams. No card
-/// chrome — keeps the grid airy so more exams fit per row.
-class _ExploreExamCard extends StatelessWidget {
-  const _ExploreExamCard({
-    required this.exam,
-    required this.isGoal,
-    required this.onToggle,
-  });
-
-  final ExamModel exam;
-  final bool isGoal;
-  final VoidCallback onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onToggle,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 58,
-                height: 58,
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: isGoal ? AppTheme.primaryLight : Colors.grey.shade50,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isGoal
-                        ? AppTheme.primary
-                        : AppTheme.borderLight,
-                    width: isGoal ? 2 : 1.5,
-                  ),
-                ),
-                child: ClipOval(
-                  child: Image.network(
-                    exam.icon,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Icon(
-                      Icons.school_rounded,
-                      color: isGoal ? AppTheme.primary : AppTheme.textSecondary,
-                      size: 26,
-                    ),
-                  ),
-                ),
-              ),
-              if (isGoal)
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                    child: const Icon(Icons.check_rounded,
-                        color: Colors.white, size: 11),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Flexible(
-            child: Text(
-              exam.name,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: AppTheme.headingSm.copyWith(
-                fontSize: 11.5,
-                height: 1.15,
-                color: isGoal ? AppTheme.primary : AppTheme.textPrimary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _BottomNav extends StatelessWidget {
@@ -729,8 +452,9 @@ class _BottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomPad = MediaQuery.of(context).padding.bottom;
     final items = [
-      const _NavItem(Icons.home_rounded, 'My Rooms'),
-      const _NavItem(Icons.explore_rounded, 'Explore'),
+      const _NavItem(Icons.assignment_rounded, 'Tests'),
+      const _NavItem(Icons.checklist_rounded, 'Planner'),
+      const _NavItem(Icons.timer_rounded, 'Focus'),
       const _NavItem(Icons.person_rounded, 'Profile'),
     ];
 
@@ -1108,16 +832,16 @@ class _SidebarExamTile extends StatelessWidget {
         ),
         child: Row(children: [
           ClipOval(
-            child: Image.network(exam.icon,
-                width: 32, height: 32, fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  width: 32, height: 32,
-                  decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      shape: BoxShape.circle),
-                  child: const Icon(Icons.school_rounded,
-                      color: Colors.white, size: 16),
-                )),
+            child: SizedBox(
+              width: 32,
+              height: 32,
+              child: ExamIcon(
+                iconKey: exam.iconKey,
+                imageUrl: exam.icon,
+                size: 16,
+                color: Colors.white,
+              ),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -1314,11 +1038,11 @@ class _DesktopExamCard extends StatelessWidget {
                       ],
                     ),
                     child: ClipOval(
-                      child: Image.network(exam.icon,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(
-                              Icons.school_rounded,
-                              color: AppTheme.primary, size: 28)),
+                      child: ExamIcon(
+                        iconKey: exam.iconKey,
+                        imageUrl: exam.icon,
+                        size: 28,
+                      ),
                     ),
                   ),
                 ),
@@ -1537,7 +1261,7 @@ class _ProfileTabState extends State<_ProfileTab> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => MembershipsScreen(allExams: widget.allExams),
+                  builder: (_) => const MembershipsScreen(),
                 ),
               );
             },

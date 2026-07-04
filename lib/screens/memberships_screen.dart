@@ -2,17 +2,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:percent/models/exam.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
 class _MembershipEntry {
   _MembershipEntry({
-    required this.exam,
     required this.since,
     required this.expiry,
   });
-  final ExamModel exam;
   final DateTime? since;
   final DateTime? expiry; // null = lifetime
 
@@ -20,10 +17,9 @@ class _MembershipEntry {
       expiry != null && DateTime.now().isAfter(expiry!);
 }
 
-/// Shows ALL of the user's memberships across every exam.
+/// Shows the user's single app-wide membership (unlocks all exams).
 class MembershipsScreen extends StatefulWidget {
-  const MembershipsScreen({Key? key, required this.allExams}) : super(key: key);
-  final List<ExamModel> allExams;
+  const MembershipsScreen({Key? key}) : super(key: key);
 
   @override
   State<MembershipsScreen> createState() => _MembershipsScreenState();
@@ -47,15 +43,11 @@ class _MembershipsScreenState extends State<MembershipsScreen> {
     }
 
     final entries = <_MembershipEntry>[];
-    // Check every exam, not just the user's goal exams, so all memberships show.
-    for (final exam in widget.allExams) {
-      try {
-        final snap = await FirebaseDatabase.instance
-            .ref('memberships/${exam.id}/$uid')
-            .once();
-        if (!snap.snapshot.exists) continue;
+    try {
+      final snap =
+          await FirebaseDatabase.instance.ref('appMemberships/$uid').once();
+      if (snap.snapshot.exists) {
         final raw = snap.snapshot.value;
-
         bool active = true;
         DateTime? since;
         DateTime? expiry;
@@ -66,11 +58,11 @@ class _MembershipsScreenState extends State<MembershipsScreen> {
           final expRaw = raw['expiryDate'];
           if (expRaw is String) expiry = DateTime.tryParse(expRaw);
         }
-        if (!active) continue;
-
-        entries.add(_MembershipEntry(exam: exam, since: since, expiry: expiry));
-      } catch (_) {}
-    }
+        if (active) {
+          entries.add(_MembershipEntry(since: since, expiry: expiry));
+        }
+      }
+    } catch (_) {}
 
     if (mounted) {
       setState(() {
@@ -126,7 +118,7 @@ class _MembershipsScreenState extends State<MembershipsScreen> {
             Text('No memberships yet', style: AppTheme.headingMd),
             const SizedBox(height: 8),
             Text(
-              'Unlock an exam from its prep room to get premium mock tests and features.',
+              'Get the All-Access Pass to unlock premium mock tests and features across every exam.',
               textAlign: TextAlign.center,
               style: AppTheme.body,
             ),
@@ -164,22 +156,13 @@ class _MembershipsScreenState extends State<MembershipsScreen> {
                     color: AppTheme.primaryLight,
                     borderRadius: AppTheme.brSm,
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Image.network(
-                      e.exam.icon,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Icon(
-                          Icons.school_rounded,
-                          color: AppTheme.primary,
-                          size: 22),
-                    ),
-                  ),
+                  child: const Icon(Icons.workspace_premium_rounded,
+                      color: AppTheme.primary, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    e.exam.name,
+                    'All-Access Pass',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppTheme.headingSm.copyWith(fontSize: 15),

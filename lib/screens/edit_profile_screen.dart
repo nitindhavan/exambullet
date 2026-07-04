@@ -115,12 +115,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Phone Number',
+              'Email',
               style: AppTheme.headingSm.copyWith(fontSize: 16),
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: TextEditingController(text: widget.user.phone),
+              controller: TextEditingController(
+                  text: FirebaseAuth.instance.currentUser?.email ?? widget.user.phone),
               enabled: false,
               style: const TextStyle(color: AppTheme.textSecondary),
               decoration: InputDecoration(
