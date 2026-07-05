@@ -177,6 +177,7 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
             currentUser.phoneNumber ?? currentUser.email ?? '',
             currentUser.uid,
             [],
+            DateTime.now().toIso8601String(),
           );
           FirebaseDatabase.instance
               .ref('users')

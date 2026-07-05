@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:percent/screens/splash.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/utils/notification_helper.dart';
+import 'package:percent/services/presence_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -43,6 +44,11 @@ Future<void> main() async {
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   await NotificationHelper.init();
+
+  // Register realtime presence so the admin can see live active usage — this
+  // runs before auth, so logged-out visitors are counted too. Fire-and-forget:
+  // it must never block or fail app startup.
+  PresenceService.instance.start();
 
   runApp(const MyApp());
 }

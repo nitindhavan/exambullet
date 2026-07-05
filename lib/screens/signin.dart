@@ -1,9 +1,6 @@
-import 'package:percent/screens/splash.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:percent/screens/phone_auth_screen.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
@@ -27,48 +24,11 @@ class SignIn extends StatefulWidget {
 }
 
 class _SignInState extends State<SignIn> {
-  bool visible = false;
-
-  Future<void> _signInWithGoogle() async {
-    setState(() => visible = true);
-    try {
-      if (kIsWeb) {
-        final provider = GoogleAuthProvider();
-        await FirebaseAuth.instance.signInWithPopup(provider);
-      } else {
-        final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-        if (googleUser == null) {
-          setState(() => visible = false);
-          return;
-        }
-        final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
-        final credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
-        await FirebaseAuth.instance.signInWithCredential(credential);
-      }
-
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const Splash()),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Sign-in failed: $e'),
-          backgroundColor: AppTheme.error,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => visible = false);
-    }
+  void _signInWithPhone() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PhoneAuthScreen()),
+    );
   }
 
   @override
@@ -76,8 +36,8 @@ class _SignInState extends State<SignIn> {
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     return Scaffold(
       body: isDesktop
-          ? _DesktopLayout(onSignIn: _signInWithGoogle, loading: visible)
-          : _MobileLayout(onSignIn: _signInWithGoogle, loading: visible),
+          ? _DesktopLayout(onPhoneSignIn: _signInWithPhone)
+          : _MobileLayout(onPhoneSignIn: _signInWithPhone),
     );
   }
 }
@@ -85,9 +45,8 @@ class _SignInState extends State<SignIn> {
 // ── Desktop: two-column layout ────────────────────────────────────────────────
 
 class _DesktopLayout extends StatelessWidget {
-  const _DesktopLayout({required this.onSignIn, required this.loading});
-  final VoidCallback onSignIn;
-  final bool loading;
+  const _DesktopLayout({required this.onPhoneSignIn});
+  final VoidCallback onPhoneSignIn;
 
   @override
   Widget build(BuildContext context) {
@@ -230,43 +189,11 @@ class _DesktopLayout extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 40),
-                      SizedBox(
-                        width: double.infinity,
+                      AppButton(
+                        label: 'Continue with phone',
+                        icon: Icons.smartphone_rounded,
                         height: 56,
-                        child: ElevatedButton(
-                          onPressed: loading ? null : onSignIn,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            disabledBackgroundColor: Colors.white70,
-                            foregroundColor: AppTheme.primary,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              side: const BorderSide(color: AppTheme.border),
-                            ),
-                          ),
-                          child: loading
-                              ? const SizedBox(
-                                  width: 22, height: 22,
-                                  child: CircularProgressIndicator(
-                                      color: AppTheme.primary, strokeWidth: 2.5))
-                              : const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.g_mobiledata_rounded,
-                                        size: 22, color: AppTheme.primary),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      'Continue with Google',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppTheme.textPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                        ),
+                        onPressed: onPhoneSignIn,
                       ),
                       const SizedBox(height: 20),
                       const Center(
@@ -287,9 +214,8 @@ class _DesktopLayout extends StatelessWidget {
 // ── Mobile: original stacked layout ──────────────────────────────────────────
 
 class _MobileLayout extends StatelessWidget {
-  const _MobileLayout({required this.onSignIn, required this.loading});
-  final VoidCallback onSignIn;
-  final bool loading;
+  const _MobileLayout({required this.onPhoneSignIn});
+  final VoidCallback onPhoneSignIn;
 
   @override
   Widget build(BuildContext context) {
@@ -381,47 +307,11 @@ class _MobileLayout extends StatelessWidget {
                             fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
                       ),
                       const SizedBox(height: 32),
-                      SizedBox(
-                        width: double.infinity,
+                      AppButton(
+                        label: 'Continue with phone',
+                        icon: Icons.smartphone_rounded,
                         height: 58,
-                        child: ElevatedButton(
-                          onPressed: loading ? null : onSignIn,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            disabledBackgroundColor: Colors.white70,
-                            foregroundColor: AppTheme.primary,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              side: const BorderSide(color: AppTheme.border),
-                            ),
-                          ),
-                          child: loading
-                              ? const SizedBox(
-                                  width: 22, height: 22,
-                                  child: CircularProgressIndicator(
-                                      color: AppTheme.primary, strokeWidth: 2.5))
-                              : Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      width: 24, height: 24,
-                                      decoration: const BoxDecoration(
-                                          shape: BoxShape.circle, color: AppTheme.primaryLight),
-                                      child: const Icon(Icons.g_mobiledata_rounded,
-                                          size: 18, color: AppTheme.primary),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    const Text(
-                                      'Continue with Google',
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppTheme.textPrimary),
-                                    ),
-                                  ],
-                                ),
-                        ),
+                        onPressed: onPhoneSignIn,
                       ),
                       const SizedBox(height: 16),
                       const Center(
