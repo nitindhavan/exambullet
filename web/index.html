@@ -33,7 +33,10 @@
   <link rel="manifest" href="manifest.json">
 
   <script>
-    // Redirect Android visitors to the Play Store.
+    // Redirect ONLY Android visitors who arrive from an in-app browser
+    // (Instagram / Facebook / etc.) to the Play Store, because Google sign-in
+    // is blocked inside those WebViews. Normal Chrome/Safari users are left on
+    // the web app.
     // Runs before Flutter loads so we never download the app engine unnecessarily.
     // Escape hatches: ?stay=1 (or #stay) keeps the web app; a sessionStorage guard
     // prevents a redirect loop when the user taps "back" from the Play Store.
@@ -44,6 +47,11 @@
       var ua = navigator.userAgent || '';
       var isAndroid = /Android/i.test(ua);
       if (!isAndroid) return;
+
+      // Only redirect when the user comes from an in-app browser
+      // (Instagram/Facebook/etc.). Regular browsers stay on the web app.
+      var isInAppBrowser = /Instagram|FBAN|FBAV|FB_IAB|LinkedInApp|Twitter|Snapchat/i.test(ua);
+      if (!isInAppBrowser) return;
 
       // Allow users to opt out of the redirect and use the web app.
       var search = window.location.search || '';
@@ -56,18 +64,13 @@
         sessionStorage.setItem('pb_redirected', '1');
       } catch (e) { /* private mode: ignore */ }
 
-      var isInAppBrowser = /Instagram|FBAN|FBAV|FB_IAB|LinkedInApp|Twitter|Snapchat/i.test(ua);
-      if (isInAppBrowser) {
-        // Inside Instagram/FB WebView, an https link opens a nested WebView instead
-        // of the Play Store app. The intent:// scheme launches the Play Store app,
-        // falling back to the https URL if the app is unavailable.
-        window.location.href =
-          'intent://details?id=' + PACKAGE +
-          '#Intent;scheme=market;package=com.android.vending;' +
-          'S.browser_fallback_url=' + encodeURIComponent(PLAY_URL) + ';end';
-      } else {
-        window.location.replace(PLAY_URL);
-      }
+      // Inside Instagram/FB WebView, an https link opens a nested WebView instead
+      // of the Play Store app. The intent:// scheme launches the Play Store app,
+      // falling back to the https URL if the app is unavailable.
+      window.location.href =
+        'intent://details?id=' + PACKAGE +
+        '#Intent;scheme=market;package=com.android.vending;' +
+        'S.browser_fallback_url=' + encodeURIComponent(PLAY_URL) + ';end';
     })();
   </script>
 

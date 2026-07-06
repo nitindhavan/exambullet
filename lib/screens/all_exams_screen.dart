@@ -1,4 +1,5 @@
 import 'package:percent/models/exam.dart';
+import 'package:percent/services/analytics_service.dart';
 import 'package:percent/utils/category_icons.dart';
 import 'package:percent/widgets/exam_icon.dart';
 import 'package:percent/widgets/sign_in_sheet.dart';
@@ -117,6 +118,9 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
     } else {
       setState(() => _goalIds.add(examId));
       await ref.set(true);
+      final match = widget.allExams.where((e) => e.id == examId);
+      Analytics.instance.logAddGoal(
+          examId, match.isNotEmpty ? match.first.name : examId);
     }
   }
 

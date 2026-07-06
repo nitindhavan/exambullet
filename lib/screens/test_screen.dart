@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:percent/models/question_model.dart';
 import 'package:percent/screens/score_screen.dart';
 import 'package:percent/services/test_result_service.dart';
+import 'package:percent/services/analytics_service.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -77,6 +78,7 @@ class _TestScreenState extends State<TestScreen> {
       _loaded = true;
     });
     _startedAt = DateTime.now();
+    Analytics.instance.logStartTest(widget.testModel.id, widget.examId);
     _startTimer();
   }
 
@@ -109,7 +111,15 @@ class _TestScreenState extends State<TestScreen> {
         questions: _questions,
         selection: _selected,
         elapsedSec: elapsedSec,
-      );
+      ).then((result) {
+        if (result != null) {
+          Analytics.instance.logCompleteTest(
+            testId: widget.testModel.id,
+            examId: widget.examId,
+            scorePct: (result.scorePct * 100).round(),
+          );
+        }
+      });
     }
     Navigator.pushReplacement(
       context,

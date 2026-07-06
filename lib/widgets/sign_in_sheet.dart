@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:percent/models/User.dart';
+import 'package:percent/services/analytics_service.dart';
 import 'package:percent/screens/home.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/utils/notification_helper.dart';
@@ -57,8 +58,10 @@ class _SignInSheetState extends State<_SignInSheet> {
       final snap = await FirebaseDatabase.instance.ref('users/${firebaseUser.uid}').once();
       if (!mounted) return;
       UserModel userModel;
+      Analytics.instance.setUser(firebaseUser.uid);
       if (snap.snapshot.exists && snap.snapshot.value != null) {
         userModel = UserModel.fromMap(snap.snapshot.value as Map);
+        Analytics.instance.logLogin();
       } else {
         userModel = UserModel(
           firebaseUser.displayName ?? 'User',
@@ -67,6 +70,7 @@ class _SignInSheetState extends State<_SignInSheet> {
           [],
         );
         await FirebaseDatabase.instance.ref('users/${firebaseUser.uid}').set(userModel.toMap());
+        Analytics.instance.logSignUp(); // new user
       }
       NotificationHelper.saveToken(firebaseUser.uid);
       widget.rootNavigator.pushAndRemoveUntil(

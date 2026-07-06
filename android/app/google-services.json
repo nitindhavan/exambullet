@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "152281166556",
+    "project_id": "exam-bullet",
+    "storage_bucket": "exam-bullet.appspot.com",
+    "firebase_url": "https://exam-bullet-default-rtdb.firebaseio.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:152281166556:android:c49960780660864f543a19",
+        "android_client_info": {
+          "package_name": "com.moralmosaic.percent"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-YKNoqF6vdtWgP31fPOlpxCtAf3sSbDs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

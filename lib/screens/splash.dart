@@ -1,4 +1,5 @@
 import 'package:percent/models/User.dart';
+import 'package:percent/services/analytics_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -164,6 +165,7 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
           .once()
           .then((value) {
         if (!mounted) return;
+        Analytics.instance.setUser(currentUser.uid);
         if (value.snapshot.exists && value.snapshot.value != null) {
           final userModel = UserModel.fromMap(value.snapshot.value as Map);
           NotificationHelper.saveToken(currentUser.uid);
@@ -184,6 +186,7 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
               .child(model.uid)
               .set(model.toMap())
               .then((_) => NotificationHelper.saveToken(model.uid));
+          Analytics.instance.logSignUp(); // first DB record for this user
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => Home(user: model)),

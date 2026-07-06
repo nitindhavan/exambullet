@@ -4,6 +4,8 @@ import java.io.FileInputStream
 plugins {
     id("com.android.application")
     id("kotlin-android")
+    // Must be applied after the Android & Kotlin plugins, before Flutter's.
+    id("com.google.gms.google-services")
     id("dev.flutter.flutter-gradle-plugin")
 }
 

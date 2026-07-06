@@ -1,5 +1,6 @@
 import 'package:percent/screens/terms_conditions_screen.dart';
 import 'package:percent/services/membership_service.dart';
+import 'package:percent/services/analytics_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
@@ -53,6 +54,7 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
       _Plan(months: 12, days: 365, price: 14900, label: '12 Months'),
     ];
     _loadSettings();
+    Analytics.instance.logViewPaywall();
   }
 
   Future<void> _loadSettings() async {
@@ -197,6 +199,12 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
           now.add(Duration(days: _selectedPlan.days)).toIso8601String();
       // App-wide membership: one record unlocks every exam.
       await MembershipService.activate(uid, paymentId: orderId, expiryDate: expiry);
+
+      Analytics.instance.logPurchase(
+        amount: _selectedPlan.price / 100,
+        currency: 'INR',
+        plan: _selectedPlan.label,
+      );
 
       if (mounted) Navigator.pop(context);
     } catch (e) {

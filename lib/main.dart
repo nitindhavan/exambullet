@@ -3,6 +3,7 @@ import 'package:percent/screens/splash.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/utils/notification_helper.dart';
 import 'package:percent/services/presence_service.dart';
+import 'package:percent/services/analytics_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -50,6 +51,10 @@ Future<void> main() async {
   // it must never block or fail app startup.
   PresenceService.instance.start();
 
+  // Enable Firebase Analytics collection (uses google-services.json; no manifest
+  // config needed). Fire-and-forget so it never blocks startup.
+  Analytics.instance.init();
+
   runApp(const MyApp());
 }
 
@@ -61,6 +66,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Percent',
+      // Logs a screen_view event on every route push/pop.
+      navigatorObservers: [Analytics.instance.observer],
       theme: ThemeData(
         primaryColor: AppTheme.primary,
         scaffoldBackgroundColor: AppTheme.background,
