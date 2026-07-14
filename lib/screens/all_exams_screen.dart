@@ -1,5 +1,6 @@
 import 'package:percent/models/exam.dart';
 import 'package:percent/services/analytics_service.dart';
+import 'package:percent/services/guest_gate.dart';
 import 'package:percent/utils/category_icons.dart';
 import 'package:percent/widgets/exam_icon.dart';
 import 'package:percent/widgets/sign_in_sheet.dart';
@@ -106,6 +107,12 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
   }
 
   Future<void> _toggleGoal(String examId) async {
+    // Guests (anonymous web visitors) can browse, but saving a goal is worth
+    // nudging them to sign in so it isn't lost. They can still dismiss and the
+    // goal saves to their guest account either way — so only nudge, don't block.
+    if (GuestGate.isGuest) {
+      GuestGate.softNudge(context, reason: 'goal');
+    }
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       showSignInSheet(context);

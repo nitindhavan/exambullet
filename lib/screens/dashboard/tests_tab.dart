@@ -2,8 +2,7 @@ import 'package:percent/models/exam.dart';
 import 'package:percent/models/test_model.dart';
 import 'package:percent/screens/membership_screen.dart';
 import 'package:percent/screens/test_screen.dart';
-import 'package:percent/widgets/sign_in_sheet.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:percent/services/guest_gate.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
@@ -223,22 +222,26 @@ class _PapersSliver extends StatelessWidget {
                 final questionCount =
                     (paperMap?['questionCount'] as int?) ?? (easy + medium + hard);
                 final totalMarks = (paperMap?['totalMarks'] as int?) ?? 0;
-                final isGuest = FirebaseAuth.instance.currentUser == null;
-                final isLocked = (!hasMembership && i > 0) || (isGuest && i > 0);
+                // Guests (anonymous web visitors) may take tests — we only nudge
+                // them to sign in so their results are saved. Membership locking
+                // (first test free, rest need membership) applies to everyone.
+                final isGuest = GuestGate.isGuest;
+                final isLocked = !hasMembership && i > 0;
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: GestureDetector(
                     onTap: () {
-                      if (isGuest) {
-                        showSignInSheet(context);
-                        return;
-                      }
                       if (isLocked) {
                         Navigator.push(context, MaterialPageRoute(
                           builder: (_) => MemberShipScreen(model: examId),
                         ));
                         return;
+                      }
+                      // Non-blocking: let the test open, but nudge a guest to
+                      // sign in so their attempt/results aren't lost.
+                      if (isGuest) {
+                        GuestGate.softNudge(context, reason: 'test results');
                       }
                       Navigator.push(context, MaterialPageRoute(
                         builder: (_) => TestScreen(

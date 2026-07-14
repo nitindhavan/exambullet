@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:percent/screens/phone_auth_screen.dart';
+import 'package:percent/services/funnel_service.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
@@ -24,7 +25,14 @@ class SignIn extends StatefulWidget {
 }
 
 class _SignInState extends State<SignIn> {
+  @override
+  void initState() {
+    super.initState();
+    Funnel.instance.signinScreen();
+  }
+
   void _signInWithPhone() {
+    Funnel.instance.signinStarted(method: 'phone');
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const PhoneAuthScreen()),

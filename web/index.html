@@ -1,27 +1,14 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Percent — exam prep">
 
   <!-- iOS meta tags & icons -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="percent">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
@@ -29,102 +16,17 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>percent</title>
+  <title>Percent</title>
   <link rel="manifest" href="manifest.json">
 
-  <script>
-    // Redirect ONLY Android visitors who arrive from an in-app browser
-    // (Instagram / Facebook / etc.) to the Play Store, because Google sign-in
-    // is blocked inside those WebViews. Normal Chrome/Safari users are left on
-    // the web app.
-    // Runs before Flutter loads so we never download the app engine unnecessarily.
-    // Escape hatches: ?stay=1 (or #stay) keeps the web app; a sessionStorage guard
-    // prevents a redirect loop when the user taps "back" from the Play Store.
-    (function() {
-      var PLAY_URL = 'https://play.google.com/store/apps/details?id=com.moralmosaic.percent';
-      var PACKAGE = 'com.moralmosaic.percent';
+  <!--
+    NOTE: Do NOT add intent:// redirects or "open in Chrome" interstitials here.
+    The app runs inside Instagram's in-app browser on purpose (phone-OTP auth
+    works there). CanvasKit assets are pinned to this origin in
+    web/flutter_bootstrap.js so the WebView never fetches from the gstatic CDN.
+  -->
 
-      var ua = navigator.userAgent || '';
-      var isAndroid = /Android/i.test(ua);
-      if (!isAndroid) return;
-
-      // Only redirect when the user comes from an in-app browser
-      // (Instagram/Facebook/etc.). Regular browsers stay on the web app.
-      var isInAppBrowser = /Instagram|FBAN|FBAV|FB_IAB|LinkedInApp|Twitter|Snapchat/i.test(ua);
-      if (!isInAppBrowser) return;
-
-      // Allow users to opt out of the redirect and use the web app.
-      var search = window.location.search || '';
-      var hash = window.location.hash || '';
-      if (/[?&]stay=1/.test(search) || /stay/i.test(hash)) return;
-
-      // Don't bounce the user again if they came back from the Play Store.
-      try {
-        if (sessionStorage.getItem('pb_redirected') === '1') return;
-        sessionStorage.setItem('pb_redirected', '1');
-      } catch (e) { /* private mode: ignore */ }
-
-      // Inside Instagram/FB WebView, an https link opens a nested WebView instead
-      // of the Play Store app. The intent:// scheme launches the Play Store app,
-      // falling back to the https URL if the app is unavailable.
-      window.location.href =
-        'intent://details?id=' + PACKAGE +
-        '#Intent;scheme=market;package=com.android.vending;' +
-        'S.browser_fallback_url=' + encodeURIComponent(PLAY_URL) + ';end';
-    })();
-  </script>
-
-  <script>
-    // Detect Instagram / Facebook in-app browser and show an interstitial
-    // before Flutter loads, since Google sign-in popups are blocked there.
-    (function() {
-      var ua = navigator.userAgent || '';
-      var isInAppBrowser = /Instagram|FBAN|FBAV|FB_IAB|LinkedInApp|Twitter|Snapchat/i.test(ua);
-      if (isInAppBrowser) {
-        document.addEventListener('DOMContentLoaded', function() {
-          var overlay = document.createElement('div');
-          overlay.id = 'iab-overlay';
-          overlay.style.cssText = [
-            'position:fixed;inset:0;z-index:99999',
-            'background:#fff',
-            'display:flex;flex-direction:column',
-            'align-items:center;justify-content:center',
-            'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
-            'padding:32px',
-            'text-align:center',
-          ].join(';');
-          overlay.innerHTML = [
-            '<div style="font-size:48px;margin-bottom:16px">📱</div>',
-            '<h2 style="font-size:22px;font-weight:800;color:#1e293b;margin:0 0 10px">',
-            'Open in Chrome for Google Sign-In</h2>',
-            '<p style="color:#64748b;font-size:15px;line-height:1.6;margin:0 0 28px">',
-            'Google sign-in doesn\'t work inside the Instagram browser.<br>',
-            'Please open this page in Chrome or Safari.</p>',
-            '<button id="iab-open-btn" style="',
-            'background:#4F46E5;color:#fff;border:none;border-radius:14px;',
-            'padding:16px 32px;font-size:16px;font-weight:700;cursor:pointer;',
-            'width:100%;max-width:320px">',
-            'Open in Browser</button>',
-            '<p style="color:#94a3b8;font-size:12px;margin-top:16px">',
-            'Tap the ··· menu → Open in browser</p>',
-          ].join('');
-          document.body.appendChild(overlay);
-          document.getElementById('iab-open-btn').addEventListener('click', function() {
-            // intent:// scheme opens Chrome on Android from in-app browsers
-            var url = window.location.href;
-            window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') +
-              '#Intent;scheme=https;package=com.android.chrome;end';
-          });
-        });
-      }
-    })();
-  </script>
-  <script>
-    // The value below is injected by flutter build, do not touch.
-    var serviceWorkerVersion = null;
-  </script>
-  <!-- This script adds the flutter initialization JS code -->
-  <script src="flutter.js" defer></script>
+  <!-- Cashfree checkout SDK (used by the membership payment flow). -->
   <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
   <script>
     function initiateCashfreePayment(paymentSessionId, mode) {
@@ -141,73 +43,96 @@
       });
     }
   </script>
-
   <style>
-    .loading {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 0;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      -ms-transform: translate(-50%, -50%);
-      transform: translate(-50%, -50%);
+    #boot {
+      position: fixed; inset: 0; z-index: 1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #ffffff; color: #0F172A; text-align: center; padding: 24px;
     }
-
-    .loader {
-      border: 16px solid #f3f3f3;
-      border-radius: 50%;
-      border-top: 16px solid blue;
-      border-right: 16px solid green;
-      border-bottom: 16px solid red;
-      border-left: 16px solid pink;
-      width: 120px;
-      height: 120px;
-      -webkit-animation: spin 2s linear infinite;
-      animation: spin 2s linear infinite;
+    #boot .logo {
+      width: 76px; height: 76px; margin-bottom: 22px; border-radius: 22px;
+      background: linear-gradient(135deg, #4F46E5, #6366F1);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 40px; font-weight: 900; line-height: 1;
+      box-shadow: 0 10px 30px rgba(79,70,229,0.28);
     }
-
-    @-webkit-keyframes spin {
-      0% {
-        -webkit-transform: rotate(0deg);
-      }
-      100% {
-        -webkit-transform: rotate(360deg);
-      }
+    #boot .spin {
+      width: 26px; height: 26px;
+      border: 3px solid #E5E7F5; border-top-color: #4F46E5;
+      border-radius: 50%; animation: bspin 0.8s linear infinite;
     }
+    #boot #boot-msg {
+      margin-top: 16px; font-size: 13px; font-weight: 500; color: #94A3B8;
+    }
+    @keyframes bspin { to { transform: rotate(360deg); } }
 
-    @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-      100% {
-        transform: rotate(360deg);
-      }
+    /* Firebase web phone-auth uses an INVISIBLE reCAPTCHA. Its container
+       (#__ff-recaptcha-container) must stay in the DOM and renderable for the
+       reCAPTCHA to initialise — so we must NOT display:none it. Instead we make
+       it take up no visible space (0x0, off-screen) so it never shows over the
+       app, while still being present for Firebase. We also hide the persistent
+       "protected by reCAPTCHA" badge. The actual challenge popup, when Google
+       genuinely requires one, is a separate fixed-position iframe that is not
+       affected by these rules and remains fully interactive. */
+    .grecaptcha-badge { visibility: hidden !important; }
+    #__ff-recaptcha-container {
+      position: absolute !important;
+      width: 0 !important; height: 0 !important;
+      overflow: hidden !important;
+      left: -9999px !important; top: -9999px !important;
+    }
+    #boot pre {
+      display: none; white-space: pre-wrap; word-break: break-word;
+      font-size: 12px; text-align: left; color: #b91c1c;
+      background: #FEF2F2; border: 1px solid #FECACA;
+      padding: 12px; border-radius: 8px; max-width: 92vw; max-height: 50vh;
+      overflow: auto; margin-top: 16px;
     }
   </style>
-
 </head>
 <body>
+  <!-- Clean branded boot screen + invisible on-screen error catcher. Flutter
+       paints over this once it renders; if it never does, any JS error shows
+       here instead of a silent white screen. -->
+  <div id="boot">
+    <div class="logo">%</div>
+    <div class="spin"></div>
+    <div id="boot-msg">Loading…</div>
+    <pre id="boot-err"></pre>
+  </div>
   <script>
-    window.addEventListener('load', function(ev) {
-      // Download main.dart.js
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        }
-      }).then(function(engineInitializer) {
-        return engineInitializer.initializeEngine();
-      }).then(function(appRunner) {
-        return appRunner.runApp();
+    (function () {
+      var errBox = document.getElementById('boot-err');
+      var msg = document.getElementById('boot-msg');
+      function show(text) {
+        if (!errBox) return;
+        msg.textContent = 'Something went wrong loading the app:';
+        errBox.style.display = 'block';
+        errBox.textContent += text + '\n';
+      }
+      window.addEventListener('error', function (e) {
+        show((e.message || 'Script error') +
+             (e.filename ? '  @ ' + e.filename + ':' + e.lineno : ''));
       });
+      window.addEventListener('unhandledrejection', function (e) {
+        show('Promise rejected: ' + (e.reason && (e.reason.message || e.reason)));
+      });
+      // If nothing has rendered after 12s, surface a hint.
+      setTimeout(function () {
+        if (document.getElementById('boot') &&
+            errBox && errBox.style.display !== 'block') {
+          msg.textContent = 'Still loading… (renderer may be blocked here)';
+        }
+      }, 12000);
+    })();
+    // Remove the boot screen once Flutter's first frame is up.
+    window.addEventListener('flutter-first-frame', function () {
+      var b = document.getElementById('boot');
+      if (b) b.remove();
     });
   </script>
-
-    <script type="text/javascript">
-      window.flutterWebRenderer = "html";
-    </script>
-
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
-

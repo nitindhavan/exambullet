@@ -14,6 +14,8 @@ import 'package:percent/screens/terms_conditions_screen.dart';
 import 'package:percent/screens/signin.dart';
 import 'package:percent/widgets/sign_in_sheet.dart';
 import 'package:percent/widgets/exam_icon.dart';
+import 'package:percent/widgets/get_app_banner.dart';
+import 'package:percent/services/guest_gate.dart';
 import 'package:percent/screens/edit_profile_screen.dart';
 import 'package:percent/widgets/shimmer.dart';
 import 'package:percent/widgets/ui/ui.dart';
@@ -51,6 +53,11 @@ class _HomeState extends State<Home> {
             return (event.snapshot.value as Map).keys.cast<String>().toSet();
           });
     _loadExams();
+    // If a guest just converted to a real account but their name is still the
+    // "Guest" placeholder, ask them once what to call them. No-op otherwise.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) GuestGate.promptForNameIfNeeded(context);
+    });
   }
 
   Future<void> _loadExams() async {
@@ -136,10 +143,17 @@ class _HomeState extends State<Home> {
               examsLoading: examsLoading,
             ),
           ),
-          bottomNavigationBar: _BottomNav(
-            currentIndex: _activeTab,
-            onTap: (index) => setState(() => _activeTab = index),
-            hasGoals: goalExams.isNotEmpty,
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Android-web only: sticky "get the app" banner above the nav.
+              const GetAppBanner(),
+              _BottomNav(
+                currentIndex: _activeTab,
+                onTap: (index) => setState(() => _activeTab = index),
+                hasGoals: goalExams.isNotEmpty,
+              ),
+            ],
           ),
         );
       },
@@ -1310,11 +1324,11 @@ class _ProfileTabState extends State<_ProfileTab> {
           ),
           const SizedBox(height: 20),
           _ProfileOption(
-            icon: widget.user.isGuest ? Icons.login_rounded : Icons.logout_rounded,
-            title: widget.user.isGuest ? 'Sign In' : 'Log Out',
-            isDestructive: !widget.user.isGuest,
+            icon: GuestGate.isGuest ? Icons.login_rounded : Icons.logout_rounded,
+            title: GuestGate.isGuest ? 'Sign In' : 'Log Out',
+            isDestructive: !GuestGate.isGuest,
             onTap: () async {
-              if (widget.user.isGuest) {
+              if (GuestGate.isGuest) {
                 showSignInSheet(context);
                 return;
               }

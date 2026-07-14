@@ -1,6 +1,7 @@
 import 'package:percent/screens/terms_conditions_screen.dart';
 import 'package:percent/services/membership_service.dart';
 import 'package:percent/services/analytics_service.dart';
+import 'package:percent/services/guest_gate.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
@@ -82,6 +83,15 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
   }
 
   Future<void> _startPayment() async {
+    // HARD gate: a purchase must be tied to a real account so the membership is
+    // saved and recoverable. A guest (anonymous) must sign in first — their
+    // guest data links over, so nothing is lost.
+    if (GuestGate.isGuest) {
+      final ok = await GuestGate.requireAccount(context, reason: 'membership');
+      if (!mounted) return;
+      if (!ok) return; // user cancelled sign-in
+    }
+
     if (_cloudFunctionUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Payment not configured. Try again later.')),

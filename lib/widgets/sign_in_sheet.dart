@@ -1,94 +1,32 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:percent/models/User.dart';
-import 'package:percent/services/analytics_service.dart';
-import 'package:percent/screens/home.dart';
+import 'package:percent/screens/phone_auth_screen.dart';
 import 'package:percent/utils/theme.dart';
-import 'package:percent/utils/notification_helper.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
+/// Bottom-sheet sign-in prompt. Phone OTP only (matches the main SignIn screen).
+///
+/// It doesn't sign the user in itself — it opens [PhoneAuthScreen], which handles
+/// OTP, links to an anonymous guest account when present (preserving their data),
+/// and routes on to Splash/Home. So this sheet just explains why and launches it.
 Future<void> showSignInSheet(BuildContext context) {
-  // Keep a reference to the root navigator before the sheet opens
-  final rootNavigator = Navigator.of(context, rootNavigator: true);
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => _SignInSheet(rootNavigator: rootNavigator),
+    builder: (_) => const _SignInSheet(),
   );
 }
 
-class _SignInSheet extends StatefulWidget {
-  const _SignInSheet({required this.rootNavigator});
-  final NavigatorState rootNavigator;
+class _SignInSheet extends StatelessWidget {
+  const _SignInSheet();
 
-  @override
-  State<_SignInSheet> createState() => _SignInSheetState();
-}
-
-class _SignInSheetState extends State<_SignInSheet> {
-  bool _loading = false;
-
-  Future<void> _signIn() async {
-    setState(() => _loading = true);
-    try {
-      if (kIsWeb) {
-        final provider = GoogleAuthProvider();
-        await FirebaseAuth.instance.signInWithPopup(provider);
-      } else {
-        final googleUser = await GoogleSignIn().signIn();
-        if (googleUser == null) {
-          setState(() => _loading = false);
-          return;
-        }
-        final googleAuth = await googleUser.authentication;
-        final credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
-        await FirebaseAuth.instance.signInWithCredential(credential);
-      }
-
-      if (!mounted) return;
-      final firebaseUser = FirebaseAuth.instance.currentUser!;
-      final snap = await FirebaseDatabase.instance.ref('users/${firebaseUser.uid}').once();
-      if (!mounted) return;
-      UserModel userModel;
-      Analytics.instance.setUser(firebaseUser.uid);
-      if (snap.snapshot.exists && snap.snapshot.value != null) {
-        userModel = UserModel.fromMap(snap.snapshot.value as Map);
-        Analytics.instance.logLogin();
-      } else {
-        userModel = UserModel(
-          firebaseUser.displayName ?? 'User',
-          firebaseUser.phoneNumber ?? firebaseUser.email ?? '',
-          firebaseUser.uid,
-          [],
-        );
-        await FirebaseDatabase.instance.ref('users/${firebaseUser.uid}').set(userModel.toMap());
-        Analytics.instance.logSignUp(); // new user
-      }
-      NotificationHelper.saveToken(firebaseUser.uid);
-      widget.rootNavigator.pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => Home(user: userModel)),
-        (r) => false,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Sign-in failed: $e'),
-          backgroundColor: AppTheme.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-    }
+  void _continueWithPhone(BuildContext context) {
+    Navigator.pop(context); // close the sheet
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PhoneAuthScreen()),
+    );
   }
 
   @override
@@ -136,7 +74,7 @@ class _SignInSheetState extends State<_SignInSheet> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Access tests, track scores and unlock\nyour full exam prep experience.',
+            'Access tests, track scores and keep\nyour progress saved to your account.',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               color: AppTheme.textSecondary,
@@ -149,47 +87,30 @@ class _SignInSheetState extends State<_SignInSheet> {
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: _loading ? null : _signIn,
+              onPressed: () => _continueWithPhone(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                disabledBackgroundColor: Colors.white70,
-                foregroundColor: AppTheme.primary,
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: AppTheme.border),
                 ),
               ),
-              child: _loading
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                          color: AppTheme.primary, strokeWidth: 2.5),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppTheme.primaryLight),
-                          child: const Icon(Icons.g_mobiledata_rounded,
-                              size: 18, color: AppTheme.primary),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Continue with Google',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.textPrimary,
-                          ),
-                        ),
-                      ],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.smartphone_rounded, size: 20),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Continue with phone',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
                     ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 12),

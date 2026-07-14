@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:percent/screens/splash.dart';
+import 'package:percent/services/analytics_service.dart';
+import 'package:percent/services/funnel_service.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
@@ -33,6 +36,11 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
   bool _loading = false;
   String? _verificationId;
   int? _resendToken;
+
+  // Web uses the ConfirmationResult flow (signInWithPhoneNumber /
+  // linkWithPhoneNumber) which manages reCAPTCHA; native uses verifyPhoneNumber
+  // + a verificationId. We keep the web confirmation here to confirm the code.
+  ConfirmationResult? _webConfirmation;
 
   // Resend cooldown.
   Timer? _resendTimer;
@@ -89,6 +97,61 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     }
 
     setState(() => _loading = true);
+    Funnel.instance.authAttempted(method: 'phone'); // OTP requested
+
+    // WEB: verifyPhoneNumber does NOT wire up reCAPTCHA on web — the resulting
+    // verificationId is unusable, so confirming the OTP fails as "code expired".
+    // The correct web flow is signInWithPhoneNumber / linkWithPhoneNumber, which
+    // returns a ConfirmationResult that manages reCAPTCHA.
+    if (kIsWeb) {
+      try {
+        final anon = FirebaseAuth.instance.currentUser;
+        ConfirmationResult result;
+        if (anon != null && anon.isAnonymous && !widget.linkToCurrentUser) {
+          // Anonymous guest converting: link so their data carries over. If the
+          // number already has an account, fall back to a plain sign-in.
+          try {
+            result = await anon.linkWithPhoneNumber(number);
+          } on FirebaseAuthException catch (e) {
+            if (e.code == 'credential-already-in-use' ||
+                e.code == 'account-exists-with-different-credential' ||
+                e.code == 'provider-already-linked') {
+              result = await FirebaseAuth.instance.signInWithPhoneNumber(number);
+            } else {
+              rethrow;
+            }
+          }
+        } else if (widget.linkToCurrentUser &&
+            FirebaseAuth.instance.currentUser != null) {
+          result =
+              await FirebaseAuth.instance.currentUser!.linkWithPhoneNumber(number);
+        } else {
+          result = await FirebaseAuth.instance.signInWithPhoneNumber(number);
+        }
+        if (!mounted) return;
+        setState(() {
+          _webConfirmation = result;
+          _step = _Step.enterOtp;
+          _loading = false;
+        });
+        Funnel.instance.log('otp_sent');
+        _startResendCooldown();
+        if (isResend) _snack('Code resent', error: false);
+      } on FirebaseAuthException catch (e) {
+        if (!mounted) return;
+        setState(() => _loading = false);
+        Funnel.instance.authFailed('send:${e.code}', method: 'phone');
+        _snack(_friendlyError(e));
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _loading = false);
+        Funnel.instance.authFailed('send_exception', method: 'phone');
+        _snack('Failed to send code: $e');
+      }
+      return;
+    }
+
+    // NATIVE: verifyPhoneNumber with auto-retrieval + a verificationId.
     try {
       await FirebaseAuth.instance.verifyPhoneNumber(
         phoneNumber: number,
@@ -101,6 +164,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
         verificationFailed: (FirebaseAuthException e) {
           if (!mounted) return;
           setState(() => _loading = false);
+          Funnel.instance.authFailed('send:${e.code}', method: 'phone');
           _snack(_friendlyError(e));
         },
         codeSent: (String verificationId, int? resendToken) {
@@ -111,6 +175,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
             _step = _Step.enterOtp;
             _loading = false;
           });
+          Funnel.instance.log('otp_sent'); // reached OTP entry screen
           _startResendCooldown();
           if (isResend) _snack('Code resent', error: false);
         },
@@ -121,15 +186,34 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
+      Funnel.instance.authFailed('send_exception', method: 'phone');
       _snack('Failed to send code: $e');
     }
   }
 
   Future<void> _verifyOtp() async {
     final code = _otpController.text.trim();
-    final vId = _verificationId;
-    if (code.length < 6 || vId == null) {
+    if (code.length < 6) {
       _snack('Enter the 6-digit code');
+      return;
+    }
+
+    // WEB: confirm against the ConfirmationResult from _sendCode. This both
+    // verifies the code AND finalises the sign-in/link that was started there.
+    if (kIsWeb) {
+      final conf = _webConfirmation;
+      if (conf == null) {
+        _snack('Please request a code first.');
+        return;
+      }
+      await _completeWebSignIn(conf, code);
+      return;
+    }
+
+    // NATIVE: build a credential from the verificationId + code.
+    final vId = _verificationId;
+    if (vId == null) {
+      _snack('Please request a code first.');
       return;
     }
     final credential = PhoneAuthProvider.credential(
@@ -139,8 +223,55 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     await _completeSignIn(credential);
   }
 
+  /// Web sign-in completion. `confirm` verifies the OTP and completes whichever
+  /// operation _sendCode started (sign-in or anonymous-link). We only need to
+  /// handle routing + the guest→real conversion funnel event here.
+  Future<void> _completeWebSignIn(ConfirmationResult conf, String code) async {
+    setState(() => _loading = true);
+    Funnel.instance.log('otp_submitted');
+    try {
+      final wasGuest =
+          FirebaseAuth.instance.currentUser?.isAnonymous ?? false;
+
+      // If this screen was opened purely to LINK a phone to an existing (real)
+      // account, pop back with success once confirmed.
+      final linkOnly = widget.linkToCurrentUser && !wasGuest;
+
+      await conf.confirm(code);
+
+      Funnel.instance.log('auth_success');
+      if (wasGuest) {
+        Funnel.instance.registered();
+        Analytics.instance.logSignUp();
+      }
+      if (!mounted) return;
+
+      if (linkOnly) {
+        _snack('Phone number linked', error: false);
+        Navigator.pop(context, true);
+        return;
+      }
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const Splash()),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      Funnel.instance.authFailed('verify:${e.code}', method: 'phone');
+      _snack(_friendlyError(e));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      Funnel.instance.authFailed('verify_exception', method: 'phone');
+      _snack('Verification failed: $e');
+    }
+  }
+
   Future<void> _completeSignIn(PhoneAuthCredential credential) async {
     setState(() => _loading = true);
+    Funnel.instance.log('otp_submitted'); // user entered a code
     try {
       if (widget.linkToCurrentUser &&
           FirebaseAuth.instance.currentUser != null) {
@@ -152,7 +283,38 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
         return;
       }
 
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      // Anonymous guest (web browse-first flow): try to link the phone so their
+      // guest uid + goals/progress carry into the real account. If the number
+      // already belongs to an account, DON'T show an error — just log them into
+      // that existing account (their real data lives there anyway).
+      final anon = FirebaseAuth.instance.currentUser;
+      final wasGuest = anon != null && anon.isAnonymous;
+      if (wasGuest) {
+        try {
+          await anon.linkWithCredential(credential);
+        } on FirebaseAuthException catch (e) {
+          if (e.code == 'credential-already-in-use' ||
+              e.code == 'account-exists-with-different-credential' ||
+              e.code == 'provider-already-linked') {
+            // Number already has an account → sign into it. Firebase may hand
+            // back the canonical credential to use via e.credential.
+            final cred = e.credential ?? credential;
+            await FirebaseAuth.instance.signInWithCredential(cred);
+          } else {
+            rethrow;
+          }
+        }
+      } else {
+        await FirebaseAuth.instance.signInWithCredential(credential);
+      }
+      Funnel.instance.log('auth_success'); // OTP verified — registration next
+      // A guest converting to a real account IS the registration/conversion.
+      // (Splash won't fire it, because their users/{uid} record already exists
+      // from guest browsing.)
+      if (wasGuest) {
+        Funnel.instance.registered();
+        Analytics.instance.logSignUp();
+      }
       if (!mounted) return;
       // Splash creates/loads the users/{uid} record and routes to Home.
       Navigator.pushAndRemoveUntil(
@@ -163,10 +325,12 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
+      Funnel.instance.authFailed('verify:${e.code}', method: 'phone');
       _snack(_friendlyError(e));
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
+      Funnel.instance.authFailed('verify_exception', method: 'phone');
       _snack('Verification failed: $e');
     }
   }

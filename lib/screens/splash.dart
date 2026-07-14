@@ -1,7 +1,9 @@
 import 'package:percent/models/User.dart';
 import 'package:percent/services/analytics_service.dart';
+import 'package:percent/services/funnel_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/utils/notification_helper.dart';
@@ -154,30 +156,47 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
       debugPrint('Failed to check app update: $e');
     }
 
-    final currentUser = FirebaseAuth.instance.currentUser;
+    var currentUser = FirebaseAuth.instance.currentUser;
+
+    // Web = browse-first. If nobody is signed in, sign the visitor in
+    // anonymously so they get a real uid and every screen keeps working; the
+    // app asks them to sign in for real only when they do something worth
+    // saving (see GuestGate). Native keeps the normal sign-in gate.
+    if (currentUser == null && kIsWeb) {
+      try {
+        final cred = await FirebaseAuth.instance.signInAnonymously();
+        currentUser = cred.user;
+      } catch (e) {
+        debugPrint('Anonymous sign-in failed: $e');
+      }
+    }
+
     if (currentUser == null) {
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (_) => const SignIn()));
     } else {
+      final user = currentUser; // non-null in this branch
+      final isAnon = user.isAnonymous;
       FirebaseDatabase.instance
           .ref('users')
-          .child(currentUser.uid)
+          .child(user.uid)
           .once()
           .then((value) {
         if (!mounted) return;
-        Analytics.instance.setUser(currentUser.uid);
+        Analytics.instance.setUser(user.uid);
         if (value.snapshot.exists && value.snapshot.value != null) {
           final userModel = UserModel.fromMap(value.snapshot.value as Map);
-          NotificationHelper.saveToken(currentUser.uid);
+          NotificationHelper.saveToken(user.uid);
+          Funnel.instance.homeReached(); // returning user reached Home
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => Home(user: userModel)),
           );
         } else {
           final model = UserModel(
-            currentUser.displayName ?? 'User',
-            currentUser.phoneNumber ?? currentUser.email ?? '',
-            currentUser.uid,
+            user.displayName ?? (isAnon ? 'Guest' : 'User'),
+            user.phoneNumber ?? user.email ?? '',
+            user.uid,
             [],
             DateTime.now().toIso8601String(),
           );
@@ -186,7 +205,13 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
               .child(model.uid)
               .set(model.toMap())
               .then((_) => NotificationHelper.saveToken(model.uid));
-          Analytics.instance.logSignUp(); // first DB record for this user
+          // Only a REAL (non-anonymous) new account is a registration/conversion.
+          // An anonymous guest browsing the web must NOT inflate the funnel.
+          if (!isAnon) {
+            Analytics.instance.logSignUp(); // first DB record for a real user
+            Funnel.instance.registered(); // the conversion we track
+          }
+          Funnel.instance.homeReached();
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => Home(user: model)),
