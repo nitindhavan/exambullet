@@ -15,9 +15,9 @@ import 'package:percent/widgets/slim_header.dart';
 //
 // Node states:
 //   completed  → brand gradient fill + check
-//   current    → first incomplete unlocked topic, pulsing highlight
-//   locked     → greyed with lock (previous topic not yet completed)
-// First topic is always unlocked.
+//   current    → first incomplete topic, pulsing highlight
+//   available  → open, not yet completed
+// All topics are always open — no sequential locking.
 // ══════════════════════════════════════════════════════════════════════════════
 
 class TopicPathScreen extends StatefulWidget {
@@ -103,12 +103,8 @@ class _TopicPathScreenState extends State<TopicPathScreen>
     return -1;
   }
 
-  bool _isUnlocked(int i) {
-    if (i == 0) return true;
-    if (_completed.contains(_topics[i].id)) return true;
-    // Unlocked when the previous topic is completed.
-    return _completed.contains(_topics[i - 1].id);
-  }
+  // All topics are always open — no sequential locking.
+  bool _isUnlocked(int i) => true;
 
   Future<void> _openTopic(TopicModel topic) async {
     final result = await Navigator.push<bool>(
