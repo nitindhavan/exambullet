@@ -6,7 +6,7 @@ import 'package:percent/services/guest_gate.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
-import 'package:percent/widgets/shimmer.dart';
+import 'package:percent/widgets/percent_loader.dart';
 
 class TestsTab extends StatefulWidget {
   const TestsTab({Key? key, required this.exam, required this.hasMembership})
@@ -31,22 +31,7 @@ class _TestsTabState extends State<TestsTab> {
           .onValue,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return ShimmerLoading(
-            builder: (context, color) {
-              return ListView.builder(
-                padding: const EdgeInsets.all(20),
-                itemCount: 4,
-                itemBuilder: (_, __) => Container(
-                  height: 80,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              );
-            },
-          );
+          return const PercentLoaderCentered();
         }
         final raw = snapshot.data!.snapshot.value;
         final tests = raw == null
@@ -174,12 +159,19 @@ class _PapersSliver extends StatelessWidget {
           .once(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
+          // Small inline spinner — the page-level "%" already showed while the
+          // tests list loaded; a second big "%" here would duplicate it.
           return const SliverToBoxAdapter(
             child: SizedBox(
               height: 120,
               child: Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
                   child: CircularProgressIndicator(
-                      color: AppTheme.primary, strokeWidth: 2)),
+                      strokeWidth: 2.4, color: AppTheme.primary),
+                ),
+              ),
             ),
           );
         }
@@ -221,7 +213,11 @@ class _PapersSliver extends StatelessWidget {
                 final hard = (paperMap?['hard'] as int?) ?? 0;
                 final questionCount =
                     (paperMap?['questionCount'] as int?) ?? (easy + medium + hard);
-                final totalMarks = (paperMap?['totalMarks'] as int?) ?? 0;
+                // Total marks displayed rounded to the nearest whole number
+                // (e.g. 199.5 -> 200), even if older records stored a fraction.
+                final totalMarks =
+                    ((paperMap?['totalMarks'] as num?)?.toDouble() ?? 0)
+                        .round();
                 // Guests (anonymous web visitors) may take tests — we only nudge
                 // them to sign in so their results are saved. Membership locking
                 // (first test free, rest need membership) applies to everyone.

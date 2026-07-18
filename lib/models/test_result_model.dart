@@ -10,8 +10,8 @@ class TestResult {
   final String testName;
   final String paperId;
   final int takenAt; // epoch ms
-  final int obtained; // marks after negative marking
-  final int total; // total marks available
+  final double obtained; // marks after negative marking (may be fractional)
+  final double total; // total marks available (may be fractional)
   final int correct;
   final int wrong;
   final int skipped;
@@ -74,8 +74,8 @@ class TestResult {
       testName: (m['testName'] ?? '').toString(),
       paperId: (m['paperId'] ?? '').toString(),
       takenAt: (m['takenAt'] as num?)?.toInt() ?? 0,
-      obtained: (m['obtained'] as num?)?.toInt() ?? 0,
-      total: (m['total'] as num?)?.toInt() ?? 0,
+      obtained: (m['obtained'] as num?)?.toDouble() ?? 0,
+      total: (m['total'] as num?)?.toDouble() ?? 0,
       correct: (m['correct'] as num?)?.toInt() ?? 0,
       wrong: (m['wrong'] as num?)?.toInt() ?? 0,
       skipped: (m['skipped'] as num?)?.toInt() ?? 0,

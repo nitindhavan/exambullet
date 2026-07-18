@@ -17,8 +17,8 @@ class ScoreScreen extends StatelessWidget {
   final List<int> selection;
   final List<Question> questions;
 
-  int get _obtained {
-    int o = 0;
+  double get _obtained {
+    double o = 0;
     for (int i = 0; i < questions.length; i++) {
       final q        = questions[i];
       final sel      = selection[i];
@@ -34,14 +34,14 @@ class ScoreScreen extends StatelessWidget {
     return o;
   }
 
-  int get _total => questions.fold(0, (s, q) => s + q.marks);
+  double get _total => questions.fold(0.0, (s, q) => s + q.marks);
 
   int get _answered => selection.where((s) => s != -1).length;
 
   int get _skipped => selection.where((s) => s == -1).length;
 
-  int get _deducted {
-    int d = 0;
+  double get _deducted {
+    double d = 0;
     for (int i = 0; i < questions.length; i++) {
       final q   = questions[i];
       final sel = selection[i];
@@ -57,7 +57,13 @@ class ScoreScreen extends StatelessWidget {
       testModel.negativeMarks > 0 ||
       questions.any((q) => q.negativeMarks > 0);
 
-  double get _pct => _total > 0 ? (_obtained.clamp(0, _total) / _total) : 0;
+  double get _pct =>
+      _total > 0 ? (_obtained.clamp(0, _total) / _total) : 0;
+
+  /// Final marks are shown rounded to the nearest whole number (e.g. 199.5 ->
+  /// 200, 132.66 -> 133). Per-question marks stay fractional internally; only
+  /// the displayed totals/score are rounded.
+  static String _fmt(double v) => v.round().toString();
 
   Color get _resultColor {
     if (_pct >= 0.7) return AppTheme.success;
@@ -124,7 +130,7 @@ class ScoreScreen extends StatelessWidget {
                       Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('$_obtained/$_total',
+                          Text('${_fmt(_obtained)}/${_fmt(_total)}',
                               style: TextStyle(
                                   color: _obtained < 0
                                       ? AppTheme.error
@@ -203,7 +209,7 @@ class ScoreScreen extends StatelessWidget {
                 if (_hasNegativeMarking) ...[
                   _StatCard(
                       label: 'Deducted',
-                      value: '−$_deducted',
+                      value: '−${_fmt(_deducted)}',
                       icon: Icons.indeterminate_check_box_rounded,
                       color: AppTheme.error),
                 ] else ...[

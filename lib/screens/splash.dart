@@ -1,6 +1,8 @@
 import 'package:percent/models/User.dart';
 import 'package:percent/services/analytics_service.dart';
 import 'package:percent/services/funnel_service.dart';
+import 'package:percent/services/onboarding.dart';
+import 'package:percent/screens/onboarding_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -154,6 +156,26 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
       }
     } catch (e) {
       debugPrint('Failed to check app update: $e');
+    }
+
+    // ── First-time onboarding ──────────────────────────────
+    // Show the feature walkthrough once (per device/browser) to brand-new
+    // users — i.e. anyone not already signed into a real account. On completion
+    // we mark it seen and fall through to the normal auth/routing below.
+    final existing = FirebaseAuth.instance.currentUser;
+    final isRealUser = existing != null && !existing.isAnonymous;
+    if (!isRealUser && !await Onboarding.seen()) {
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OnboardingScreen(
+            onDone: () => Navigator.of(context).pop(),
+          ),
+        ),
+      );
+      await Onboarding.markSeen();
+      if (!mounted) return;
     }
 
     var currentUser = FirebaseAuth.instance.currentUser;

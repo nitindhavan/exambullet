@@ -18,9 +18,14 @@ import 'package:percent/widgets/ui/ui.dart';
 /// stays correct across minimise / kill / reopen; an ongoing notification shows
 /// while a session is active.
 class FocusTab extends StatelessWidget {
-  const FocusTab({Key? key, required this.goalExams}) : super(key: key);
+  const FocusTab({Key? key, this.goalExams = const [], this.singleExam})
+      : super(key: key);
 
   final List<ExamModel> goalExams;
+
+  /// When set, the focus timer is tied to this one exam (no picker). Used when
+  /// embedded inside a specific exam's dashboard.
+  final ExamModel? singleExam;
 
   bool get _signedIn => FirebaseAuth.instance.currentUser != null;
 
@@ -40,7 +45,7 @@ class FocusTab extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [
             const _SectionTitle('Focus Timer', Icons.timer_rounded),
-            _TimerCard(goalExams: goalExams),
+            _TimerCard(goalExams: goalExams, singleExam: singleExam),
             const SizedBox(height: AppTheme.space6),
 
             // Streak + quick totals
@@ -93,8 +98,9 @@ class _SectionTitle extends StatelessWidget {
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _TimerCard extends StatefulWidget {
-  const _TimerCard({required this.goalExams});
+  const _TimerCard({required this.goalExams, this.singleExam});
   final List<ExamModel> goalExams;
+  final ExamModel? singleExam;
 
   @override
   State<_TimerCard> createState() => _TimerCardState();
@@ -107,7 +113,12 @@ class _TimerCardState extends State<_TimerCard> {
   @override
   void initState() {
     super.initState();
-    if (widget.goalExams.isNotEmpty) _selected = widget.goalExams.first;
+    // Single-exam mode: fix to that exam. Else default to the first offered.
+    if (widget.singleExam != null) {
+      _selected = widget.singleExam;
+    } else if (widget.goalExams.isNotEmpty) {
+      _selected = widget.goalExams.first;
+    }
   }
 
   @override
@@ -186,6 +197,15 @@ class _TimerCardState extends State<_TimerCard> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(active.examName,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800)),
+                )
+              else if (widget.singleExam != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(widget.singleExam!.name,
                       style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,

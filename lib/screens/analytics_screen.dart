@@ -5,6 +5,7 @@ import 'package:percent/services/test_analytics.dart';
 import 'package:percent/services/test_result_service.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/exam_icon.dart';
+import 'package:percent/widgets/percent_loader.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
 /// Analytics / progress dashboard built from the user's saved test attempts.
@@ -49,8 +50,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         stream: TestResultService.resultsStream(),
         builder: (context, snap) {
           if (!snap.hasData) {
-            return const Center(
-                child: CircularProgressIndicator(color: AppTheme.primary));
+            return const PercentLoaderCentered();
           }
           final all = snap.data!;
           if (all.isEmpty) return const _EmptyState();

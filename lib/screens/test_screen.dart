@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/test_model.dart';
 import 'package:percent/utils/theme.dart';
-import 'package:percent/widgets/shimmer.dart';
+import 'package:percent/widgets/percent_loader.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
 class TestScreen extends StatefulWidget {
@@ -203,41 +203,7 @@ class _TestScreenState extends State<TestScreen> {
           title: widget.testModel.name,
           onBack: () => Navigator.of(context).pop(),
         ),
-        body: ShimmerLoading(
-          builder: (context, color) => Padding(
-            padding: const EdgeInsets.fromLTRB(
-                AppTheme.space5, AppTheme.space5, AppTheme.space5, AppTheme.space5),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Progress bar placeholder
-                Container(
-                  height: 6,
-                  decoration: BoxDecoration(
-                      color: color, borderRadius: BorderRadius.circular(6)),
-                ),
-                const SizedBox(height: AppTheme.space6),
-                // Question card placeholder
-                Container(
-                  height: 140,
-                  decoration: BoxDecoration(
-                      color: color, borderRadius: AppTheme.brLg),
-                ),
-                const SizedBox(height: AppTheme.space6),
-                // Option placeholders
-                ...List.generate(
-                  4,
-                  (i) => Container(
-                    height: 58,
-                    margin: const EdgeInsets.only(bottom: AppTheme.space4),
-                    decoration: BoxDecoration(
-                        color: color, borderRadius: AppTheme.brMd),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        body: const PercentLoaderCentered(),
       );
     }
 

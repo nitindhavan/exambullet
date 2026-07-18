@@ -7,6 +7,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/percent_loader.dart';
 import 'package:percent/widgets/ui/ui.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -233,7 +234,7 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
       backgroundColor: AppTheme.background,
       appBar: const AppTopBar(title: 'Membership'),
       body: !_settingsLoaded
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+          ? const PercentLoaderCentered()
           : SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(
                   AppTheme.space6, AppTheme.space7, AppTheme.space6, AppTheme.space8),

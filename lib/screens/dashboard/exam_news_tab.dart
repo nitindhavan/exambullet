@@ -7,6 +7,7 @@ import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/ui/ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:percent/widgets/percent_loader.dart';
 
 // ── Data model ────────────────────────────────────────────────────────────────
 
@@ -244,7 +245,7 @@ class _ExamNewsTabState extends State<ExamNewsTab> {
         ),
         Expanded(
           child: _loading
-              ? const _LoadingList()
+              ? const PercentLoaderCentered()
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   itemCount: _articles.length,
@@ -487,95 +488,3 @@ class _ArticleWebViewState extends State<_ArticleWebView> {
   }
 }
 
-// ── Shimmer Loading ───────────────────────────────────────────────────────────
-
-class _LoadingList extends StatefulWidget {
-  const _LoadingList();
-
-  @override
-  State<_LoadingList> createState() => _LoadingListState();
-}
-
-class _LoadingListState extends State<_LoadingList>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1100),
-  )..repeat(reverse: true);
-
-  late final Animation<double> _anim =
-      Tween<double>(begin: 0.25, end: 0.65).animate(_ctrl);
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _anim,
-      builder: (_, __) => ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        itemCount: 5,
-        itemBuilder: (_, __) => _ShimmerCard(opacity: _anim.value),
-      ),
-    );
-  }
-}
-
-class _ShimmerCard extends StatelessWidget {
-  const _ShimmerCard({required this.opacity});
-  final double opacity;
-
-  @override
-  Widget build(BuildContext context) {
-    final bg =
-        Color.lerp(const Color(0xffF1F5F9), const Color(0xffE2E8F0), opacity)!;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppTheme.borderLight),
-        boxShadow: AppTheme.softShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-              height: 14,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                  color: bg, borderRadius: BorderRadius.circular(6))),
-          const SizedBox(height: 8),
-          Container(
-              height: 14,
-              width: 200,
-              decoration: BoxDecoration(
-                  color: bg, borderRadius: BorderRadius.circular(6))),
-          const SizedBox(height: 12),
-          Container(
-              height: 12,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                  color: bg, borderRadius: BorderRadius.circular(6))),
-          const SizedBox(height: 6),
-          Container(
-              height: 12,
-              width: 220,
-              decoration: BoxDecoration(
-                  color: bg, borderRadius: BorderRadius.circular(6))),
-          const SizedBox(height: 14),
-          Container(
-              height: 22,
-              width: 90,
-              decoration: BoxDecoration(
-                  color: bg, borderRadius: BorderRadius.circular(8))),
-        ],
-      ),
-    );
-  }
-}

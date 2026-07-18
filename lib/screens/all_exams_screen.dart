@@ -1,8 +1,11 @@
 import 'package:percent/models/exam.dart';
+import 'package:percent/models/User.dart';
+import 'package:percent/screens/exam_dashboard.dart';
 import 'package:percent/services/analytics_service.dart';
 import 'package:percent/services/guest_gate.dart';
 import 'package:percent/utils/category_icons.dart';
 import 'package:percent/widgets/exam_icon.dart';
+import 'package:percent/widgets/percent_loader.dart';
 import 'package:percent/widgets/sign_in_sheet.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -15,12 +18,22 @@ class AllExamsScreen extends StatefulWidget {
     Key? key,
     required this.allExams,
     required this.goalIds,
+    this.user,
     this.initialSearch = '',
+    this.embedded = false,
   }) : super(key: key);
 
   final List<ExamModel> allExams;
   final Set<String> goalIds;
+
+  /// When provided, tapping an exam opens its content (ExamDashboard). When
+  /// null (legacy "add exams" usage), tapping toggles the bookmark instead.
+  final UserModel? user;
   final String initialSearch;
+
+  /// When true, renders WITHOUT its own Scaffold/AppBar so it can be dropped
+  /// into a host screen's tab body (the category-first Home).
+  final bool embedded;
 
   @override
   State<AllExamsScreen> createState() => _AllExamsScreenState();
@@ -89,21 +102,21 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
   int _countInCategory(String catId) =>
       widget.allExams.where((e) => e.category == catId).length;
 
-  /// Exams for the current view: search results (across all) if searching,
-  /// otherwise the selected category's exams.
+  /// Exams for the current view. The search bar only appears once inside a
+  /// category, but a typed query searches ALL exams (any category) — not just
+  /// the current one — since the user may be looking for something elsewhere.
+  /// With no query, shows just the selected category's exams.
   List<ExamModel> _visibleExams() {
-    if (_search.isNotEmpty) {
-      final q = _search.toLowerCase();
-      return widget.allExams
-          .where((e) => e.name.toLowerCase().contains(q))
-          .toList();
-    }
-    if (_selectedCategory != null) {
+    if (_selectedCategory == null) return const [];
+    if (_search.isEmpty) {
       return widget.allExams
           .where((e) => e.category == _selectedCategory)
           .toList();
     }
-    return const [];
+    final q = _search.toLowerCase();
+    return widget.allExams
+        .where((e) => e.name.toLowerCase().contains(q))
+        .toList();
   }
 
   Future<void> _toggleGoal(String examId) async {
@@ -133,12 +146,42 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Show category tiles only when not searching and no category picked.
-    final showingCategories = _search.isEmpty && _selectedCategory == null;
+    // Show category tiles only when no category is picked yet.
+    final showingCategories = _selectedCategory == null;
     final exams = _visibleExams();
 
     // When viewing a category's exams, back should return to the category grid.
-    final inCategoryView = _selectedCategory != null && _search.isEmpty;
+    final inCategoryView = _selectedCategory != null;
+
+    final body = Column(
+      children: [
+        // Search only exists once inside a category — not on the top-level grid.
+        if (inCategoryView) _buildSearchBar(context),
+        Expanded(
+          child: showingCategories
+              ? _buildCategoryGrid()
+              : (exams.isEmpty ? _emptyState() : _buildExamGrid(exams)),
+        ),
+      ],
+    );
+
+    // Embedded (inside Home's tab): no Scaffold/AppBar. Back within the category
+    // view still returns to the category grid via PopScope.
+    if (widget.embedded) {
+      return PopScope(
+        canPop: !inCategoryView,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop && inCategoryView) {
+            _searchCtrl.clear();
+            setState(() {
+              _selectedCategory = null;
+              _search = '';
+            });
+          }
+        },
+        child: body,
+      );
+    }
 
     return PopScope(
       canPop: !inCategoryView,
@@ -150,23 +193,20 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
       child: Scaffold(
         backgroundColor: AppTheme.background,
         appBar: AppTopBar(
-          title: inCategoryView ? _categoryLabel(_selectedCategory!) : 'Add Exams',
+          title: inCategoryView
+              ? _categoryLabel(_selectedCategory!)
+              : (widget.user != null ? 'Explore' : 'Add Exams'),
           onBack: inCategoryView
-              ? () => setState(() => _selectedCategory = null)
+              ? () {
+                  _searchCtrl.clear();
+                  setState(() {
+                    _selectedCategory = null;
+                    _search = '';
+                  });
+                }
               : null,
         ),
-        body: Column(
-          children: [
-            _buildSearchBar(context),
-            Expanded(
-              child: showingCategories
-                  ? _buildCategoryGrid()
-                  : (exams.isEmpty
-                      ? _emptyState()
-                      : _buildExamGrid(exams)),
-            ),
-          ],
-        ),
+        body: body,
       ),
     );
   }
@@ -178,8 +218,7 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
 
   Widget _buildCategoryGrid() {
     if (!_categoriesLoaded) {
-      return const Center(
-          child: CircularProgressIndicator(color: AppTheme.primary));
+      return const PercentLoaderCentered();
     }
     // Hide empty categories.
     final visible =
@@ -209,6 +248,9 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
   }
 
   Widget _buildExamGrid(List<ExamModel> exams) {
+    // While searching, results can span categories other than the one
+    // currently open — show each card's category so it's clear where it's from.
+    final showCategoryBadge = _search.isNotEmpty;
     return GridView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       itemCount: exams.length,
@@ -222,10 +264,42 @@ class _AllExamsScreenState extends State<AllExamsScreen> {
         final exam = exams[index];
         final isGoal = _goalIds.contains(exam.id);
         return GestureDetector(
-          onTap: () => _toggleGoal(exam.id),
-          child: _ExamCard(exam: exam, isGoal: isGoal),
+          // Category-first flow: tapping the card OPENS the exam's content.
+          // (Legacy "add exams" usage without a user falls back to bookmarking.)
+          onTap: () => _openExam(exam),
+          child: _ExamCard(
+            exam: exam,
+            isGoal: isGoal,
+            categoryLabel:
+                showCategoryBadge ? _categoryLabel(exam.category) : null,
+            // The star is a secondary bookmark action, not the primary tap.
+            onBookmarkTap: () => _toggleGoal(exam.id),
+          ),
         );
       },
+    );
+  }
+
+  void _openExam(ExamModel exam) {
+    // A global search from inside a category may surface an exam from a
+    // different category. Snap the selection to match so that returning to
+    // this screen (e.g. via back button) lands on the right category grid.
+    if (_search.isNotEmpty) {
+      _searchCtrl.clear();
+      setState(() {
+        _search = '';
+        _selectedCategory = exam.category;
+      });
+    }
+    final user = widget.user;
+    if (user == null) {
+      // No user context (legacy add-exams screen) → keep bookmarking behaviour.
+      _toggleGoal(exam.id);
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ExamDashboard(exam: exam, user: user)),
     );
   }
 
@@ -371,10 +445,14 @@ class _ExamCard extends StatelessWidget {
   const _ExamCard({
     required this.exam,
     required this.isGoal,
+    this.categoryLabel,
+    this.onBookmarkTap,
   });
 
   final ExamModel exam;
-  final bool isGoal;
+  final bool isGoal; // bookmarked ("saved")
+  final String? categoryLabel; // shown as a badge during cross-category search
+  final VoidCallback? onBookmarkTap;
 
   @override
   Widget build(BuildContext context) {
@@ -445,6 +523,26 @@ class _ExamCard extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (categoryLabel != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.borderLight.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          categoryLabel!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.label.copyWith(
+                            color: AppTheme.textSecondary,
+                            fontSize: 9,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                    ],
                     SizedBox(
                       height: 34,
                       child: Center(
@@ -461,26 +559,24 @@ class _ExamCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
+                    // Primary action label: tapping the card opens content.
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isGoal ? AppTheme.primary : AppTheme.primaryLight,
+                        color: AppTheme.primaryLight,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            isGoal ? Icons.check_rounded : Icons.add_rounded,
-                            size: 13,
-                            color: isGoal ? Colors.white : AppTheme.primary,
-                          ),
+                          const Icon(Icons.arrow_forward_rounded,
+                              size: 13, color: AppTheme.primary),
                           const SizedBox(width: 4),
                           Text(
-                            isGoal ? 'Goal Active' : 'Add Goal',
+                            'Open',
                             style: AppTheme.label.copyWith(
-                              color: isGoal ? Colors.white : AppTheme.primary,
+                              color: AppTheme.primary,
                               fontSize: 10,
                             ),
                           ),
@@ -492,21 +588,30 @@ class _ExamCard extends StatelessWidget {
               ),
             ],
           ),
-          // Checkmark Badge at top-right if selected
-          if (isGoal)
+          // Top-right bookmark toggle (secondary action). Filled when saved.
+          if (onBookmarkTap != null)
             Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  color: AppTheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  color: Colors.white,
-                  size: 11,
+              top: 6,
+              right: 6,
+              child: GestureDetector(
+                onTap: onBookmarkTap,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: isGoal ? AppTheme.primary : Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isGoal ? AppTheme.primary : AppTheme.borderLight,
+                      width: 1.2,
+                    ),
+                    boxShadow: AppTheme.softShadow,
+                  ),
+                  child: Icon(
+                    isGoal ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                    color: isGoal ? Colors.white : AppTheme.textSecondary,
+                    size: 15,
+                  ),
                 ),
               ),
             ),

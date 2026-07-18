@@ -1,6 +1,7 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:percent/models/notification.dart';
+import 'package:percent/widgets/percent_loader.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
@@ -74,12 +75,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       backgroundColor: AppTheme.background,
       appBar: const AppTopBar(title: 'Notifications'),
       body: !_isReadTimeLoaded
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primary, strokeWidth: 2.5))
+          ? const PercentLoaderCentered()
           : StreamBuilder<DatabaseEvent>(
               stream: FirebaseDatabase.instance.ref('notifications').onValue,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: AppTheme.primary, strokeWidth: 2.5));
+                  return const PercentLoaderCentered();
                 }
 
                 final List<NotificationModel> notifications = [];

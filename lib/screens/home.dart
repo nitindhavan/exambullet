@@ -1,10 +1,9 @@
+import 'dart:ui' show ImageFilter;
 import 'package:percent/models/User.dart';
 import 'package:percent/models/exam.dart';
 import 'package:percent/screens/all_exams_screen.dart';
 import 'package:percent/screens/analytics_screen.dart';
 import 'package:percent/screens/exam_dashboard.dart';
-import 'package:percent/screens/dashboard/planner_tab.dart';
-import 'package:percent/screens/dashboard/focus_tab.dart';
 import 'package:percent/widgets/home/embedded_dashboard.dart';
 import 'package:percent/widgets/home/home_header.dart';
 import 'package:percent/widgets/home/news_section.dart';
@@ -15,15 +14,17 @@ import 'package:percent/screens/signin.dart';
 import 'package:percent/widgets/sign_in_sheet.dart';
 import 'package:percent/widgets/exam_icon.dart';
 import 'package:percent/widgets/get_app_banner.dart';
+import 'package:percent/widgets/percent_loader.dart';
 import 'package:percent/services/guest_gate.dart';
 import 'package:percent/screens/edit_profile_screen.dart';
-import 'package:percent/widgets/shimmer.dart';
 import 'package:percent/widgets/ui/ui.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/utils/category_icons.dart';
+import 'package:percent/utils/category_theme.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key, required this.user}) : super(key: key);
@@ -37,7 +38,18 @@ class _HomeState extends State<Home> {
   bool examsLoading = true;
   late final Stream<Set<String>> _goalIdsStream;
   int _activeTab = 0;
-  String? _selectedRoomsExamId;
+
+  // "Tests" tab drill-in: null = showing category sections; otherwise the
+  // selected category id, inside which we show that category's exam grid.
+  String? _testsCategoryId;
+  // Once an exam is picked inside a category room, its embedded dashboard
+  // replaces the grid (no switcher rail — back returns to the grid).
+  ExamModel? _testsSelectedExam;
+  final TextEditingController _categorySearchCtrl = TextEditingController();
+  String _categorySearch = '';
+  // Categories loaded from the `categories` node (id, label, order, icon).
+  List<_HomeCategory> _categories = [];
+  bool _categoriesLoaded = false;
 
   @override
   void initState() {
@@ -53,11 +65,45 @@ class _HomeState extends State<Home> {
             return (event.snapshot.value as Map).keys.cast<String>().toSet();
           });
     _loadExams();
+    _loadCategories();
     // If a guest just converted to a real account but their name is still the
     // "Guest" placeholder, ask them once what to call them. No-op otherwise.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) GuestGate.promptForNameIfNeeded(context);
     });
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final snap = await FirebaseDatabase.instance.ref('categories').once();
+      final cats = <_HomeCategory>[];
+      if (snap.snapshot.exists && snap.snapshot.value != null) {
+        (snap.snapshot.value as Map).forEach((key, v) {
+          if (v is! Map) return;
+          cats.add(_HomeCategory(
+            key.toString(),
+            (v['label'] ?? key).toString(),
+            (v['order'] as num?)?.toInt() ?? 999,
+            (v['icon'] ?? '').toString(),
+          ));
+        });
+      }
+      cats.sort((a, b) => a.order.compareTo(b.order));
+      if (mounted) {
+        setState(() {
+          _categories = cats;
+          _categoriesLoaded = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _categoriesLoaded = true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _categorySearchCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadExams() async {
@@ -80,7 +126,8 @@ class _HomeState extends State<Home> {
   void _openAllExams(Set<String> goalIds) {
     Navigator.push(context,
         MaterialPageRoute(
-            builder: (_) => AllExamsScreen(allExams: allExams, goalIds: goalIds)));
+            builder: (_) => AllExamsScreen(
+                allExams: allExams, goalIds: goalIds, user: widget.user)));
   }
 
   void _openExamDashboard(ExamModel exam) {
@@ -117,42 +164,60 @@ class _HomeState extends State<Home> {
         }
 
 
+        // Inside a section (drilled into a category on the Tests tab), hide the
+        // app header so the category's own back-arrow + content take full height.
+        final insideSection = _activeTab == 0 && _testsCategoryId != null;
+
         return Scaffold(
           backgroundColor: AppTheme.background,
-          appBar: AppTopBar(
-            title: 'Percent',
-            showBack: false,
-            leadingIcon: Icons.percent_rounded,
-            actions: [
-              IconButton(
-                onPressed: () => _openAllExams(goalIds),
-                icon: const Icon(Icons.add_circle_outline_rounded,
-                    color: AppTheme.primary),
-                tooltip: 'Add Exams',
-              ),
-              NotificationBell(userId: widget.user.uid),
-              const SizedBox(width: AppTheme.space5),
-            ],
-          ),
-          body: SafeArea(
-            top: false,
-            child: _buildTabBody(
-              goalExams: goalExams,
-              otherExams: otherExams,
-              goalIds: goalIds,
-              examsLoading: examsLoading,
-            ),
-          ),
-          bottomNavigationBar: Column(
-            mainAxisSize: MainAxisSize.min,
+          appBar: insideSection
+              ? null
+              : AppTopBar(
+                  title: 'Percent',
+                  showBack: false,
+                  leadingIcon: Icons.percent_rounded,
+                  actions: [
+                    NotificationBell(userId: widget.user.uid),
+                    const SizedBox(width: AppTheme.space5),
+                  ],
+                ),
+          // Body fills the full height; the floating nav overlays it at the
+          // bottom so content shows THROUGH the translucent pill (true floating,
+          // no solid bar behind it).
+          body: Stack(
             children: [
-              // Android-web only: sticky "get the app" banner above the nav.
-              const GetAppBanner(),
-              _BottomNav(
-                currentIndex: _activeTab,
-                onTap: (index) => setState(() => _activeTab = index),
-                hasGoals: goalExams.isNotEmpty,
+              Positioned.fill(
+                child: SafeArea(
+                  top: insideSection,
+                  bottom: false,
+                  child: _buildTabBody(
+                    goalExams: goalExams,
+                    otherExams: otherExams,
+                    goalIds: goalIds,
+                    examsLoading: examsLoading,
+                  ),
+                ),
               ),
+              // Hide the main Tests/Progress/Profile nav while inside a section
+              // — there the exam dashboard shows its own floating tab bar.
+              if (!insideSection)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Android-web only: "get the app" banner above the nav.
+                      const GetAppBanner(),
+                      _BottomNav(
+                        currentIndex: _activeTab,
+                        onTap: (index) => setState(() => _activeTab = index),
+                        hasGoals: goalExams.isNotEmpty,
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         );
@@ -168,287 +233,329 @@ class _HomeState extends State<Home> {
   }) {
     switch (_activeTab) {
       case 0:
-        return _buildRoomsTab(goalExams, goalIds, examsLoading);
+        // "Tests" tab: category sections → drill into an exam's dashboard, which
+        // now also hosts the per-exam Planner and Focus tools.
+        return _buildExploreTab(goalExams, goalIds, examsLoading);
       case 1:
-        return PlannerTab(goalExams: goalExams);
+        // Bottom padding so content clears the floating nav bar.
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 88),
+          child: AnalyticsScreen(allExams: allExams, embedded: true),
+        );
       case 2:
-        return FocusTab(goalExams: goalExams);
-      case 3:
-        return AnalyticsScreen(allExams: allExams, embedded: true);
-      case 4:
-        return _ProfileTab(
-          user: widget.user,
-          goalExams: goalExams,
-          allExams: allExams,
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 88),
+          child: _ProfileTab(
+            user: widget.user,
+            goalExams: goalExams,
+            allExams: allExams,
+          ),
         );
       default:
         return const SizedBox();
     }
   }
 
-  Widget _buildRoomsTab(List<ExamModel> goalExams, Set<String> goalIds, bool examsLoading) {
-    if (goalExams.isNotEmpty) {
-      final containsSelected = goalExams.any((e) => e.id == _selectedRoomsExamId);
-      if (!containsSelected) _selectedRoomsExamId = goalExams.first.id;
-    } else {
-      _selectedRoomsExamId = null;
+  /// "Tests" tab. Landing shows category SECTIONS; tapping one drills into that
+  /// category's old-home layout (exam rail at top + dashboard below).
+  Widget _buildExploreTab(
+      List<ExamModel> goalExams, Set<String> goalIds, bool examsLoading) {
+    if (examsLoading || !_categoriesLoaded) {
+      return const PercentLoaderCentered();
     }
+    // Drilled into a category → old-home rail + dashboard for its exams.
+    if (_testsCategoryId != null) {
+      return _buildCategoryRoom(_testsCategoryId!);
+    }
+    // Landing: the category sections.
+    return _buildCategorySections();
+  }
 
-    // Section title (scrolls away)
-    Widget header = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.meeting_room_rounded,
-                      color: AppTheme.primary, size: 20),
-                  const SizedBox(width: 8),
-                  Text('My Prep Rooms',
-                      style: GoogleFonts.outfit(
-                          color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.w800)),
-                ],
-              ),
-              if (goalExams.isNotEmpty)
-                GestureDetector(
-                  onTap: () => _openAllExams(goalIds),
-                  child: Text('Manage',
-                      style: GoogleFonts.inter(
-                          color: AppTheme.primary, fontSize: 13, fontWeight: FontWeight.w700)),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
+  int _examCountInCategory(String catId) =>
+      allExams.where((e) => e.category == catId).length;
 
-    if (examsLoading) {
-      return Column(
-        children: [
-          header,
-          Expanded(
-            child: ShimmerLoading(
-              builder: (context, color) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 72,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: 4,
-                        itemBuilder: (_, __) => Container(
-                          width: 72, height: 72,
-                          margin: const EdgeInsets.only(right: 16),
-                          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      height: 46,
-                      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(24)),
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: 3,
-                        itemBuilder: (_, __) => Container(
-                          height: 80,
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+  Widget _buildCategorySections() {
+    final visible =
+        _categories.where((c) => _examCountInCategory(c.id) > 0).toList();
+    if (visible.isEmpty) {
+      return Center(
+        child: Text('No exams available yet.',
+            style: GoogleFonts.inter(color: AppTheme.textSecondary)),
       );
     }
-
-    if (goalExams.isEmpty) {
-      return Column(
-        children: [
-          header,
-          Expanded(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: const BoxDecoration(color: AppTheme.primaryLight, shape: BoxShape.circle),
-                      child: const Icon(Icons.school_rounded, color: AppTheme.primary, size: 40),
-                    ),
-                    const SizedBox(height: 20),
-                    Text('No Prep Rooms Active',
-                        style: GoogleFonts.outfit(
-                            color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Select the exams you are preparing for in the Explore tab to customize your mock tests and start learning.',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(color: AppTheme.textSecondary, fontSize: 13, height: 1.45),
-                    ),
-                    const SizedBox(height: 20),
-                    AppButton(
-                      label: 'Add Exams',
-                      onPressed: () => _openAllExams(goalIds),
-                      expand: false,
-                      height: 46,
-                    ),
-                  ],
-                ),
-              ),
+    return GridView.builder(
+            // Bottom padding clears the floating translucent nav bar.
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+            itemCount: visible.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              // Taller cells for the illustration-top / text-below layout.
+              childAspectRatio: 0.9,
             ),
-          ),
-        ],
-      );
-    }
-
-    // Has goals: header + exam switcher rail, then a single connected white
-    // "room" panel holding the selected exam's identity + tabbed dashboard.
-    final selectedExam = goalExams.firstWhere((e) => e.id == _selectedRoomsExamId);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Compact title row
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.meeting_room_rounded,
-                      color: AppTheme.primary, size: 20),
-                  const SizedBox(width: 8),
-                  Text('My Prep Rooms',
-                      style: GoogleFonts.outfit(
-                          color: AppTheme.textPrimary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800)),
-                ],
-              ),
-              GestureDetector(
-                onTap: () => _openAllExams(goalIds),
-                child: Text('Manage',
-                    style: GoogleFonts.inter(
-                        color: AppTheme.primary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700)),
-              ),
-            ],
-          ),
-        ),
-        // Horizontal exam switcher rail
-        SizedBox(
-          height: 96,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
-            itemCount: goalExams.length,
             itemBuilder: (context, index) {
-              final exam = goalExams[index];
-              final isSelected = exam.id == _selectedRoomsExamId;
-              return Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: GestureDetector(
-                  onTap: () => setState(() => _selectedRoomsExamId = exam.id),
-                  child: SizedBox(
-                    width: 64,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: isSelected
-                                ? const LinearGradient(
-                                    colors: AppTheme.primaryGradient,
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  )
-                                : null,
-                            color: isSelected ? null : Colors.grey.shade200,
-                          ),
-                          child: Container(
-                            width: 46, height: 46,
-                            padding: const EdgeInsets.all(3),
-                            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryLight.withValues(alpha: 0.5),
-                                shape: BoxShape.circle,
-                              ),
-                              child: ClipOval(
-                                child: ExamIcon(
-                                  iconKey: exam.iconKey,
-                                  imageUrl: exam.icon,
-                                  size: 22,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          exam.name,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
-                            color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
-                            fontSize: 11,
-                            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                            height: 1.15,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+              final c = visible[index];
+              return GestureDetector(
+                onTap: () => setState(() => _testsCategoryId = c.id),
+                child: _CategorySectionCard(
+                  categoryId: c.id,
+                  label: c.label,
+                  count: _examCountInCategory(c.id),
+                  icon: categoryIconFor(c.icon),
                 ),
               );
             },
-          ),
-        ),
-        // Connected "room" panel: selected exam identity + tabbed dashboard
-        Expanded(
-          child: Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(top: 4),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 20,
-                  offset: Offset(0, -4),
+    );
+  }
+
+  void _exitCategoryRoom() {
+    _categorySearchCtrl.clear();
+    setState(() {
+      _testsCategoryId = null;
+      _testsSelectedExam = null;
+      _categorySearch = '';
+    });
+  }
+
+  /// Category room: search + pick an exam from this category's themed grid.
+  /// Selecting one swaps in its embedded dashboard right here (no switcher
+  /// rail, no separate route) — back returns to the grid, not the sections.
+  Widget _buildCategoryRoom(String catId) {
+    final exams = allExams.where((e) => e.category == catId).toList();
+    if (exams.isEmpty) {
+      // Category emptied out — bounce back to sections.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _exitCategoryRoom();
+      });
+      return const SizedBox();
+    }
+
+    final category = _categories.firstWhere((c) => c.id == catId,
+        orElse: () => _HomeCategory(catId, catId, 0, ''));
+    final label = category.label;
+    final accent = CategoryTheme.accentFor(catId);
+    final selected = _testsSelectedExam;
+
+    // Inside an exam's embedded dashboard: back returns to this category's grid.
+    if (selected != null) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) setState(() => _testsSelectedExam = null);
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 20, 4),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.arrow_back_rounded, color: accent),
+                    onPressed: () =>
+                        setState(() => _testsSelectedExam = null),
+                  ),
+                  Expanded(
+                    child: Text(selected.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.outfit(
+                            color: AppTheme.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800)),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(top: 4),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(28)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 20,
+                      offset: Offset(0, -4),
+                    ),
+                  ],
                 ),
+                child: EmbeddedDashboard(
+                  key: ValueKey(selected.id),
+                  exam: selected,
+                  user: widget.user,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final q = _categorySearch.trim().toLowerCase();
+    final visibleExams = q.isEmpty
+        ? exams
+        : exams.where((e) => e.name.toLowerCase().contains(q)).toList();
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _exitCategoryRoom();
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Plain header row — matches AppTopBar's style used everywhere else.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 4, 20, 4),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                      color: AppTheme.textPrimary, size: 20),
+                  onPressed: _exitCategoryRoom,
+                ),
+                Expanded(
+                  child: Text(label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.headingMd),
+                ),
+                Text('${exams.length} ${exams.length == 1 ? 'exam' : 'exams'}',
+                    style: AppTheme.caption),
               ],
             ),
-            child: EmbeddedDashboard(
-              key: ValueKey(selectedExam.id),
-              exam: selectedExam,
-              user: widget.user,
+          ),
+          // Plain search bar — same style as AllExamsScreen's.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            child: Container(
+              height: 46,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.borderLight, width: 1.5),
+              ),
+              child: TextField(
+                controller: _categorySearchCtrl,
+                onChanged: (v) => setState(() => _categorySearch = v),
+                style: AppTheme.body.copyWith(color: AppTheme.textPrimary),
+                cursorColor: AppTheme.primary,
+                decoration: InputDecoration(
+                  hintText: 'Search $label exams...',
+                  hintStyle: AppTheme.body.copyWith(
+                      color: AppTheme.textSecondary.withValues(alpha: 0.55),
+                      fontSize: 13.5),
+                  prefixIcon: Icon(Icons.search_rounded,
+                      color: AppTheme.textSecondary.withValues(alpha: 0.65),
+                      size: 18),
+                  suffixIcon: _categorySearch.isNotEmpty
+                      ? GestureDetector(
+                          onTap: () {
+                            _categorySearchCtrl.clear();
+                            setState(() => _categorySearch = '');
+                          },
+                          child: Icon(Icons.close_rounded,
+                              color: AppTheme.textSecondary
+                                  .withValues(alpha: 0.65),
+                              size: 16),
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 13),
+                ),
+              ),
             ),
           ),
-        ),
-      ],
+          Expanded(
+            child: visibleExams.isEmpty
+                ? Center(
+                    child: Text('No exams match "$_categorySearch"',
+                        style: AppTheme.bodySm),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+                    itemCount: visibleExams.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: AppTheme.space3),
+                    itemBuilder: (context, index) {
+                      final exam = visibleExams[index];
+                      return GestureDetector(
+                        onTap: () =>
+                            setState(() => _testsSelectedExam = exam),
+                        child: _CategoryExamCard(
+                          exam: exam,
+                          fallbackIcon: categoryIconFor(category.icon),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Plain list-row card for the category room's exam list — icon, name, and a
+/// chevron. Same tokens (radius, shadow, borders) as the rest of the app.
+class _CategoryExamCard extends StatelessWidget {
+  const _CategoryExamCard({required this.exam, required this.fallbackIcon});
+  final ExamModel exam;
+
+  /// Shown instead of ExamIcon's generic school icon when this exam has
+  /// neither a named iconKey nor a usable image — the category's own icon
+  /// (e.g. the pillar icon for State PSC) reads better than a blank default.
+  final IconData fallbackIcon;
+
+  bool get _hasOwnIcon =>
+      (exam.iconKey.isNotEmpty && kCategoryIcons.containsKey(exam.iconKey)) ||
+      exam.icon.isNotEmpty;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.space4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: AppTheme.brLg,
+        border: Border.all(color: AppTheme.borderLight, width: 1.5),
+        boxShadow: AppTheme.softShadow,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: AppTheme.primaryLight,
+              shape: BoxShape.circle,
+            ),
+            child: ClipOval(
+              child: _hasOwnIcon
+                  ? ExamIcon(
+                      iconKey: exam.iconKey,
+                      imageUrl: exam.icon,
+                      size: 22,
+                    )
+                  : Icon(fallbackIcon, size: 22, color: AppTheme.primary),
+            ),
+          ),
+          const SizedBox(width: AppTheme.space4),
+          Expanded(
+            child: Text(exam.name,
+                maxLines: 2, overflow: TextOverflow.ellipsis,
+                style: AppTheme.headingSm.copyWith(fontSize: 14)),
+          ),
+          const SizedBox(width: AppTheme.space3),
+          const Icon(Icons.chevron_right_rounded,
+              color: AppTheme.textLight, size: 22),
+        ],
+      ),
     );
   }
 }
@@ -470,75 +577,80 @@ class _BottomNav extends StatelessWidget {
     final bottomPad = MediaQuery.of(context).padding.bottom;
     final items = [
       const _NavItem(Icons.assignment_rounded, 'Tests'),
-      const _NavItem(Icons.checklist_rounded, 'Planner'),
-      const _NavItem(Icons.timer_rounded, 'Focus'),
       const _NavItem(Icons.insights_rounded, 'Progress'),
       const _NavItem(Icons.person_rounded, 'Profile'),
     ];
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(28),
-          topRight: Radius.circular(28),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 24,
-            offset: const Offset(0, -6),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(10, 12, 10, bottomPad + 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: items.asMap().entries.map((entry) {
-            final i = entry.key;
-            final item = entry.value;
-            final selected = i == currentIndex;
-
-            return Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => onTap(i),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeInOut,
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
-                  decoration: BoxDecoration(
-                    color: selected ? AppTheme.primaryLight : Colors.transparent,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        item.icon,
-                        size: 22,
-                        color: selected ? AppTheme.primary : AppTheme.textSecondary,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                          color: selected ? AppTheme.primary : AppTheme.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
+    // Floating frosted pill: translucent + blurred backdrop for a light,
+    // premium feel that lets content subtly show through underneath.
+    return Padding(
+      padding: EdgeInsets.fromLTRB(18, 0, 18, bottomPad > 0 ? bottomPad : 12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(26),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.72),
+              borderRadius: BorderRadius.circular(26),
+              border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.6), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.10),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
                 ),
-              ),
-            );
-          }).toList(),
+              ],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: items.asMap().entries.map((entry) {
+                final i = entry.key;
+                final item = entry.value;
+                final selected = i == currentIndex;
+
+                return Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => onTap(i),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            item.icon,
+                            size: 23,
+                            color: selected
+                                ? AppTheme.primary
+                                : AppTheme.textSecondary,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            item.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: selected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: selected
+                                  ? AppTheme.primary
+                                  : AppTheme.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
         ),
       ),
     );
@@ -549,6 +661,174 @@ class _NavItem {
   final IconData icon;
   final String label;
   const _NavItem(this.icon, this.label);
+}
+
+class _HomeCategory {
+  _HomeCategory(this.id, this.label, this.order, this.icon);
+  final String id;
+  final String label;
+  final int order;
+  final String icon;
+}
+
+class _CategorySectionCard extends StatelessWidget {
+  const _CategorySectionCard(
+      {required this.categoryId,
+      required this.label,
+      required this.count,
+      required this.icon});
+  final String categoryId;
+  final String label;
+  final int count;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = CategoryTheme.accentFor(categoryId);
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.22),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // ── Full-bleed illustration (falls back to an accent gradient) ──
+          _Banner(categoryId: categoryId, accent: accent, icon: icon),
+
+          // ── Dark scrim rising from the bottom for text legibility ──
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.05),
+                    Colors.black.withValues(alpha: 0.72),
+                  ],
+                  stops: const [0.35, 0.6, 1.0],
+                ),
+              ),
+            ),
+          ),
+
+          // ── Text on top ──
+          Positioned(
+            left: 14,
+            right: 12,
+            bottom: 12,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 15,
+                      height: 1.1,
+                      fontWeight: FontWeight.w900,
+                      shadows: const [
+                        Shadow(color: Colors.black45, blurRadius: 6),
+                      ]),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.menu_book_rounded,
+                        size: 12,
+                        color: Colors.white.withValues(alpha: 0.85)),
+                    const SizedBox(width: 4),
+                    Text('$count ${count == 1 ? 'exam' : 'exams'}',
+                        style: GoogleFonts.inter(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Category banner: shows the bundled illustration if present, otherwise an
+/// accent-tinted icon panel. Uses the async existence cache so it settles to the
+/// image once (and never flickers on rebuilds).
+class _Banner extends StatelessWidget {
+  const _Banner(
+      {required this.categoryId, required this.accent, required this.icon});
+  final String categoryId;
+  final Color accent;
+  final IconData icon;
+
+  // Full-bleed accent gradient with a faint icon — used when a category has no
+  // bundled illustration. The card's dark scrim + white text still read well.
+  Widget _fallback() => Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              accent,
+              Color.lerp(accent, Colors.black, 0.28)!,
+            ],
+          ),
+        ),
+        child: Align(
+          alignment: const Alignment(0, -0.25),
+          child: Icon(icon,
+              color: Colors.white.withValues(alpha: 0.9), size: 40),
+        ),
+      );
+
+  Widget _image() => ClipRect(
+        child: Transform.translate(
+          // Slide the artwork up so the illustration's baked-in top headline is
+          // pushed out of frame (the card shows its own name at the bottom).
+          offset: const Offset(0, -40),
+          child: Transform.scale(
+            scale: 1.3,
+            alignment: Alignment.topCenter,
+            child: Image.asset(
+              CategoryTheme.assetFor(categoryId),
+              width: double.infinity,
+              height: double.infinity,
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+              errorBuilder: (_, __, ___) => _fallback(),
+            ),
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final cached = CategoryTheme.cachedHasImage(categoryId);
+    if (cached == true) return _image();
+    if (cached == false) return _fallback();
+    // Unknown yet — resolve once, show fallback until known.
+    return FutureBuilder<bool>(
+      future: CategoryTheme.hasImage(categoryId),
+      builder: (_, snap) =>
+          (snap.data == true) ? _image() : _fallback(),
+    );
+  }
 }
 
 // ── Desktop two-column home ───────────────────────────────────────────────────
@@ -665,7 +945,7 @@ class _DesktopHome extends StatelessWidget {
                           letterSpacing: 0.8)),
                   const SizedBox(height: 10),
                   if (examsLoading)
-                    ...List.generate(3, (_) => _GoalShimmerTile())
+                    const Center(child: PercentLoader(size: 40))
                   else if (goalExams.isEmpty)
                     _EmptySidebarGoal(onTap: onManageTap)
                   else ...[
@@ -935,20 +1215,6 @@ class _EmptySidebarGoal extends StatelessWidget {
               style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
         ]),
-      ),
-    );
-  }
-}
-
-class _GoalShimmerTile extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      height: 50,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
       ),
     );
   }

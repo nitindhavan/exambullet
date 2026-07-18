@@ -6,7 +6,7 @@ import 'package:percent/models/exam.dart';
 import 'package:percent/models/planner_task_model.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/exam_icon.dart';
-import 'package:percent/widgets/shimmer.dart';
+import 'package:percent/widgets/percent_loader.dart';
 import 'package:percent/widgets/sign_in_sheet.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
@@ -16,10 +16,15 @@ import 'package:percent/widgets/ui/ui.dart';
 /// preparing for gets its own plan. Slots into the home tab switcher (see
 /// [Home]); an exam rail at the top selects which exam's plan is shown.
 class PlannerTab extends StatefulWidget {
-  const PlannerTab({Key? key, required this.goalExams}) : super(key: key);
+  const PlannerTab({Key? key, this.goalExams = const [], this.singleExam})
+      : super(key: key);
 
-  /// The user's active goal exams — one plan per exam.
+  /// Multi-exam mode: the exams to offer via a top rail (legacy usage).
   final List<ExamModel> goalExams;
+
+  /// Single-exam mode: when set, the planner operates on just this exam (no
+  /// rail). Used when embedded inside a specific exam's dashboard.
+  final ExamModel? singleExam;
 
   @override
   State<PlannerTab> createState() => _PlannerTabState();
@@ -41,6 +46,20 @@ class _PlannerTabState extends State<PlannerTab> {
     if (_uid.isEmpty) {
       return _GuestState(onSignIn: () => showSignInSheet(context));
     }
+
+    // Single-exam mode (embedded in an exam dashboard): no rail, just the plan.
+    final single = widget.singleExam;
+    if (single != null) {
+      return ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        child: _ExamPlanner(
+          key: ValueKey(single.id),
+          exam: single,
+          ref: _ref(single.id),
+        ),
+      );
+    }
+
     if (widget.goalExams.isEmpty) {
       return const _NoExamsState();
     }
@@ -206,7 +225,7 @@ class _ExamPlanner extends StatelessWidget {
       stream: ref.onValue,
       builder: (context, snap) {
         if (!snap.hasData) {
-          return const _PlannerShimmer();
+          return const PercentLoaderCentered();
         }
 
         final tasks = <PlannerTask>[];
@@ -564,28 +583,6 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
 // ══════════════════════════════════════════════════════════════════════════════
 // States: shimmer / empty / no-exams / guest
 // ══════════════════════════════════════════════════════════════════════════════
-
-class _PlannerShimmer extends StatelessWidget {
-  const _PlannerShimmer();
-
-  @override
-  Widget build(BuildContext context) {
-    return ShimmerLoading(
-      builder: (context, color) => ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-        itemCount: 6,
-        itemBuilder: (_, __) => Container(
-          height: 54,
-          margin: const EdgeInsets.only(bottom: 10),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState({required this.onAdd});

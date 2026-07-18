@@ -1,14 +1,18 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:percent/screens/phone_auth_screen.dart';
+import 'package:percent/screens/splash.dart';
+import 'package:percent/services/analytics_service.dart';
+import 'package:percent/services/google_auth.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
-/// Bottom-sheet sign-in prompt. Phone OTP only (matches the main SignIn screen).
+/// Bottom-sheet sign-in prompt. Offers PHONE (primary) and GOOGLE.
 ///
-/// It doesn't sign the user in itself — it opens [PhoneAuthScreen], which handles
-/// OTP, links to an anonymous guest account when present (preserving their data),
-/// and routes on to Splash/Home. So this sheet just explains why and launches it.
+/// Phone opens [PhoneAuthScreen] (OTP + guest linking). Google signs in inline
+/// via [GoogleAuth] (also links an anonymous guest) then routes to Splash, which
+/// creates/loads the user record and continues to Home.
 Future<void> showSignInSheet(BuildContext context) {
   return showModalBottomSheet(
     context: context,
@@ -18,15 +22,56 @@ Future<void> showSignInSheet(BuildContext context) {
   );
 }
 
-class _SignInSheet extends StatelessWidget {
+class _SignInSheet extends StatefulWidget {
   const _SignInSheet();
 
-  void _continueWithPhone(BuildContext context) {
+  @override
+  State<_SignInSheet> createState() => _SignInSheetState();
+}
+
+class _SignInSheetState extends State<_SignInSheet> {
+  bool _loading = false;
+
+  void _continueWithPhone() {
     Navigator.pop(context); // close the sheet
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const PhoneAuthScreen()),
     );
+  }
+
+  Future<void> _continueWithGoogle() async {
+    setState(() => _loading = true);
+    try {
+      final wasGuest =
+          FirebaseAuth.instance.currentUser?.isAnonymous ?? false;
+      final user = await GoogleAuth.signIn();
+      if (user == null) {
+        if (mounted) setState(() => _loading = false);
+        return; // cancelled
+      }
+      Analytics.instance.setUser(user.uid);
+      if (wasGuest) Analytics.instance.logSignUp();
+      if (!mounted) return;
+      // Splash creates/loads users/{uid} and routes to Home.
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const Splash()),
+        (r) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google sign-in failed: $e'),
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
   }
 
   @override
@@ -83,11 +128,12 @@ class _SignInSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 28),
+          // Primary: phone.
           SizedBox(
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: () => _continueWithPhone(context),
+              onPressed: _loading ? null : _continueWithPhone,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
@@ -113,10 +159,79 @@ class _SignInSheet extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          const _OrDivider(),
+          const SizedBox(height: 16),
+          // Secondary: Google (more providers can slot in here later).
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: OutlinedButton(
+              onPressed: _loading ? null : _continueWithGoogle,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.textPrimary,
+                side: const BorderSide(color: AppTheme.border),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: _loading
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                          color: AppTheme.primary, strokeWidth: 2.5),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 22,
+                          height: 22,
+                          decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppTheme.primaryLight),
+                          child: const Icon(Icons.g_mobiledata_rounded,
+                              size: 18, color: AppTheme.primary),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Continue with Google',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
           const SizedBox(height: 12),
           const LegalConsentText(fontSize: 11),
         ],
       ),
+    );
+  }
+}
+
+/// "or continue with" separator between the primary option and the rest.
+class _OrDivider extends StatelessWidget {
+  const _OrDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Expanded(child: Divider(color: AppTheme.borderLight)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text('or continue with',
+              style: GoogleFonts.inter(
+                  color: AppTheme.textSecondary, fontSize: 12)),
+        ),
+        const Expanded(child: Divider(color: AppTheme.borderLight)),
+      ],
     );
   }
 }

@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:percent/models/User.dart';
 import 'package:percent/models/exam.dart';
 import 'package:percent/screens/dashboard/exam_news_tab.dart';
+import 'package:percent/screens/dashboard/focus_tab.dart';
 import 'package:percent/screens/dashboard/notes_tab.dart';
+import 'package:percent/screens/dashboard/planner_tab.dart';
 import 'package:percent/screens/dashboard/quiz_tab.dart';
 import 'package:percent/screens/dashboard/tests_tab.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,7 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:percent/services/membership_service.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/exam_icon.dart';
-import 'package:percent/widgets/shimmer_loading.dart';
+import 'package:percent/widgets/percent_loader.dart';
 class ExamDashboard extends StatefulWidget {
   const ExamDashboard({
     Key? key,
@@ -68,11 +70,13 @@ class _ExamDashboardState extends State<ExamDashboard> {
         const _NavItem(Icons.assignment_rounded, 'Tests'),
         const _NavItem(Icons.auto_stories_rounded, 'Notes'),
         const _NavItem(Icons.lightbulb_rounded, 'Practice'),
+        const _NavItem(Icons.checklist_rounded, 'Planner'),
+        const _NavItem(Icons.timer_rounded, 'Focus'),
         const _NavItem(Icons.newspaper_rounded, 'Updates'),
       ];
 
   Widget _currentTab() {
-    if (!_membershipLoaded) return const SkeletonLoader();
+    if (!_membershipLoaded) return const PercentLoaderCentered();
     switch (_navItems[_currentIndex].label) {
       case 'Tests':
         return TestsTab(exam: widget.exam, hasMembership: _hasMembership);
@@ -80,6 +84,10 @@ class _ExamDashboardState extends State<ExamDashboard> {
         return NotesTab(exam: widget.exam, hasMembership: _hasMembership);
       case 'Practice':
         return QuizTab(exam: widget.exam, hasMembership: _hasMembership);
+      case 'Planner':
+        return PlannerTab(singleExam: widget.exam);
+      case 'Focus':
+        return FocusTab(singleExam: widget.exam);
       case 'Updates':
         return ExamNewsTab(exam: widget.exam);
       default:

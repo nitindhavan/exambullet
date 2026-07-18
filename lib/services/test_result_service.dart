@@ -29,7 +29,8 @@ class TestResultService {
     final ref = _ref;
     if (ref == null) return null;
 
-    int obtained = 0, total = 0, correct = 0, wrong = 0, skipped = 0;
+    double obtained = 0, total = 0;
+    int correct = 0, wrong = 0, skipped = 0;
     final topics = <String, TopicStat>{};
 
     for (int i = 0; i < questions.length; i++) {

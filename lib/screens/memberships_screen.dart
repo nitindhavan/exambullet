@@ -3,6 +3,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/percent_loader.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
 class _MembershipEntry {
@@ -86,9 +87,7 @@ class _MembershipsScreenState extends State<MembershipsScreen> {
       backgroundColor: AppTheme.background,
       appBar: const AppTopBar(title: 'My Memberships'),
       body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(
-                  color: AppTheme.primary, strokeWidth: 2.5))
+          ? const PercentLoaderCentered()
           : _entries.isEmpty
               ? _empty()
               : ListView.builder(
