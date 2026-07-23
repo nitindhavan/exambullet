@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:percent/models/subject_model.dart';
 import 'package:percent/models/topic_model.dart';
 import 'package:percent/screens/dashboard/topic_content_screen.dart';
+import 'package:percent/screens/membership_screen.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/percent_loader.dart';
 import 'package:percent/widgets/slim_header.dart';
@@ -17,13 +18,24 @@ import 'package:percent/widgets/slim_header.dart';
 //   completed  → brand gradient fill + check
 //   current    → first incomplete topic, pulsing highlight
 //   available  → open, not yet completed
-// All topics are always open — no sequential locking.
+//   locked     → members-only (see below), lock icon, routes to membership
+//
+// There is no sequential locking — progress never gates a topic. The only gate
+// is membership: the first topic of each subject is a free preview, the rest
+// require an active membership (mirrors the "first test free" rule in Tests).
 // ══════════════════════════════════════════════════════════════════════════════
 
 class TopicPathScreen extends StatefulWidget {
-  const TopicPathScreen({Key? key, required this.subject}) : super(key: key);
+  const TopicPathScreen({
+    Key? key,
+    required this.subject,
+    required this.examId,
+    required this.hasMembership,
+  }) : super(key: key);
 
   final SubjectModel subject;
+  final String examId;
+  final bool hasMembership;
 
   @override
   State<TopicPathScreen> createState() => _TopicPathScreenState();
@@ -103,14 +115,28 @@ class _TopicPathScreenState extends State<TopicPathScreen>
     return -1;
   }
 
-  // All topics are always open — no sequential locking.
-  bool _isUnlocked(int i) => true;
+  /// No sequential locking — the only gate is membership. The first topic is a
+  /// free preview; the rest need an active membership.
+  bool _isUnlocked(int i) => widget.hasMembership || i == 0;
 
-  Future<void> _openTopic(TopicModel topic) async {
+  Future<void> _openTopic(TopicModel topic, int index) async {
+    if (!_isUnlocked(index)) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MemberShipScreen(model: widget.examId),
+        ),
+      );
+      return;
+    }
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => TopicContentScreen(topic: topic),
+        builder: (_) => TopicContentScreen(
+          topic: topic,
+          hasMembership: widget.hasMembership,
+          examId: widget.examId,
+        ),
       ),
     );
     // Refresh progress if the content screen marked completion.
@@ -210,9 +236,8 @@ class _TopicPathScreenState extends State<TopicPathScreen>
       pulse: _pulseCtrl,
     );
 
-    if (unlocked) {
-      node = GestureDetector(onTap: () => _openTopic(topic), child: node);
-    }
+    // Locked nodes stay tappable — the tap routes to the membership screen.
+    node = GestureDetector(onTap: () => _openTopic(topic, i), child: node);
 
     // Label placed to the side of the node so it never overlaps the path.
     final labelWidth = width * 0.42;

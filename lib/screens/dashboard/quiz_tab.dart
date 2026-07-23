@@ -99,7 +99,10 @@ class _QuizTabState extends State<QuizTab> {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => TopicPathScreen(subject: subject),
+                    builder: (_) => TopicPathScreen(
+                        subject: subject,
+                        examId: widget.exam.id,
+                        hasMembership: widget.hasMembership),
                   ),
                 ),
               );

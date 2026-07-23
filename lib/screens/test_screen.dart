@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import '../models/test_model.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/percent_loader.dart';
+import 'package:percent/widgets/report_sheet.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
 class TestScreen extends StatefulWidget {
@@ -128,6 +129,8 @@ class _TestScreenState extends State<TestScreen> {
           selection: _selected,
           questions: _questions,
           testModel: widget.testModel,
+          examId: widget.examId,
+          paperId: widget.paperId ?? '',
         ),
       ),
     );
@@ -171,6 +174,19 @@ class _TestScreenState extends State<TestScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _reportCurrentQuestion() {
+    final q = _questions[_current];
+    showReportSheet(
+      context,
+      type: 'question',
+      examId: widget.examId,
+      testId: widget.testModel.id,
+      paperId: widget.paperId ?? '',
+      questionId: q.id,
+      questionText: q.questionText,
     );
   }
 
@@ -277,16 +293,22 @@ class _TestScreenState extends State<TestScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryLight,
-                          borderRadius: AppTheme.brSm,
-                        ),
-                        child: Text('Question ${_current + 1}',
-                            style: AppTheme.label.copyWith(
-                                color: AppTheme.primary, fontSize: 11.5)),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryLight,
+                              borderRadius: AppTheme.brSm,
+                            ),
+                            child: Text('Question ${_current + 1}',
+                                style: AppTheme.label.copyWith(
+                                    color: AppTheme.primary, fontSize: 11.5)),
+                          ),
+                          const Spacer(),
+                          ReportButton(onTap: _reportCurrentQuestion),
+                        ],
                       ),
                       const SizedBox(height: AppTheme.space4),
                       Text(

@@ -4,6 +4,7 @@ import 'package:percent/models/exam.dart';
 import 'package:percent/screens/all_exams_screen.dart';
 import 'package:percent/screens/analytics_screen.dart';
 import 'package:percent/screens/exam_dashboard.dart';
+import 'package:percent/screens/schedule_screen.dart';
 import 'package:percent/widgets/home/embedded_dashboard.dart';
 import 'package:percent/widgets/home/home_header.dart';
 import 'package:percent/widgets/home/news_section.dart';
@@ -45,6 +46,9 @@ class _HomeState extends State<Home> {
   // Once an exam is picked inside a category room, its embedded dashboard
   // replaces the grid (no switcher rail — back returns to the grid).
   ExamModel? _testsSelectedExam;
+  // True when the embedded exam was opened from the Schedule tab (not by
+  // drilling through a category room), so back should return to Schedule.
+  bool _openedExamFromSchedule = false;
   final TextEditingController _categorySearchCtrl = TextEditingController();
   String _categorySearch = '';
   // Categories loaded from the `categories` node (id, label, order, icon).
@@ -136,6 +140,32 @@ class _HomeState extends State<Home> {
             builder: (_) => ExamDashboard(exam: exam, user: widget.user)));
   }
 
+  /// Opens an exam in the embedded dashboard inside the Tests tab (same view as
+  /// drilling into it from a category room), rather than pushing a full screen.
+  void _openExamEmbedded(ExamModel exam) {
+    setState(() {
+      _activeTab = 0;
+      _testsCategoryId = exam.category.isNotEmpty ? exam.category : null;
+      _testsSelectedExam = exam;
+      _openedExamFromSchedule = true;
+    });
+  }
+
+  /// Leaves the embedded exam view. If it was opened from Schedule, return
+  /// there; otherwise fall back to the category grid.
+  void _closeEmbeddedExam() {
+    setState(() {
+      if (_openedExamFromSchedule) {
+        _openedExamFromSchedule = false;
+        _testsSelectedExam = null;
+        _testsCategoryId = null;
+        _activeTab = 1; // Schedule tab
+      } else {
+        _testsSelectedExam = null;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width >= 900;
@@ -212,7 +242,12 @@ class _HomeState extends State<Home> {
                       const GetAppBanner(),
                       _BottomNav(
                         currentIndex: _activeTab,
-                        onTap: (index) => setState(() => _activeTab = index),
+                        onTap: (index) => setState(() {
+                          _activeTab = index;
+                          // Switching tabs by hand drops the schedule-origin
+                          // link so back-nav can't misroute later.
+                          _openedExamFromSchedule = false;
+                        }),
                         hasGoals: goalExams.isNotEmpty,
                       ),
                     ],
@@ -237,12 +272,17 @@ class _HomeState extends State<Home> {
         // now also hosts the per-exam Planner and Focus tools.
         return _buildExploreTab(goalExams, goalIds, examsLoading);
       case 1:
+        return ScheduleScreen(
+            allExams: allExams,
+            embedded: true,
+            onExamTap: _openExamEmbedded);
+      case 2:
         // Bottom padding so content clears the floating nav bar.
         return Padding(
           padding: const EdgeInsets.only(bottom: 88),
           child: AnalyticsScreen(allExams: allExams, embedded: true),
         );
-      case 2:
+      case 3:
         return Padding(
           padding: const EdgeInsets.only(bottom: 88),
           child: _ProfileTab(
@@ -342,7 +382,7 @@ class _HomeState extends State<Home> {
       return PopScope(
         canPop: false,
         onPopInvokedWithResult: (didPop, _) {
-          if (!didPop) setState(() => _testsSelectedExam = null);
+          if (!didPop) _closeEmbeddedExam();
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,8 +393,7 @@ class _HomeState extends State<Home> {
                 children: [
                   IconButton(
                     icon: Icon(Icons.arrow_back_rounded, color: accent),
-                    onPressed: () =>
-                        setState(() => _testsSelectedExam = null),
+                    onPressed: _closeEmbeddedExam,
                   ),
                   Expanded(
                     child: Text(selected.name,
@@ -577,6 +616,7 @@ class _BottomNav extends StatelessWidget {
     final bottomPad = MediaQuery.of(context).padding.bottom;
     final items = [
       const _NavItem(Icons.assignment_rounded, 'Tests'),
+      const _NavItem(Icons.event_note_rounded, 'Schedule'),
       const _NavItem(Icons.insights_rounded, 'Progress'),
       const _NavItem(Icons.person_rounded, 'Profile'),
     ];

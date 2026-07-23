@@ -7,6 +7,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/percent_loader.dart';
+import 'package:percent/widgets/report_sheet.dart';
 
 class TestsTab extends StatefulWidget {
   const TestsTab({Key? key, required this.exam, required this.hasMembership})
@@ -66,6 +67,16 @@ class _TestsTabState extends State<TestsTab> {
                   children: [
                     Text('Mock Tests', style: AppTheme.headingMd),
                     const Spacer(),
+                    ReportButton(
+                      onTap: () => showReportSheet(
+                        context,
+                        type: 'test',
+                        examId: widget.exam.id,
+                        testId: selected.id,
+                        questionText: selected.name,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     _Chip('${tests.length} tests'),
                   ],
                 ),
@@ -315,7 +326,25 @@ class _PapersSliver extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 6),
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                                minWidth: 32, minHeight: 32),
+                            tooltip: 'Report a problem',
+                            icon: const Icon(Icons.flag_outlined,
+                                size: 18, color: AppTheme.textLight),
+                            onPressed: () => showReportSheet(
+                              context,
+                              type: 'paper',
+                              examId: examId,
+                              testId: test.id,
+                              paperId: paperId,
+                              questionText: name,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(

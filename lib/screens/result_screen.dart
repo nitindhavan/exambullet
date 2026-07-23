@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/test_model.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/report_sheet.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
 class ResultScreen extends StatefulWidget {
@@ -11,11 +12,15 @@ class ResultScreen extends StatefulWidget {
     required this.testModel,
     required this.selection,
     required this.questions,
+    this.examId = '',
+    this.paperId = '',
   }) : super(key: key);
 
   final TestModel testModel;
   final List<int> selection;
   final List<Question> questions;
+  final String examId;
+  final String paperId;
 
   @override
   State<ResultScreen> createState() => _ResultScreenState();
@@ -33,6 +38,19 @@ class _ResultScreenState extends State<ResultScreen> {
     setState(() => _current = index);
   }
 
+  void _reportCurrentQuestion() {
+    final q = widget.questions[_current];
+    showReportSheet(
+      context,
+      type: 'question',
+      examId: widget.examId,
+      testId: widget.testModel.id,
+      paperId: widget.paperId,
+      questionId: q.id,
+      questionText: q.questionText,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final question = widget.questions[_current];
@@ -45,6 +63,8 @@ class _ResultScreenState extends State<ResultScreen> {
         title: widget.testModel.name,
         onBack: () => Navigator.pop(context),
         actions: [
+          Center(child: ReportButton(onTap: _reportCurrentQuestion, compact: true)),
+          const SizedBox(width: AppTheme.space3),
           Center(
             child: Container(
               padding:

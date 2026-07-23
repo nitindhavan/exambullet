@@ -11,11 +11,15 @@ class ScoreScreen extends StatelessWidget {
     required this.testModel,
     required this.selection,
     required this.questions,
+    this.examId = '',
+    this.paperId = '',
   }) : super(key: key);
 
   final TestModel testModel;
   final List<int> selection;
   final List<Question> questions;
+  final String examId;
+  final String paperId;
 
   double get _obtained {
     double o = 0;
@@ -254,6 +258,8 @@ class ScoreScreen extends StatelessWidget {
                         testModel: testModel,
                         selection: selection,
                         questions: questions,
+                        examId: examId,
+                        paperId: paperId,
                       ),
                     ),
                   ),

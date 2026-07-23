@@ -4,7 +4,10 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:percent/models/topic_model.dart';
+import 'package:percent/models/topic_notes_model.dart';
+import 'package:percent/screens/membership_screen.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/notes_markdown.dart';
 import 'package:percent/widgets/percent_loader.dart';
 import 'package:percent/widgets/slim_header.dart';
 
@@ -18,27 +21,45 @@ import 'package:percent/widgets/slim_header.dart';
 // ══════════════════════════════════════════════════════════════════════════════
 
 class TopicContentScreen extends StatefulWidget {
-  const TopicContentScreen({Key? key, required this.topic}) : super(key: key);
+  const TopicContentScreen({
+    Key? key,
+    required this.topic,
+    this.hasMembership = true,
+    this.examId = '',
+  }) : super(key: key);
 
   final TopicModel topic;
+
+  /// Non-members read the first couple of sections of the theory notes, then
+  /// hit a paywall (videos/articles stay fully open).
+  final bool hasMembership;
+  final String examId;
 
   @override
   State<TopicContentScreen> createState() => _TopicContentScreenState();
 }
 
+// TickerProvider (not Single-) because the TabController is created after the
+// content loads — the tab count depends on whether this topic has theory notes.
 class _TopicContentScreenState extends State<TopicContentScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   bool _loading = true;
   bool _completed = false;
   List<_VideoItem> _videos = [];
   List<_ArticleItem> _articles = [];
+  TopicNotes? _notes;
 
   TabController? _tabController;
+
+  /// Theory is only shown when notes exist, so the tab set is dynamic.
+  bool get _hasNotes => _notes != null && !_notes!.isEmpty;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    // The controller is created in _loadContent(), once the tab count is known
+    // (TabController.length is immutable, and Theory only appears if notes
+    // exist). Until then _loading is true, so the tabs aren't built.
     _loadContent();
   }
 
@@ -49,10 +70,23 @@ class _TopicContentScreenState extends State<TopicContentScreen>
   }
 
   Future<void> _loadContent() async {
-    final snap = await FirebaseDatabase.instance
-        .ref('topicContent/${widget.topic.id}')
-        .once();
+    // Scraped media and admin-authored theory live at separate roots — the
+    // scrapers .set() the whole topicContent node, which would wipe notes
+    // stored as a child of it.
+    final results = await Future.wait([
+      FirebaseDatabase.instance.ref('topicContent/${widget.topic.id}').once(),
+      FirebaseDatabase.instance.ref('topicNotes/${widget.topic.id}').once(),
+    ]);
     if (!mounted) return;
+    final snap = results[0];
+    final notesSnap = results[1];
+
+    TopicNotes? notes;
+    final rawNotes = notesSnap.snapshot.value;
+    if (rawNotes is Map) {
+      final parsed = TopicNotes.fromMap(rawNotes, widget.topic.id);
+      if (!parsed.isEmpty) notes = parsed;
+    }
 
     final List<_VideoItem> videos = [];
     final List<_ArticleItem> articles = [];
@@ -81,14 +115,21 @@ class _TopicContentScreenState extends State<TopicContentScreen>
       }
     }
 
+    final bool hasNotes = notes != null;
+    // Create the controller now that the tab count is known: Videos + Articles,
+    // plus Theory when this topic has notes.
+    _tabController?.dispose();
+    _tabController = TabController(length: hasNotes ? 3 : 2, vsync: this);
+
     setState(() {
       _videos = videos;
       _articles = articles;
+      _notes = notes;
       _loading = false;
     });
 
-    // Auto-mark complete when content is actually available.
-    if (videos.isNotEmpty || articles.isNotEmpty) {
+    // Auto-mark complete when any content is available — theory counts too.
+    if (videos.isNotEmpty || articles.isNotEmpty || hasNotes) {
       _markComplete();
     }
   }
@@ -129,7 +170,8 @@ class _TopicContentScreenState extends State<TopicContentScreen>
 
   @override
   Widget build(BuildContext context) {
-    final bool hasContent = _videos.isNotEmpty || _articles.isNotEmpty;
+    final bool hasContent =
+        _videos.isNotEmpty || _articles.isNotEmpty || _hasNotes;
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: Column(
@@ -193,9 +235,10 @@ class _TopicContentScreenState extends State<TopicContentScreen>
                 GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700),
             unselectedLabelStyle:
                 GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w600),
-            tabs: const [
-              Tab(text: 'YouTube Videos'),
-              Tab(text: 'Articles'),
+            tabs: [
+              if (_hasNotes) const Tab(text: 'Theory'),
+              const Tab(text: 'YouTube Videos'),
+              const Tab(text: 'Articles'),
             ],
           ),
         ),
@@ -204,12 +247,34 @@ class _TopicContentScreenState extends State<TopicContentScreen>
           child: TabBarView(
             controller: _tabController,
             children: [
+              if (_hasNotes) _buildTheoryTab(),
               _buildVideosTab(),
               _buildArticlesTab(),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  /// Admin-authored study notes: markdown with inline SVG diagrams.
+  /// Non-members get a preview (first 2 sections) then a membership prompt.
+  Widget _buildTheoryTab() {
+    final notes = _notes;
+    if (notes == null || notes.isEmpty) {
+      return _emptyTabNote('No theory notes for this topic yet.');
+    }
+    return NotesMarkdown(
+      data: notes.content,
+      maxSections: widget.hasMembership ? null : 2,
+      onUnlock: widget.hasMembership
+          ? null
+          : () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MemberShipScreen(model: widget.examId),
+                ),
+              ),
     );
   }
 
