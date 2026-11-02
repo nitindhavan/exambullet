@@ -13,6 +13,7 @@ class ScoreScreen extends StatelessWidget {
     required this.questions,
     this.examId = '',
     this.paperId = '',
+    this.language = 'en',
   }) : super(key: key);
 
   final TestModel testModel;
@@ -20,6 +21,7 @@ class ScoreScreen extends StatelessWidget {
   final List<Question> questions;
   final String examId;
   final String paperId;
+  final String language;
 
   double get _obtained {
     double o = 0;
@@ -260,6 +262,7 @@ class ScoreScreen extends StatelessWidget {
                         questions: questions,
                         examId: examId,
                         paperId: paperId,
+                        language: language,
                       ),
                     ),
                   ),

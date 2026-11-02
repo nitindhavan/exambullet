@@ -439,8 +439,12 @@ class _MobileLayout extends StatelessWidget {
                     bottom: 10, left: -60,
                     child: _glowCircle(220, 0.08),
                   ),
-                  SafeArea(
-                    bottom: false,
+                  // Centre the hero content in the FULL blue area (not just the
+                  // space below the status bar) so the logo block is truly
+                  // vertically + horizontally centred. Positioned.fill makes the
+                  // centring Column span the whole hero; the status bar simply
+                  // overlaps the top of the decorative gradient.
+                  Positioned.fill(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 32),
                       child: Column(

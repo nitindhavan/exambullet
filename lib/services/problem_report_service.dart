@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:percent/models/problem_report_model.dart';
+import 'package:percent/services/language_service.dart';
 
 /// Submits user-reported problems (about a question, paper, or test) to a flat
 /// top-level `problemReports` node so the admin app can review them. Mirrors the
@@ -32,6 +33,7 @@ class ProblemReportService {
     String paperId = '',
     String questionId = '',
     String questionText = '',
+    String language = '', // '' = fall back to the global setting
   }) async {
     final uid = _uid;
     if (uid == null) return null;
@@ -51,6 +53,11 @@ class ProblemReportService {
         paperId: paperId,
         questionId: questionId,
         questionText: questionText,
+        // Capture the language so translation reports are triageable — the
+        // caller's explicit language (a test attempt's), else the global one.
+        language: language.isNotEmpty
+            ? language
+            : LanguageService.instance.current.value,
         createdAt: DateTime.now().millisecondsSinceEpoch,
         status: 'open',
       );

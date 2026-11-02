@@ -3,11 +3,14 @@ import 'package:percent/models/test_model.dart';
 import 'package:percent/screens/membership_screen.dart';
 import 'package:percent/screens/test_screen.dart';
 import 'package:percent/services/guest_gate.dart';
+import 'package:percent/services/language_service.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/percent_loader.dart';
 import 'package:percent/widgets/report_sheet.dart';
+import 'package:percent/widgets/start_test_language_sheet.dart';
 
 class TestsTab extends StatefulWidget {
   const TestsTab({Key? key, required this.exam, required this.hasMembership})
@@ -238,7 +241,7 @@ class _PapersSliver extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: GestureDetector(
-                    onTap: () {
+                    onTap: () async {
                       if (isLocked) {
                         Navigator.push(context, MaterialPageRoute(
                           builder: (_) => MemberShipScreen(model: examId),
@@ -250,11 +253,28 @@ class _PapersSliver extends StatelessWidget {
                       if (isGuest) {
                         GuestGate.softNudge(context, reason: 'test results');
                       }
+
+                      // Ask which language to take the test in (native only —
+                      // ML Kit translation isn't available on web). English
+                      // papers are auto-locked to English inside the sheet.
+                      var lang = LanguageService.sourceLang;
+                      if (!kIsWeb) {
+                        final chosen = await showStartTestLanguageSheet(
+                          context,
+                          paperName: name,
+                          subjectHint: test.name,
+                        );
+                        if (chosen == null) return; // dismissed — don't start
+                        lang = chosen;
+                      }
+                      if (!context.mounted) return;
+
                       Navigator.push(context, MaterialPageRoute(
                         builder: (_) => TestScreen(
                           testModel: test,
                           examId: examId,
                           paperId: paperId,
+                          language: lang,
                         ),
                       ));
                     },

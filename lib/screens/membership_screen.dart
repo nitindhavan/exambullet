@@ -41,10 +41,16 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
 
   // Three membership plans (durations fixed; prices from appSettings, in paise).
   late List<_Plan> _plans;
-  int _selectedIndex = 1; // default to the 6-month plan
+  int _selectedIndex = 0;
   bool _settingsLoaded = false;
 
-  _Plan get _selectedPlan => _plans[_selectedIndex];
+  /// Only plans with a real price show — a plan priced 0 (in appSettings) is
+  /// treated as disabled and hidden. So admin can turn off, e.g., the 3-month
+  /// and 6-month tiers by setting their price to 0.
+  List<_Plan> get _visiblePlans =>
+      _plans.where((p) => p.price > 0).toList();
+
+  _Plan get _selectedPlan => _visiblePlans[_selectedIndex];
 
   @override
   void initState() {
@@ -73,6 +79,10 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
           _plans[1].price = paise(settings['membershipPrice6m'], 9900);
           _plans[2].price = paise(settings['membershipPrice12m'], 14900);
           _settingsLoaded = true;
+          // Default to the longest available plan; keep selection in range if
+          // some tiers got hidden.
+          final n = _visiblePlans.length;
+          _selectedIndex = n > 0 ? n - 1 : 0;
         });
       } else {
         setState(() => _settingsLoaded = true);
@@ -235,7 +245,20 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
       appBar: const AppTopBar(title: 'Membership'),
       body: !_settingsLoaded
           ? const PercentLoaderCentered()
-          : SingleChildScrollView(
+          : _visiblePlans.isEmpty
+              // All tiers disabled (every price is 0) — nothing to sell.
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppTheme.space7),
+                    child: Text(
+                      'Membership plans are not available right now.\nPlease check back later.',
+                      textAlign: TextAlign.center,
+                      style: AppTheme.body
+                          .copyWith(color: AppTheme.textSecondary),
+                    ),
+                  ),
+                )
+              : SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(
                   AppTheme.space6, AppTheme.space7, AppTheme.space6, AppTheme.space8),
               child: Column(
@@ -243,14 +266,17 @@ class _MemberShipScreenState extends State<MemberShipScreen> {
                 children: [
                   Text('Choose your plan', style: AppTheme.headingMd),
                   const SizedBox(height: AppTheme.space5),
-                  for (int i = 0; i < _plans.length; i++) ...[
+                  for (int i = 0; i < _visiblePlans.length; i++) ...[
                     _PlanCard(
-                      plan: _plans[i],
+                      plan: _visiblePlans[i],
                       selected: i == _selectedIndex,
-                      bestValue: i == _plans.length - 1,
+                      // "Best value" only makes sense when more than one plan
+                      // is offered; mark the longest (last) one.
+                      bestValue: _visiblePlans.length > 1 &&
+                          i == _visiblePlans.length - 1,
                       onTap: () => setState(() => _selectedIndex = i),
                     ),
-                    if (i != _plans.length - 1)
+                    if (i != _visiblePlans.length - 1)
                       const SizedBox(height: AppTheme.space4),
                   ],
                   const SizedBox(height: AppTheme.space6),

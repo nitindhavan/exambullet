@@ -6,6 +6,7 @@ import 'package:percent/utils/notification_helper.dart';
 import 'package:percent/services/presence_service.dart';
 import 'package:percent/services/analytics_service.dart';
 import 'package:percent/services/funnel_service.dart';
+import 'package:percent/services/language_service.dart';
 import 'package:percent/services/web_back_handler.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -75,6 +76,14 @@ Future<void> main() async {
     Analytics.instance.init();
   } catch (e) {
     debugPrint('Analytics init failed: $e');
+  }
+
+  // Restore the saved content language (for on-device translation). Guarded so
+  // it never blocks startup.
+  try {
+    await LanguageService.instance.init();
+  } catch (e) {
+    debugPrint('LanguageService init failed: $e');
   }
 
   // Pre-registration funnel: capture platform + source (Instagram etc.) and log

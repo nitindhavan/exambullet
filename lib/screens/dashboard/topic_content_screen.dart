@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -7,7 +8,8 @@ import 'package:percent/models/topic_model.dart';
 import 'package:percent/models/topic_notes_model.dart';
 import 'package:percent/screens/membership_screen.dart';
 import 'package:percent/utils/theme.dart';
-import 'package:percent/widgets/notes_markdown.dart';
+import 'package:percent/widgets/notes_language_bar.dart';
+import 'package:percent/widgets/translated_notes.dart';
 import 'package:percent/widgets/percent_loader.dart';
 import 'package:percent/widgets/slim_header.dart';
 
@@ -48,6 +50,10 @@ class _TopicContentScreenState extends State<TopicContentScreen>
   List<_VideoItem> _videos = [];
   List<_ArticleItem> _articles = [];
   TopicNotes? _notes;
+
+  // Language the theory notes are shown in ('en' = original). Chosen per-topic
+  // via the Theory tab's language button; not a global setting.
+  String _notesLang = 'en';
 
   TabController? _tabController;
 
@@ -264,17 +270,31 @@ class _TopicContentScreenState extends State<TopicContentScreen>
     if (notes == null || notes.isEmpty) {
       return _emptyTabNote('No theory notes for this topic yet.');
     }
-    return NotesMarkdown(
-      data: notes.content,
-      maxSections: widget.hasMembership ? null : 2,
-      onUnlock: widget.hasMembership
-          ? null
-          : () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => MemberShipScreen(model: widget.examId),
-                ),
-              ),
+    return Column(
+      children: [
+        // Per-note language bar (native only — ML Kit isn't on web).
+        if (!kIsWeb)
+          NotesLanguageBar(
+            current: _notesLang,
+            onChanged: (code) => setState(() => _notesLang = code),
+          ),
+        Expanded(
+          child: TranslatedNotes(
+            content: notes.content,
+            lang: _notesLang,
+            maxSections: widget.hasMembership ? null : 2,
+            onUnlock: widget.hasMembership
+                ? null
+                : () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            MemberShipScreen(model: widget.examId),
+                      ),
+                    ),
+          ),
+        ),
+      ],
     );
   }
 

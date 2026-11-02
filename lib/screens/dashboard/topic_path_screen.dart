@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:percent/models/subject_model.dart';
 import 'package:percent/models/topic_model.dart';
 import 'package:percent/screens/dashboard/topic_content_screen.dart';
-import 'package:percent/screens/membership_screen.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/percent_loader.dart';
 import 'package:percent/widgets/slim_header.dart';
@@ -115,25 +114,19 @@ class _TopicPathScreenState extends State<TopicPathScreen>
     return -1;
   }
 
-  /// No sequential locking — the only gate is membership. The first topic is a
-  /// free preview; the rest need an active membership.
-  bool _isUnlocked(int i) => widget.hasMembership || i == 0;
+  /// Every topic is open. Topics surface third-party YouTube videos/articles,
+  /// which must NOT sit behind a paywall — the only membership gate is on our
+  /// own THEORY NOTES (locked from the 2nd section, inside TopicContentScreen).
+  bool _isUnlocked(int i) => true;
 
   Future<void> _openTopic(TopicModel topic, int index) async {
-    if (!_isUnlocked(index)) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => MemberShipScreen(model: widget.examId),
-        ),
-      );
-      return;
-    }
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => TopicContentScreen(
           topic: topic,
+          // Drives ONLY the notes paywall inside the content screen; videos
+          // and articles are always fully open.
           hasMembership: widget.hasMembership,
           examId: widget.examId,
         ),

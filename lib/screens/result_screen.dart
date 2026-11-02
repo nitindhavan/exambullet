@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/test_model.dart';
 import 'package:percent/utils/theme.dart';
+import 'package:percent/widgets/original_toggle.dart';
 import 'package:percent/widgets/report_sheet.dart';
+import 'package:percent/widgets/translated_text.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
 class ResultScreen extends StatefulWidget {
@@ -14,6 +16,7 @@ class ResultScreen extends StatefulWidget {
     required this.questions,
     this.examId = '',
     this.paperId = '',
+    this.language = 'en',
   }) : super(key: key);
 
   final TestModel testModel;
@@ -21,6 +24,7 @@ class ResultScreen extends StatefulWidget {
   final List<Question> questions;
   final String examId;
   final String paperId;
+  final String language;
 
   @override
   State<ResultScreen> createState() => _ResultScreenState();
@@ -28,10 +32,17 @@ class ResultScreen extends StatefulWidget {
 
 class _ResultScreenState extends State<ResultScreen> {
   int _current = 0;
+  // Questions the user chose to view in the original English (translated
+  // attempts only).
+  final Set<int> _showOriginal = {};
 
   static const Color _primary = AppTheme.primary;
   static const Color _correct = AppTheme.success;
   static const Color _wrong = AppTheme.error;
+
+  /// Language the current question renders in during review.
+  String get _questionLang =>
+      _showOriginal.contains(_current) ? 'en' : widget.language;
 
   void _goTo(int index) {
     HapticFeedback.selectionClick();
@@ -48,6 +59,7 @@ class _ResultScreenState extends State<ResultScreen> {
       paperId: widget.paperId,
       questionId: q.id,
       questionText: q.questionText,
+      language: widget.language,
     );
   }
 
@@ -137,20 +149,36 @@ class _ResultScreenState extends State<ResultScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryLight,
-                          borderRadius: AppTheme.brSm,
-                        ),
-                        child: Text('Question ${_current + 1}',
-                            style: AppTheme.label.copyWith(
-                                color: AppTheme.primary, fontSize: 11.5)),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryLight,
+                              borderRadius: AppTheme.brSm,
+                            ),
+                            child: Text('Question ${_current + 1}',
+                                style: AppTheme.label.copyWith(
+                                    color: AppTheme.primary, fontSize: 11.5)),
+                          ),
+                          const Spacer(),
+                          if (widget.language != 'en')
+                            OriginalToggle(
+                              showingOriginal:
+                                  _showOriginal.contains(_current),
+                              onTap: () => setState(() {
+                                if (!_showOriginal.remove(_current)) {
+                                  _showOriginal.add(_current);
+                                }
+                              }),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: AppTheme.space4),
-                      Text(
+                      TranslatedText(
                         question.questionText,
+                        lang: _questionLang,
                         style: AppTheme.body.copyWith(
                             color: AppTheme.textPrimary,
                             fontSize: 15,
@@ -187,6 +215,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 ...[1, 2, 3, 4].map((opt) => _ResultOption(
                       label: String.fromCharCode(64 + opt),
                       text: question.optionText(opt),
+                      language: _questionLang,
                       isCorrect: question.answer == opt,
                       isSelected: userAnswer == opt,
                     )),
@@ -219,7 +248,8 @@ class _ResultScreenState extends State<ResultScreen> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(question.explanation,
+                        TranslatedText(question.explanation,
+                            lang: _questionLang,
                             style: const TextStyle(
                                 color: AppTheme.textSecondary,
                                 fontSize: 13,
@@ -368,11 +398,13 @@ class _ResultOption extends StatelessWidget {
   const _ResultOption({
     required this.label,
     required this.text,
+    required this.language,
     required this.isCorrect,
     required this.isSelected,
   });
   final String label;
   final String text;
+  final String language;
   final bool isCorrect;
   final bool isSelected;
 
@@ -435,7 +467,8 @@ class _ResultOption extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(text,
+              child: TranslatedText(text,
+                  lang: language,
                   style: TextStyle(
                       color: fg, fontSize: 14, fontWeight: FontWeight.w500)),
             ),

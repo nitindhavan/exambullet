@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:percent/services/language_service.dart';
 import 'package:percent/services/problem_report_service.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/ui/ui.dart';
@@ -47,6 +48,10 @@ Future<void> showReportSheet(
   String paperId = '',
   String questionId = '',
   String questionText = '',
+  // The language the content is being viewed in ('' = follow the global
+  // setting). Set this to a test attempt's language so a translation report is
+  // tagged correctly even if the global language differs.
+  String language = '',
 }) {
   return showModalBottomSheet(
     context: context,
@@ -59,6 +64,9 @@ Future<void> showReportSheet(
       paperId: paperId,
       questionId: questionId,
       questionText: questionText,
+      language: language.isNotEmpty
+          ? language
+          : LanguageService.instance.current.value,
     ),
   );
 }
@@ -117,6 +125,7 @@ class _ReportSheet extends StatefulWidget {
     required this.paperId,
     required this.questionId,
     required this.questionText,
+    required this.language,
   });
 
   final String type;
@@ -125,6 +134,7 @@ class _ReportSheet extends StatefulWidget {
   final String paperId;
   final String questionId;
   final String questionText;
+  final String language;
 
   @override
   State<_ReportSheet> createState() => _ReportSheetState();
@@ -135,8 +145,22 @@ class _ReportSheetState extends State<_ReportSheet> {
   String? _reason;
   bool _submitting = false;
 
-  List<String> get _reasons =>
-      _kReasonsByType[widget.type] ?? const ['Other'];
+  List<String> get _reasons {
+    final base = _kReasonsByType[widget.type] ?? const ['Other'];
+    // Offer "Wrong translation" only when the content is being viewed in a
+    // non-English language — meaningless otherwise. Uses the report's captured
+    // language (the attempt's language, or the global setting).
+    final nonEnglish = widget.language != LanguageService.sourceLang &&
+        widget.language.isNotEmpty;
+    if (widget.type == 'question' && nonEnglish) {
+      return [
+        ...base.where((r) => r != 'Other'),
+        'Wrong translation',
+        'Other',
+      ];
+    }
+    return base;
+  }
 
   @override
   void dispose() {
@@ -156,6 +180,7 @@ class _ReportSheetState extends State<_ReportSheet> {
       paperId: widget.paperId,
       questionId: widget.questionId,
       questionText: widget.questionText,
+      language: widget.language,
     );
     if (!mounted) return;
     Navigator.pop(context);

@@ -1,3 +1,4 @@
+import 'dart:async' show Timer;
 import 'dart:ui' show ImageFilter;
 import 'package:percent/models/User.dart';
 import 'package:percent/models/exam.dart';
@@ -17,6 +18,7 @@ import 'package:percent/widgets/exam_icon.dart';
 import 'package:percent/widgets/get_app_banner.dart';
 import 'package:percent/widgets/percent_loader.dart';
 import 'package:percent/services/guest_gate.dart';
+import 'package:percent/utils/notification_helper.dart';
 import 'package:percent/screens/edit_profile_screen.dart';
 import 'package:percent/widgets/ui/ui.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -75,7 +77,16 @@ class _HomeState extends State<Home> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) GuestGate.promptForNameIfNeeded(context);
     });
+    // Ask for notification permission a few seconds AFTER the user lands on Home
+    // (not on the cold-start path) so the OS dialog feels contextual instead of
+    // slamming them the instant the app opens. The OS shows the prompt only
+    // once; later calls just return the existing decision.
+    _notifPermTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted) NotificationHelper.requestPermission();
+    });
   }
+
+  Timer? _notifPermTimer;
 
   Future<void> _loadCategories() async {
     try {
@@ -106,6 +117,7 @@ class _HomeState extends State<Home> {
 
   @override
   void dispose() {
+    _notifPermTimer?.cancel();
     _categorySearchCtrl.dispose();
     super.dispose();
   }

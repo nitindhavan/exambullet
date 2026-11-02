@@ -9,7 +9,9 @@ import 'package:flutter/services.dart';
 import '../models/test_model.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/widgets/percent_loader.dart';
+import 'package:percent/widgets/original_toggle.dart';
 import 'package:percent/widgets/report_sheet.dart';
+import 'package:percent/widgets/translated_text.dart';
 import 'package:percent/widgets/ui/ui.dart';
 
 class TestScreen extends StatefulWidget {
@@ -18,10 +20,17 @@ class TestScreen extends StatefulWidget {
     required this.testModel,
     required this.examId,
     this.paperId,
+    this.language = 'en',
   }) : super(key: key);
   final TestModel testModel;
   final String examId;
   final String? paperId;
+
+  /// BCP-47 code this attempt is taken in ('en' = no translation). Chosen in
+  /// the start-test language sheet; passed on to the score/result screens so
+  /// the whole attempt renders in one language.
+  final String language;
+
   @override
   State<TestScreen> createState() => _TestScreenState();
 }
@@ -31,6 +40,9 @@ class _TestScreenState extends State<TestScreen> {
   List<int> _selected = [];
   List<Question> _questions = [];
   bool _loaded = false;
+  // Question indices the user chose to view in the original (English) instead
+  // of the attempt's translation. Only relevant on a translated attempt.
+  final Set<int> _showOriginal = {};
   Timer? _timer;
   DateTime? _startedAt; // when the test actually began, for elapsed-time capture
   bool _saved = false; // guard against double-saving on auto + manual submit
@@ -131,6 +143,7 @@ class _TestScreenState extends State<TestScreen> {
           testModel: widget.testModel,
           examId: widget.examId,
           paperId: widget.paperId ?? '',
+          language: widget.language,
         ),
       ),
     );
@@ -177,6 +190,11 @@ class _TestScreenState extends State<TestScreen> {
     );
   }
 
+  /// Language the CURRENT question renders in: English if the user toggled
+  /// "show original" for it, otherwise the attempt's language.
+  String get _questionLang =>
+      _showOriginal.contains(_current) ? 'en' : widget.language;
+
   void _reportCurrentQuestion() {
     final q = _questions[_current];
     showReportSheet(
@@ -187,6 +205,7 @@ class _TestScreenState extends State<TestScreen> {
       paperId: widget.paperId ?? '',
       questionId: q.id,
       questionText: q.questionText,
+      language: widget.language,
     );
   }
 
@@ -307,12 +326,27 @@ class _TestScreenState extends State<TestScreen> {
                                     color: AppTheme.primary, fontSize: 11.5)),
                           ),
                           const Spacer(),
+                          // Only on a translated attempt: let the user peek at
+                          // the original English for this question.
+                          if (widget.language != 'en') ...[
+                            OriginalToggle(
+                              showingOriginal:
+                                  _showOriginal.contains(_current),
+                              onTap: () => setState(() {
+                                if (!_showOriginal.remove(_current)) {
+                                  _showOriginal.add(_current);
+                                }
+                              }),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
                           ReportButton(onTap: _reportCurrentQuestion),
                         ],
                       ),
                       const SizedBox(height: AppTheme.space4),
-                      Text(
+                      TranslatedText(
                         _questions[_current].questionText,
+                        lang: _questionLang,
                         style: AppTheme.body.copyWith(
                             color: AppTheme.textPrimary,
                             fontSize: 16,
@@ -345,6 +379,7 @@ class _TestScreenState extends State<TestScreen> {
                       label: String.fromCharCode(64 + opt),
                       optionText: _questions[_current].optionText(opt),
                       optionNumber: opt,
+                      language: _questionLang,
                       selected: _selected[_current],
                       onTap: () {
                         HapticFeedback.selectionClick();
@@ -510,12 +545,14 @@ class _OptionButton extends StatelessWidget {
     required this.label,
     required this.optionText,
     required this.optionNumber,
+    required this.language,
     required this.selected,
     required this.onTap,
   });
   final String label;
   final String optionText;
   final int optionNumber;
+  final String language;
   final int selected;
   final VoidCallback onTap;
 
@@ -556,7 +593,8 @@ class _OptionButton extends StatelessWidget {
             ),
             const SizedBox(width: 14),
             Expanded(
-              child: Text(optionText,
+              child: TranslatedText(optionText,
+                  lang: language,
                   style: TextStyle(
                       color: isSelected ? AppTheme.primary : AppTheme.textPrimary,
                       fontSize: 15,

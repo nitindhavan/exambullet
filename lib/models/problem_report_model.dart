@@ -18,6 +18,7 @@ class ProblemReport {
   final String paperId;
   final String questionId;
   final String questionText; // snapshot, so admin sees it even if data changes
+  final String language; // active language code when reported ('' = English)
   final int createdAt; // epoch ms
   final String status; // 'open' | 'resolved' | 'dismissed'
 
@@ -33,6 +34,7 @@ class ProblemReport {
     required this.paperId,
     required this.questionId,
     required this.questionText,
+    this.language = '',
     required this.createdAt,
     required this.status,
   });
@@ -48,6 +50,7 @@ class ProblemReport {
         'paperId': paperId,
         'questionId': questionId,
         'questionText': questionText,
+        'language': language,
         'createdAt': createdAt,
         'status': status,
       };
@@ -65,6 +68,7 @@ class ProblemReport {
         paperId: (m['paperId'] ?? '').toString(),
         questionId: (m['questionId'] ?? '').toString(),
         questionText: (m['questionText'] ?? '').toString(),
+        language: (m['language'] ?? '').toString(),
         createdAt: (m['createdAt'] as num?)?.toInt() ?? 0,
         status: (m['status'] ?? 'open').toString(),
       );

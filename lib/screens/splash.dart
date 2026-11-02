@@ -1,11 +1,8 @@
 import 'package:percent/models/User.dart';
 import 'package:percent/services/analytics_service.dart';
 import 'package:percent/services/funnel_service.dart';
-import 'package:percent/services/onboarding.dart';
-import 'package:percent/screens/onboarding_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:percent/utils/theme.dart';
 import 'package:percent/utils/notification_helper.dart';
@@ -158,33 +155,15 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
       debugPrint('Failed to check app update: $e');
     }
 
-    // ── First-time onboarding ──────────────────────────────
-    // Show the feature walkthrough once (per device/browser) to brand-new
-    // users — i.e. anyone not already signed into a real account. On completion
-    // we mark it seen and fall through to the normal auth/routing below.
-    final existing = FirebaseAuth.instance.currentUser;
-    final isRealUser = existing != null && !existing.isAnonymous;
-    if (!isRealUser && !await Onboarding.seen()) {
-      if (!mounted) return;
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => OnboardingScreen(
-            onDone: () => Navigator.of(context).pop(),
-          ),
-        ),
-      );
-      await Onboarding.markSeen();
-      if (!mounted) return;
-    }
-
     var currentUser = FirebaseAuth.instance.currentUser;
 
-    // Web = browse-first. If nobody is signed in, sign the visitor in
-    // anonymously so they get a real uid and every screen keeps working; the
+    // Browse-first on EVERY platform. If nobody is signed in, sign the visitor
+    // in anonymously so they get a real uid and every screen keeps working; the
     // app asks them to sign in for real only when they do something worth
-    // saving (see GuestGate). Native keeps the normal sign-in gate.
-    if (currentUser == null && kIsWeb) {
+    // saving — reaching the membership paywall (see GuestGate). Anonymous
+    // guests later linkWithCredential when they sign in, so their guest uid +
+    // progress carry into the real account (see phone_auth_screen).
+    if (currentUser == null) {
       try {
         final cred = await FirebaseAuth.instance.signInAnonymously();
         currentUser = cred.user;
@@ -194,6 +173,8 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
     }
 
     if (currentUser == null) {
+      // Anonymous sign-in failed (offline / auth error) — fall back to the
+      // sign-in screen rather than a dead end.
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (_) => const SignIn()));
     } else {

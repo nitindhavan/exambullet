@@ -17,6 +17,10 @@ class NotificationHelper {
     importance: Importance.high,
   );
 
+  /// Silent startup setup — channel, plugin init, foreground listener. Does NOT
+  /// prompt for permission (that's [requestPermission], called later so the OS
+  /// dialog doesn't slam the user the instant they open the app). Safe to call
+  /// at launch.
   static Future<void> init() async {
     // Android channel
     await _localNotif
@@ -26,10 +30,12 @@ class NotificationHelper {
 
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
+    // Don't auto-request the iOS permission during init — we ask explicitly in
+    // [requestPermission] once the user has settled into the app.
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
     const initSettings = InitializationSettings(
       android: androidSettings,
@@ -37,13 +43,6 @@ class NotificationHelper {
     );
 
     await _localNotif.initialize(initSettings);
-
-    // Permission (Android 13+ / iOS)
-    await FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
 
     await FirebaseMessaging.instance
         .setForegroundNotificationPresentationOptions(
@@ -53,6 +52,23 @@ class NotificationHelper {
     );
 
     _listenForeground();
+  }
+
+  /// Prompts for notification permission (Android 13+ / iOS). Call this AFTER
+  /// the user has reached the app and had a moment to look around — never on the
+  /// cold-start path — so the OS dialog feels contextual rather than an
+  /// immediate interruption. Safe to call more than once: the OS shows the
+  /// dialog only the first time and returns the existing decision after.
+  static Future<void> requestPermission() async {
+    try {
+      await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    } catch (e) {
+      debugPrint('requestPermission failed: $e');
+    }
   }
 
   /// Saves this device's FCM token under `users/<uid>/fcmToken` (read by the

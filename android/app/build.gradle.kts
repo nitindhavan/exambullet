@@ -42,7 +42,9 @@ android {
 
     defaultConfig {
         applicationId = "com.moralmosaic.percent"
-        minSdk = flutter.minSdkVersion
+        // google_mlkit_translation requires minSdk 21; pin it so a Flutter
+        // default change can't drop us below that floor.
+        minSdk = maxOf(flutter.minSdkVersion, 21)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
